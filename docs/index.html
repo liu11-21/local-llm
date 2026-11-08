@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="在瀏覽器使用本機模型聊天，透過 WebGPU 在你的裝置上推論。">
+  <meta name="theme-color" content="#f5f4f2">
+  <title>Local LLM 網頁版</title>
+  <link rel="icon" href="./logo.png">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./chat.mjs"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="./logo.png" alt="" width="40" height="40"><span>Local LLM</span><span class="edition">網頁版</span></div>
+    <a href="https://github.com/liu11-21/local-llm/releases/latest">Windows 桌面版 <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="workspace">
+    <aside class="controls" aria-label="模型設定">
+      <p class="eyebrow">瀏覽器本機推論</p>
+      <h1>本機模型</h1>
+      <p class="muted">首次載入需下載模型。模型會由瀏覽器快取，對話在這台裝置上運算。</p>
+      <label for="model">選擇模型</label>
+      <select id="model">
+        <option value="Qwen2.5-0.5B-Instruct-q4f32_1-MLC">Qwen 2.5 · 0.5B</option>
+        <option value="SmolLM2-360M-Instruct-q4f32_1-MLC">SmolLM2 · 360M</option>
+      </select>
+      <p id="model-description" class="model-description">適合先試繁體中文問答。</p>
+      <button id="load" class="button primary" type="button" disabled>載入模型</button>
+      <progress id="progress" max="100" aria-label="模型載入進度" hidden></progress>
+      <p id="status" class="status" role="status">正在檢查 WebGPU…</p>
+      <noscript><p>請啟用 JavaScript，以載入本機模型。</p></noscript>
+      <div class="note"><span class="indicator" aria-hidden="true"></span> 不需要 API 金鑰</div>
+    </aside>
+
+    <section class="conversation" aria-labelledby="conversation-title">
+      <div class="chat-bar">
+        <h2 id="conversation-title">對話</h2>
+        <div class="chat-actions">
+          <button id="export" class="button secondary" type="button" disabled>匯出</button>
+          <button id="clear" class="button secondary" type="button" disabled>清空</button>
+        </div>
+      </div>
+      <div id="thread" class="thread" tabindex="0" aria-label="對話紀錄">
+        <div id="empty" class="empty">
+          <span class="empty-symbol" aria-hidden="true">✦</span>
+          <h3>今天想聊什麼？</h3>
+          <p>載入模型後，就可以提問、整理文字，或一起想點子。</p>
+        </div>
+      </div>
+      <div id="announcer" class="visually-hidden" role="status"></div>
+      <form id="composer" class="composer">
+        <label class="visually-hidden" for="prompt">訊息</label>
+        <textarea id="prompt" rows="2" maxlength="1800" placeholder="載入模型後輸入訊息…" disabled></textarea>
+        <div class="composer-actions">
+          <span class="muted">Enter 傳送 · Shift + Enter 換行</span>
+          <button id="stop" class="button secondary" type="button" hidden>停止</button>
+          <button id="send" class="button primary" type="submit" disabled>傳送</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
