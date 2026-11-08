@@ -27,7 +27,7 @@ class LocalEngine:
         with self.lock:
             return self.process is not None and self.process.poll() is None
 
-    def start(self, executable, model, cancel=None, plan=None):
+    def start(self, executable, model, cancel=None, plan=None, *, context=2048):
         cancel = cancel or Event()
         executable = Path(executable).resolve(strict=True)
         model = Path(model).resolve(strict=True)
@@ -52,7 +52,7 @@ class LocalEngine:
             try:
                 process = subprocess.Popen(
                     [str(executable), "--model", str(model), "--alias", "local-model",
-                     "--host", "127.0.0.1", "--port", str(port), "--ctx-size", "2048",
+                     "--host", "127.0.0.1", "--port", str(port), "--ctx-size", str(context),
                      "--parallel", "1", *placement],
                     cwd=executable.parent, env=env, stdin=subprocess.DEVNULL,
                     stdout=log, stderr=subprocess.STDOUT,
@@ -119,16 +119,36 @@ class LocalEngine:
                 self.log.close()
                 self.process = self.log = self.model = self.port = self.key = None
 
-    def stream(self, messages):
+    def endpoint(self):
         with self.lock:
             if self.process is None or self.process.poll() is not None:
                 raise RuntimeError("請先啟動模型。")
-            port, key = self.port, self.key
+            return self.port, self.key
+
+    def prompt_tokens(self, messages):
+        port, key = self.endpoint()
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+        try:
+            headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+            def request(path, data):
+                connection.request("POST", path, json.dumps(data).encode(), headers)
+                with connection.getresponse() as response:
+                    body = response.read()
+                    if response.status != 200:
+                        raise RuntimeError(f"本機模型無法檢查輸入長度（HTTP {response.status}）。")
+                    return json.loads(body)
+            prompt = request("/apply-template", {"messages": messages})["prompt"]
+            return len(request("/tokenize", {"content": prompt, "add_special": True})["tokens"])
+        finally:
+            connection.close()
+
+    def stream(self, messages, *, max_tokens=512):
+        port, key = self.endpoint()
         body = json.dumps({
             "model": "local-model",
             "messages": messages,
             "stream": True,
-            "max_tokens": 512,
+            "max_tokens": max_tokens,
             "temperature": 0.4,
         }, ensure_ascii=False).encode("utf-8")
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=180)

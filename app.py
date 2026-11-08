@@ -18,8 +18,9 @@ from engine import LocalEngine
 from hardware import FIT_LABELS, Fit, detect_hardware, estimate_ram, model_fit
 from load_plan import allocate, plan_load
 from media import ComfyClient, MODELS
+from team_panel import TeamPanel
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 APP_DIR = Path(__file__).resolve().parent
 FROZEN = getattr(sys, "frozen", False)
 DATA_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "LocalLLM" if FROZEN else APP_DIR
@@ -196,14 +197,17 @@ class LocalLLM:
         catalog = ttk.Frame(self.tabs, padding=(16, 14))
         self.download_tab = ttk.Frame(self.tabs, padding=(20, 18))
         media = ttk.Frame(self.tabs, padding=(20, 18))
+        team = ttk.Frame(self.tabs, padding=(16, 12))
         self.tabs.add(chat, text="對話")
         self.tabs.add(catalog, text="模型清單")
         self.tabs.add(self.download_tab, text="模型下載")
         self.tabs.add(media, text="創作")
+        self.tabs.add(team, text="模型團隊")
         self.build_chat(chat)
         self.build_catalog(catalog)
         self.build_download(self.download_tab)
         self.build_media(media)
+        self.team = TeamPanel(self, team, OUTPUT_DIR / "teams")
 
     def build_chat(self, pane):
         header = ttk.Frame(pane)
@@ -525,7 +529,7 @@ class LocalLLM:
         if self.comfy.running():
             self.stop_comfy()
             return
-        if self.ready or self.loading or self.stopping:
+        if self.ready or self.loading or self.stopping or self.team.cancel is not None:
             return
         try:
             port = int(self.media_port.get())
@@ -613,7 +617,8 @@ class LocalLLM:
             self.lyrics_row.pack_forget()
 
     def generate_media(self):
-        if self.media_busy or self.comfy_busy or self.ready or self.loading or self.stopping or self.closing:
+        if (self.media_busy or self.comfy_busy or self.ready or self.loading or self.stopping or self.closing
+                or self.team.cancel is not None):
             return
         prompt = self.media_prompt.get("1.0", "end-1c").strip()
         if not prompt:
@@ -663,6 +668,7 @@ class LocalLLM:
                 name = path.name if path.name not in self.models else str(path)
                 self.models[name] = path
         self.picker.configure(values=list(self.models))
+        self.team.local_models_changed()
         label = next((name for name, path in self.models.items() if path == previous), "")
         self.selected.set(label or next(iter(self.models), ""))
         self.show_model_info()
@@ -742,13 +748,14 @@ class LocalLLM:
             self.comfy_status.set("ComfyUI 已結束。啟動日誌位於便攜版資料夾。")
             self.refresh_buttons()
         if self.closing and not any((self.loading, self.stopping, self.answering, self.download_cancel,
-                                     self.media_busy, self.comfy_busy)):
+                                     self.media_busy, self.comfy_busy, self.team.cancel)):
             self.root.destroy()
             return
         self.root.after(30, self.dispatch)
 
     def refresh_buttons(self):
         locked = self.ready or self.loading or self.stopping or self.answering or self.closing
+        team_busy = self.team.cancel is not None
         downloading = self.download_cancel is not None
         comfy_running = self.comfy.running()
         comfy_idle = not self.comfy_busy and not self.closing
@@ -760,7 +767,8 @@ class LocalLLM:
         for widget, enabled in (
             (self.import_button, not locked),
             (self.engine_button, not locked),
-            (self.load_button, not locked and not self.media_busy and not self.comfy_busy and bool(self.selected.get())),
+            (self.load_button, not locked and not team_busy and not self.media_busy and not self.comfy_busy
+             and bool(self.selected.get())),
             (self.stop_button, self.ready and not self.stopping and not self.closing),
             (self.clear_button, not self.answering and not self.closing),
             (self.send_button, self.ready and not self.answering and not self.stopping and not self.closing),
@@ -771,9 +779,9 @@ class LocalLLM:
             (self.download_button, not downloading and not self.closing),
             (self.cancel_button, downloading and not self.download_cancel.is_set() and not self.closing),
             (self.media_port_entry, comfy_idle and not comfy_running and not self.media_busy),
-            (self.media_generate, comfy_idle and not self.media_busy and not locked),
+            (self.media_generate, comfy_idle and not self.media_busy and not locked and not team_busy),
             (self.media_open, self.media_result is not None and not self.closing),
-            (self.comfy_action, comfy_idle and not self.media_busy and (comfy_running or not locked)),
+            (self.comfy_action, comfy_idle and not self.media_busy and (comfy_running or not (locked or team_busy))),
             (self.comfy_cancel_button, not self.closing and self.comfy_cancel is not None
              and not self.comfy_cancel.is_set()),
             (self.comfy_models, comfy_idle and comfy_installed),
@@ -781,6 +789,7 @@ class LocalLLM:
         ):
             widget.configure(state="normal" if enabled else "disabled")
         self.refresh_catalog_buttons()
+        self.team.refresh()
         self.media_picker.configure(state="disabled" if self.media_busy or self.closing else "readonly")
         if self.ready or self.loading or self.stopping:
             self.media_status.set("先停止對話模型，讓創作引擎使用記憶體。")
@@ -976,6 +985,7 @@ class LocalLLM:
         self.shutdown.set()
         self.cancel_download()
         self.cancel_comfy()
+        self.team.request_cancel()
         if not self.comfy_busy and self.comfy.running():
             self.stop_comfy()
         if self.ready and not self.stopping:

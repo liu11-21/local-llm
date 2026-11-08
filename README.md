@@ -1,6 +1,6 @@
-# Local LLM v0.5.0
+# Local LLM v0.6.0
 
-Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `LocalLLM-v0.5.0-Windows-x64.exe` 包含 Python 執行環境和 llama.cpp Vulkan／CPU 引擎。雙擊即可開啟。
+Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `LocalLLM-v0.6.0-Windows-x64.exe` 包含 Python 執行環境和 llama.cpp Vulkan／CPU 引擎。雙擊即可開啟。
 
 1. 到「模型清單」選擇依本機硬體排序的推薦模型，或搜尋 Hugging Face 公開單檔 GGUF。選好檔案後按「前往下載」。已有 GGUF 可直接按「選擇本機 GGUF」。
 2. 在「模型下載」按「開始下載」。預設 4 個執行緒，可調整為 1–16。支援 HTTP Range 的來源會平行下載，下載完成才將模型放入資料夾。
@@ -9,6 +9,14 @@ Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `L
 聊天引擎啟動前會重新讀取 GGUF 檔案大小、層數與引擎回報的可用 GPU 記憶體。程式按預留的 GPU 記憶體分配卸載層數，其餘層由 CPU 使用 RAM。引擎支援時會映射原本的 GGUF 檔案，由 Windows 按需將檔案頁載入 RAM。磁碟映射顯示的是原模型檔大小。共用 GPU 記憶體會計入 RAM 預估。實際佔用會隨模型架構、上下文和 Windows 快取而變化。GPU 啟動失敗時會嘗試 CPU。
 
 EXE 下載的模型與生成的作品會分別儲存在 `%LOCALAPPDATA%\LocalLLM\models` 和 `%LOCALAPPDATA%\LocalLLM\outputs`。從原始碼執行時使用專案內的 `models` 和 `outputs`。舊版的本機 GGUF 可在新版用檔案選擇器匯入。
+
+## 模型團隊
+
+1. 開啟「模型團隊」，加入 2–6 個本機 GGUF 或支援 Chat Completions 的雲端模型。加入雲端模型時，填入服務的 HTTPS API 網址（例如 `https://api.openai.com/v1` 或 `https://openrouter.ai/api/v1`）、模型 ID 和 API 金鑰。金鑰只保留在本次開啟的程式內。
+2. 選一個成員當「主模型」，輸入一份提示詞，按「執行團隊」。所有成員獨立收到同一份提示詞；主模型在草稿階段完成後再合併。RAM 或顯存不足以並行時，本機模型會依序載入和卸載；也可勾選「本機一律排隊」。若單一模型也放不下，該成員會標示失敗。雲端請求可與本機推理同時執行。
+3. 最終回答會顯示在程式並存成 `answer.md`。「開啟結果資料夾」可查看原始提示詞、各份草稿 `member-XX.md` 和狀態 `run.json`。有成員失敗時仍可合併成功的草稿；若合併失敗，已完成的草稿會保留。若本機主模型的上下文不足以容納全部草稿，合併時會使用節錄，完整草稿仍會保存。
+
+EXE 將結果存到 `%LOCALAPPDATA%\LocalLLM\outputs\teams`，原始碼版本使用 `outputs/teams`。只選本機模型時，提示詞與草稿留在本機；選用雲端成員會把提示詞送給該服務，雲端主模型還會收到所有成功的草稿。請求可能按服務商的方式計費。
 
 ## 圖片、影片與音樂
 
