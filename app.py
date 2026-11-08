@@ -8,9 +8,11 @@ import time
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+from catalog import RECOMMENDED, model_files, search_models
 from downloads import DownloadCancelled, check_gguf, download_model
 from engine import LocalEngine
 
+VERSION = "0.2.0"
 APP_DIR = Path(__file__).resolve().parent
 MODEL_DIR = APP_DIR / "models"
 ENGINE_PATH = APP_DIR / "engine" / "llama-server.exe"
@@ -48,6 +50,10 @@ class LocalLLM:
         self.loading = self.ready = self.stopping = self.answering = self.closing = False
         self.download_cancel = None
         self.shutdown = Event()
+        self.catalog_busy = False
+        self.catalog_files = []
+        self.catalog_query = tk.StringVar()
+        self.catalog_status = tk.StringVar()
 
         self.selected = tk.StringVar()
         system_engine = shutil.which("llama-server")
@@ -61,7 +67,7 @@ class LocalLLM:
         self.download_status = tk.StringVar(value="等待下載")
         self.progress = tk.DoubleVar()
 
-        self.root.title("Local LLM · 本機模型工作台")
+        self.root.title(f"Local LLM v{VERSION} · 本機模型工作台")
         self.root.geometry("1050x690")
         self.root.minsize(820, 610)
         self.root.configure(bg=BG)
@@ -97,6 +103,8 @@ class LocalLLM:
         style.configure("TNotebook", background=BG, borderwidth=0, tabmargins=(0, 0, 0, 0))
         style.configure("TNotebook.Tab", padding=(16, 9), background=PANEL, foreground=MUTED)
         style.map("TNotebook.Tab", background=[("selected", FIELD)], foreground=[("selected", ACCENT)])
+        style.configure("Treeview", background=FIELD, fieldbackground=FIELD, foreground=TEXT, rowheight=26)
+        style.map("Treeview", background=[("selected", "#344967")], foreground=[("selected", TEXT)])
         style.configure("Horizontal.TProgressbar", background=ACCENT, troughcolor=FIELD, bordercolor=BORDER)
         self.root.option_add("*TCombobox*Listbox.background", FIELD)
         self.root.option_add("*TCombobox*Listbox.foreground", TEXT)
@@ -137,11 +145,14 @@ class LocalLLM:
         self.tabs = ttk.Notebook(shell)
         self.tabs.grid(row=1, column=1, sticky="nsew")
         chat = ttk.Frame(self.tabs, padding=(14, 12))
-        download = ttk.Frame(self.tabs, padding=(20, 18))
+        catalog = ttk.Frame(self.tabs, padding=(16, 14))
+        self.download_tab = ttk.Frame(self.tabs, padding=(20, 18))
         self.tabs.add(chat, text="對話")
-        self.tabs.add(download, text="模型下載")
+        self.tabs.add(catalog, text="模型清單")
+        self.tabs.add(self.download_tab, text="模型下載")
         self.build_chat(chat)
-        self.build_download(download)
+        self.build_catalog(catalog)
+        self.build_download(self.download_tab)
 
     def build_chat(self, pane):
         header = ttk.Frame(pane)
@@ -168,9 +179,134 @@ class LocalLLM:
         self.send_button.pack(side="right", padx=(10, 0), fill="y")
         ttk.Label(pane, text="Enter 傳送  ·  Shift + Enter 換行", style="Muted.TLabel").pack(anchor="w", pady=(5, 0))
 
+    def build_catalog(self, pane):
+        ttk.Label(pane, text="推薦模型與 Hugging Face 搜尋", style="Section.TLabel").pack(anchor="w")
+        search = ttk.Frame(pane)
+        search.pack(fill="x", pady=(10, 8))
+        self.catalog_entry = ttk.Entry(search, textvariable=self.catalog_query)
+        self.catalog_entry.pack(side="left", fill="x", expand=True)
+        self.catalog_entry.bind("<Return>", lambda _: self.find_models())
+        self.catalog_search = ttk.Button(search, text="線上搜尋", command=self.find_models)
+        self.catalog_search.pack(side="left", padx=6)
+        self.catalog_recommended = ttk.Button(search, text="推薦模型", command=self.show_recommended)
+        self.catalog_recommended.pack(side="left")
+
+        listing = ttk.Frame(pane)
+        listing.pack(fill="both", expand=True)
+        self.catalog_list = ttk.Treeview(listing, columns=("repo", "info"), show="headings",
+                                         selectmode="browse", height=5)
+        self.catalog_list.heading("repo", text="Hugging Face 倉庫")
+        self.catalog_list.heading("info", text="用途 / 下載次數")
+        self.catalog_list.column("repo", width=290, minwidth=120)
+        self.catalog_list.column("info", width=130, minwidth=85, stretch=False)
+        scrollbar = ttk.Scrollbar(listing, command=self.catalog_list.yview)
+        self.catalog_list.configure(yscrollcommand=scrollbar.set)
+        self.catalog_list.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        self.catalog_list.bind("<<TreeviewSelect>>", self.catalog_selection_changed)
+
+        self.catalog_versions = ttk.Button(pane, text="查看 GGUF 版本", command=self.read_versions)
+        self.catalog_versions.pack(anchor="w", pady=(8, 5))
+        choose = ttk.Frame(pane)
+        choose.pack(fill="x")
+        self.catalog_picker = ttk.Combobox(choose, state="disabled", width=20)
+        self.catalog_picker.pack(side="left", fill="x", expand=True)
+        self.catalog_download = ttk.Button(choose, text="前往下載", style="Primary.TButton",
+                                           command=self.use_catalog_file)
+        self.catalog_download.pack(side="right", padx=(8, 0))
+        ttk.Label(pane, textvariable=self.catalog_status, style="Muted.TLabel", wraplength=440).pack(
+            anchor="w", pady=(6, 0))
+        self.show_recommended()
+
+    def set_catalog_rows(self, rows):
+        self.catalog_list.delete(*self.catalog_list.get_children())
+        for repo, info in rows:
+            self.catalog_list.insert("", "end", values=(repo, info))
+        self.catalog_selection_changed()
+
+    def show_recommended(self):
+        self.set_catalog_rows(RECOMMENDED)
+        self.catalog_status.set("選擇模型後查看版本。留空搜尋可瀏覽熱門 GGUF。")
+
+    def catalog_selection_changed(self, event=None):
+        self.catalog_files = []
+        self.catalog_picker.configure(values=())
+        self.catalog_picker.set("")
+        self.refresh_catalog_buttons()
+
+    def refresh_catalog_buttons(self):
+        available = not self.catalog_busy and not self.closing
+        has_files = available and bool(self.catalog_files)
+        self.catalog_picker.configure(state="readonly" if has_files else "disabled")
+        for widget, enabled in (
+            (self.catalog_entry, available),
+            (self.catalog_search, available),
+            (self.catalog_recommended, available),
+            (self.catalog_versions, available and bool(self.catalog_list.selection())),
+            (self.catalog_download, has_files and self.download_cancel is None),
+        ):
+            widget.configure(state="normal" if enabled else "disabled")
+
+    def catalog_request(self, task, status, apply_result):
+        if self.catalog_busy or self.closing:
+            return
+        self.catalog_busy = True
+        self.catalog_status.set(status)
+        self.refresh_catalog_buttons()
+
+        def done(result, error):
+            self.catalog_busy = False
+            if error:
+                self.catalog_status.set(str(error))
+            else:
+                apply_result(result)
+            self.refresh_catalog_buttons()
+
+        self.background(task, done)
+
+    def find_models(self):
+        if self.catalog_busy or self.closing:
+            return
+        query = self.catalog_query.get().strip()
+        self.set_catalog_rows(())
+
+        def show(results):
+            self.set_catalog_rows((repo, f"{count:,}" if type(count) is int else "—") for repo, count in results)
+            self.catalog_status.set(f"找到 {len(results)} 筆。選擇模型後查看版本。" if results else "找不到符合的模型。")
+
+        self.catalog_request(lambda: search_models(query), "正在搜尋 Hugging Face…", show)
+
+    def read_versions(self):
+        selected = self.catalog_list.selection()
+        if not selected:
+            return
+        repo = self.catalog_list.item(selected[0], "values")[0]
+        self.catalog_selection_changed()
+
+        def show(files):
+            if self.catalog_list.selection() != selected:
+                self.catalog_status.set("請按「查看 GGUF 版本」載入目前選擇的模型。")
+                return
+            self.catalog_files = files
+            self.catalog_picker.configure(values=[
+                f"{name}  ·  {format_size(size)}" if size else name for name, size, _ in files
+            ])
+            if files:
+                self.catalog_picker.current(0)
+            self.catalog_status.set(f"找到 {len(files)} 個可下載的 GGUF 檔案。" if files
+                                    else "此倉庫沒有支援的單檔 GGUF。")
+
+        self.catalog_request(lambda: model_files(repo), f"正在讀取 {repo}…", show)
+
+    def use_catalog_file(self):
+        index = self.catalog_picker.current()
+        if index >= 0 and self.download_cancel is None:
+            self.url.set(self.catalog_files[index][2])
+            self.tabs.select(self.download_tab)
+
     def build_download(self, pane):
         ttk.Label(pane, text="下載 GGUF 模型", style="Section.TLabel").pack(anchor="w")
-        ttk.Label(pane, text="貼上公開 HTTPS 直連網址，或使用預填的輕量聊天模型。",
+        ttk.Label(pane, text="從模型清單選擇版本，或貼上公開 HTTPS 的 GGUF 直連網址。",
                   style="Muted.TLabel", wraplength=520).pack(anchor="w", pady=(6, 18))
         ttk.Label(pane, text="模型檔案網址").pack(anchor="w", pady=(0, 5))
         self.url_entry = ttk.Entry(pane, textvariable=self.url)
@@ -288,6 +424,7 @@ class LocalLLM:
             (self.cancel_button, downloading and not self.download_cancel.is_set() and not self.closing),
         ):
             widget.configure(state="normal" if enabled else "disabled")
+        self.refresh_catalog_buttons()
 
     def load_model(self):
         if not self.executable.is_file():
