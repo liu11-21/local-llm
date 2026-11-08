@@ -213,7 +213,8 @@ class ManagedComfy:
                                             stdout=log, stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
         self.port = port
         try:
-            deadline = time.monotonic() + 180
+            # A fresh extraction can spend several minutes loading Windows/PyTorch DLLs.
+            deadline = time.monotonic() + 600
             while time.monotonic() < deadline:
                 check_cancelled(cancel)
                 if not self.running():
@@ -223,7 +224,8 @@ class ManagedComfy:
                         log.seek(max(0, log.tell() - 8192))
                         detail = log.read().decode("utf-8", "replace")
                     if "Windows fatal exception: access violation" in detail or exit_code == 0xC0000005:
-                        raise RuntimeError("ComfyUI 的硬體後端崩潰。請確認顯示驅動相容，或改選 CPU。")
+                        hint = "請查看啟動日誌。" if profile == "CPU" else "請確認顯示驅動相容，或改選 CPU。"
+                        raise RuntimeError(f"ComfyUI 的硬體後端崩潰。{hint}")
                     reason = detail.strip().splitlines()[-1:] or ["請查看啟動日誌"]
                     raise RuntimeError(f"ComfyUI 啟動失敗（{exit_code}）：{reason[0]}")
                 try:
