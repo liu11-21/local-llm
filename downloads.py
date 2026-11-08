@@ -12,6 +12,7 @@ from urllib.parse import unquote, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 BLOCK_SIZE = 256 * 1024
+RETRY_SPAN = 4 * 1024 ** 2
 RANGE_HEADER = re.compile(r"bytes (\d+)-(\d+)/(\d+)")
 
 
@@ -126,35 +127,41 @@ def download_model(url, directory, workers, cancel, report, *, opener=open_downl
 
     def download_range(start, end):
         position = start
+        attempt = 0
+        span = end - start + 1
         with staging.open("r+b", buffering=0) as output:
             output.seek(start)
-            for attempt in range(3):
+            while position <= end:
                 check_cancelled()
+                last = min(end, position + span - 1)
                 try:
-                    with opener(url, (position, end), etag) as response:
+                    with opener(url, (position, last), etag) as response:
                         check_encoding(response)
-                        if content_range(response) != (position, end, total) or entity_tag(response) != etag:
+                        if content_range(response) != (position, last, total) or entity_tag(response) != etag:
                             raise ValueError("檔案在下載期間變更，或伺服器回傳了錯誤的區段。")
                         declared = response.headers.get("Content-Length")
-                        if declared is not None and int(declared) != end - position + 1:
+                        if declared is not None and int(declared) != last - position + 1:
                             raise ValueError("下載區段長度與 HTTP 標頭不符。")
-                        while position <= end:
+                        while position <= last:
                             check_cancelled()
-                            chunk = response.read1(min(BLOCK_SIZE, end - position + 1))
+                            chunk = response.read1(min(BLOCK_SIZE, last - position + 1))
                             if not chunk:
                                 raise ConnectionError("下載區段中途斷線。")
                             if output.write(chunk) != len(chunk):
                                 raise OSError("無法完整寫入下載區段。")
                             position += len(chunk)
                             advance(len(chunk))
-                        return
+                    attempt = 0
+                    continue
                 except HTTPError as error:
                     if error.code not in (408, 429, 500, 502, 503, 504) or attempt == 2:
                         raise
                 except (URLError, ConnectionError, TimeoutError, HTTPException):
                     if attempt == 2:
                         raise
-                if cancel.wait(0.5 * (attempt + 1)):
+                attempt += 1
+                span = min(span, RETRY_SPAN)
+                if cancel.wait(0.5 * attempt):
                     raise DownloadCancelled()
 
     try:

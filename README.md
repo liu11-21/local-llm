@@ -61,3 +61,25 @@ EXE 安裝的便攜版位於 `%LOCALAPPDATA%\LocalLLM\comfyui`，從原始碼執
 要產生 EXE，安裝 `pyinstaller==6.22.3` 後執行 `python build_windows.py`。輸出位於 `dist/`。引擎和模型檔案均由本機準備，Git 會忽略這些目錄。
 
 要重建安裝包，另準備 [Inno Setup](https://jrsoftware.org/isdl.php)，執行 `python build_windows.py --iscc "C:\path\to\ISCC.exe"`。要加入繁體中文安裝介面，可將 [Inno Setup 繁體中文語言檔](https://jrsoftware.org/files/istrans/) 放到編譯器的 `Languages` 資料夾。持有 Windows 信任的程式碼簽署憑證時，可將 Windows SDK 的 `signtool.exe` 加到 PATH，並加上 `--sign-thumbprint <憑證指紋>` 簽署安裝包、解除安裝程式及尚無有效簽章的執行元件。
+
+## 新桌面工作台（開發分支）
+
+新的 React／Tauri 桌面版仍在驗收。既有 Windows v0.6.2 與 GitHub Pages 可照常使用。
+
+- [介面與實際畫面](docs/UI_DESIGN.md) · [架構](docs/ARCHITECTURE.md) · [路線圖](docs/ROADMAP.md)
+- [Windows 打包、安全與簽章](docs/SECURITY_AND_RELEASE.md) · [測試結果](docs/TEST_REPORT.md)
+
+在 Windows 開發機安裝 Python 3.12、Node 24、[Tauri 的 Rust／MSVC／WebView2 先決條件](https://v2.tauri.app/start/prerequisites/)，於庫根目錄執行：
+
+```powershell
+python -m pip install --only-binary=:all: -r desktop/requirements-windows.lock
+python -m unittest -v
+python build_desktop_worker.py
+cd desktop
+npm ci
+npm run tauri -- dev
+# 只產生未簽署的本機 Windows x64 開發安裝程式：
+npm run tauri -- build --target x86_64-pc-windows-msvc -- --locked
+```
+
+暫時只想驗證 UI 時，於 `desktop` 執行 `npm run dev` 並開啟 [本機預覽](http://127.0.0.1:1420/)。它會啟動相同 Python Worker；不需要 Rust／MSVC，也不是可部署的網頁版。第一次聊天可從「運算環境」安裝官方 llama.cpp，再從「模型與應用」下載一個小型 GGUF。

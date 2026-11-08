@@ -1,0 +1,82 @@
+name: Desktop workspace (Windows x64)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['dev/desktop-workspace']
+    paths: ['desktop/**', '*.py', 'logo.ico', '.github/workflows/desktop-windows.yml']
+  pull_request:
+    paths: ['desktop/**', '*.py', 'logo.ico', '.github/workflows/desktop-windows.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    env:
+      CARGO_TERM_COLOR: always
+      PYTHONIOENCODING: utf-8
+      RUST_TOOLCHAIN: '1.99.1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.22.1'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12.10'
+          architecture: x64
+      - name: Pin toolchain and Python packager
+        shell: pwsh
+        run: |
+          rustup toolchain install $env:RUST_TOOLCHAIN --profile minimal --target x86_64-pc-windows-msvc
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          "RUSTUP_TOOLCHAIN=$env:RUST_TOOLCHAIN" >> $env:GITHUB_ENV
+          python -m pip install --only-binary=:all: -r desktop/requirements-windows.lock
+      - name: Test Python and build the onedir worker
+        shell: pwsh
+        run: |
+          python -m unittest -v
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python build_desktop_worker.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m unittest -v test_desktop_worker.PackagedWorkerTests
+      - name: Build Windows per-user installer (unsigned)
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo metadata --locked --format-version 1 --manifest-path src-tauri/Cargo.toml | Out-Null
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run tauri -- build --target x86_64-pc-windows-msvc -- --locked
+      - name: Verify installer inventory and produce checksums
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(Get-ChildItem 'desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis' -Filter '*.exe' -File)
+          if ($files.Count -ne 1) { throw "Expected exactly one Windows installer." }
+          $out = New-Item -ItemType Directory -Force build/windows-review
+          $files | Copy-Item -Destination $out
+          foreach ($file in (Get-ChildItem $out -Filter '*.exe' -File)) {
+            $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($file.Name)" | Set-Content (Join-Path $out 'SHA256SUMS.txt') -Encoding ascii
+            $signature = Get-AuthenticodeSignature $file.FullName
+            if ($signature.Status -ne 'NotSigned') { throw "Unsigned validation pipeline produced unexpected signing state: $($signature.Status)" }
+            $version = (Get-Content desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+            @{
+              commit = $env:GITHUB_SHA; version = $version; run = $env:GITHUB_RUN_ID
+              runner = $env:RUNNER_OS; target = 'x86_64-pc-windows-msvc'
+              rust = (rustc --version); python = (python --version); node = (node --version)
+              authenticode = $signature.Status.ToString(); sha256 = $hash; bytes = $file.Length
+            } | ConvertTo-Json | Set-Content (Join-Path $out 'BUILD.json')
+          }
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: LocalLLM-workspace-Windows-x64-unsigned
+          path: build/windows-review/
+          if-no-files-found: error
+          retention-days: 14

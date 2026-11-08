@@ -7,7 +7,7 @@ import secrets
 import socket
 import subprocess
 from tempfile import TemporaryFile
-from threading import Event, Lock
+from threading import Event, Lock, Thread
 import time
 
 from downloads import check_gguf
@@ -142,16 +142,29 @@ class LocalEngine:
         finally:
             connection.close()
 
-    def stream(self, messages, *, max_tokens=512):
+    def stream(self, messages, *, max_tokens=512, temperature=0.4, cancel=None):
         port, key = self.endpoint()
         body = json.dumps({
             "model": "local-model",
             "messages": messages,
             "stream": True,
             "max_tokens": max_tokens,
-            "temperature": 0.4,
+            "temperature": temperature,
         }, ensure_ascii=False).encode("utf-8")
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=180)
+        finished = Event()
+        def interrupt():
+            while not finished.wait(0.1):
+                if cancel.is_set():
+                    sock = connection.sock
+                    if sock is not None:
+                        try:
+                            sock.shutdown(socket.SHUT_RDWR)
+                        except OSError:
+                            pass
+                        return
+        if cancel is not None:
+            Thread(target=interrupt, daemon=True).start()
         try:
             connection.request("POST", "/v1/chat/completions", body, {
                 "Authorization": f"Bearer {key}", "Content-Type": "application/json",
@@ -175,4 +188,5 @@ class LocalEngine:
                             yield token
             raise ConnectionError("模型串流提前結束。")
         finally:
+            finished.set()
             connection.close()
