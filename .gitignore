@@ -1,0 +1,8 @@
+/engine/
+/models/
+__pycache__/
+*.py[cod]
+*.gguf
+*.part
+.env
+.env.*
