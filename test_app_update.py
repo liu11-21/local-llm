@@ -35,6 +35,14 @@ class UpdateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ReleaseRedirect().redirect_request(None, None, 302, "", {}, "https://example.invalid/update.exe")
 
+    def test_installed_and_portable_builds_get_matching_updates(self):
+        installer = dict(self.asset)
+        installer["name"] = installer["name"].replace(".exe", "-Setup.exe")
+        installer["browser_download_url"] = installer["browser_download_url"].replace(".exe", "-Setup.exe")
+        self.release["assets"].append(installer)
+        self.assertEqual(select_update(self.release, "0.6.2", installer=True).name, installer["name"])
+        self.assertEqual(select_update(self.release, "0.6.2").name, self.asset["name"])
+
     def test_corrupt_and_cancelled_downloads_never_publish_exe(self):
         offer = select_update(self.release, "0.9.9")
         with TemporaryDirectory() as directory:

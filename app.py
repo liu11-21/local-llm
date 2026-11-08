@@ -21,9 +21,10 @@ from load_plan import allocate, plan_load
 from media import ComfyClient, MODELS
 from team_panel import TeamPanel
 
-VERSION = "0.6.1"
+VERSION = "0.6.2"
 APP_DIR = Path(__file__).resolve().parent
 FROZEN = getattr(sys, "frozen", False)
+INSTALLED_BUILD = FROZEN and Path(sys.executable).with_name("LocalLLM.installed").is_file()
 DATA_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "LocalLLM" if FROZEN else APP_DIR
 MODEL_DIR = DATA_DIR / "models"
 OUTPUT_DIR = DATA_DIR / "outputs"
@@ -808,13 +809,18 @@ class LocalLLM:
                 if not offer:
                     self.update_status.set("目前已是最新版本。")
                 elif self.update_file and self.update_file.is_file():
-                    self.update_status.set(f"{offer.tag} 已下載。請關閉目前版本，再開啟新版 EXE。")
+                    self.update_status.set(f"{offer.tag} 已下載。{self.update_launch_hint()}")
                 else:
                     self.update_file = None
                     self.update_status.set(f"{offer.tag} 可下載 · {format_size(offer.size)}")
             self.refresh_update()
 
-        self.background(lambda: check_for_update(VERSION), done)
+        self.background(lambda: check_for_update(VERSION, installer=INSTALLED_BUILD), done)
+
+    def update_launch_hint(self):
+        if INSTALLED_BUILD:
+            return "請關閉 Local LLM，再開啟下載的安裝程式更新。"
+        return "請關閉目前版本，再開啟新版 EXE。"
 
     def fetch_update(self):
         offer = self.update_offer
@@ -837,7 +843,7 @@ class LocalLLM:
             else:
                 self.update_file = path
                 self.update_progress.set(100)
-                self.update_status.set(f"{offer.tag} 已下載並通過 SHA-256 校驗。請關閉目前版本，再開啟新版 EXE。")
+                self.update_status.set(f"{offer.tag} 已下載並通過 SHA-256 校驗。{self.update_launch_hint()}")
             self.refresh_update()
 
         self.background(lambda: download_update(offer, DATA_DIR / "updates", cancel, progress), done)

@@ -1,16 +1,18 @@
-# Local LLM v0.6.1
+# Local LLM v0.6.2
 
-**[一鍵下載 Windows x64 EXE](https://github.com/liu11-21/local-llm/releases/download/v0.6.1/LocalLLM-v0.6.1-Windows-x64.exe)** · [最新發行頁](https://github.com/liu11-21/local-llm/releases/latest)
+**[下載 Windows x64 安裝程式](https://github.com/liu11-21/local-llm/releases/download/v0.6.2/LocalLLM-v0.6.2-Windows-x64-Setup.exe)** · [免安裝版](https://github.com/liu11-21/local-llm/releases/download/v0.6.2/LocalLLM-v0.6.2-Windows-x64.exe) · [最新發行頁](https://github.com/liu11-21/local-llm/releases/latest)
 
-下載後雙擊 `LocalLLM-v0.6.1-Windows-x64.exe` 即可開啟。這是單檔免安裝版，內含 Python 執行環境與 llama.cpp Vulkan／CPU 引擎。GitHub 的「Code → Download ZIP」和發行頁的「Source code (zip)」是開發用原始碼，使用程式請選上方的 EXE。
+雙擊 `LocalLLM-v0.6.2-Windows-x64-Setup.exe`，依安裝精靈完成安裝。預設建立桌面與開始功能表捷徑，可在 Windows「已安裝的應用程式」解除安裝。安裝在目前使用者帳號下，模型和作品存放於獨立資料夾。發行版內含 Python 與 llama.cpp Vulkan／CPU 引擎。GitHub 的「Source code (zip)」提供開發用原始碼。
+
+v0.6.2 的安裝包尚未做 Windows 程式碼簽署，Windows 或防毒軟體可能依裝置政策攔截。
 
 Local LLM 是 Windows x64 本機聊天與媒體創作工作台。
 
 ## 程式更新
 
-從 v0.6.1 起，Windows EXE 開啟時會在背景檢查 GitHub 的最新正式版。右上角的「程式更新」也能手動檢查。有新版時按「下載更新」，待 SHA-256 核對完成後開啟下載資料夾，關閉目前版本，再雙擊新版 EXE。各版本的模型、作品和 ComfyUI 安裝資料共用 `%LOCALAPPDATA%\LocalLLM`。
+Windows EXE 開啟時會在背景檢查 GitHub 的最新正式版，右上角的「程式更新」也能手動檢查。安裝版會下載新版 Setup，免安裝版會下載新版單檔 EXE。待 SHA-256 核對完成後，開啟下載資料夾，關閉目前版本，再雙擊下載的 EXE。各版本的模型、作品和 ComfyUI 資料共用 `%LOCALAPPDATA%\LocalLLM`。
 
-v0.6.0 或更早的 EXE 請先從 [GitHub Releases](https://github.com/liu11-21/local-llm/releases/latest) 下載一次新版。
+要從免安裝版改用安裝版，請直接下載 Setup 一次。v0.6.0 或更早的版本也請先手動下載新版。
 
 1. 到「模型清單」選擇依本機硬體排序的推薦模型，或搜尋 Hugging Face 公開單檔 GGUF。選好檔案後按「前往下載」。已有 GGUF 可直接按「選擇本機 GGUF」。
 2. 在「模型下載」按「開始下載」。預設 4 個執行緒，可調整為 1–16。支援 HTTP Range 的來源會平行下載，下載完成才將模型放入資料夾。
@@ -51,3 +53,5 @@ EXE 安裝的便攜版位於 `%LOCALAPPDATA%\LocalLLM\comfyui`，從原始碼執
 需要 Python 3.12（含 Tk）。將 [llama.cpp b11810 Windows x64 Vulkan ZIP](https://github.com/ggml-org/llama.cpp/releases/download/b11810/llama-b11810-bin-win-vulkan-x64.zip) 解壓到專案的 `engine-vulkan`，並放入 [llama.cpp 授權文件](https://raw.githubusercontent.com/ggml-org/llama.cpp/b11810/LICENSE)，檔名為 `LICENSE-llama.cpp`。雙擊 `Launch.cmd` 或執行 `python app.py`。
 
 要產生 EXE，安裝 `pyinstaller==6.22.3` 後執行 `python build_windows.py`。輸出位於 `dist/`。引擎和模型檔案均由本機準備，Git 會忽略這些目錄。
+
+要重建安裝包，另準備 [Inno Setup](https://jrsoftware.org/isdl.php)，執行 `python build_windows.py --iscc "C:\path\to\ISCC.exe"`。要加入繁體中文安裝介面，可將 [Inno Setup 繁體中文語言檔](https://jrsoftware.org/files/istrans/) 放到編譯器的 `Languages` 資料夾。持有 Windows 信任的程式碼簽署憑證時，可將 Windows SDK 的 `signtool.exe` 加到 PATH，並加上 `--sign-thumbprint <憑證指紋>` 簽署安裝包、解除安裝程式及尚無有效簽章的執行元件。

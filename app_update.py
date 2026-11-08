@@ -42,7 +42,7 @@ def open_github(url, accept):
     return build_opener(ReleaseRedirect()).open(request, timeout=15)
 
 
-def select_update(release, current):
+def select_update(release, current, *, installer=False):
     tag = release.get("tag_name", "")
     match = VERSION_PATTERN.fullmatch(tag[1:]) if isinstance(tag, str) and tag.startswith("v") else None
     if release.get("draft") or release.get("prerelease") or match is None:
@@ -50,7 +50,8 @@ def select_update(release, current):
     current_match = VERSION_PATTERN.fullmatch(current)
     if tuple(map(int, match.groups())) <= tuple(map(int, current_match.groups())):
         return None
-    name = f"LocalLLM-{tag}-Windows-x64.exe"
+    suffix = "-Setup.exe" if installer else ".exe"
+    name = f"LocalLLM-{tag}-Windows-x64{suffix}"
     url = f"{RELEASES}/download/{tag}/{name}"
     for asset in release.get("assets", []):
         if asset.get("name") != name or asset.get("state") != "uploaded":
@@ -62,12 +63,12 @@ def select_update(release, current):
     raise ValueError(f"{tag} 暫無可校驗的 Windows x64 發行檔。")
 
 
-def check_for_update(current):
+def check_for_update(current, *, installer=False):
     with open_github(LATEST, "application/vnd.github+json") as response:
         raw = response.read(1024 ** 2 + 1)
     if len(raw) > 1024 ** 2:
         raise ValueError("GitHub 版本資料超出大小限制。")
-    return select_update(json.loads(raw), current)
+    return select_update(json.loads(raw), current, installer=installer)
 
 
 def download_update(update, directory, cancel, progress):
