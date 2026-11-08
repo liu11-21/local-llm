@@ -1,5 +1,9 @@
 /engine/
+/engine-vulkan/
 /models/
+/outputs/
+/build/
+/dist/
 __pycache__/
 *.py[cod]
 *.gguf

@@ -3,20 +3,27 @@ import os
 from pathlib import Path
 from queue import Empty, SimpleQueue
 import shutil
+import sys
 from threading import Event, Thread
 import time
 import tkinter as tk
 from tkinter import filedialog, ttk
+import webbrowser
 
 from catalog import RECOMMENDED, model_files, recommended_file, search_models
 from downloads import DownloadCancelled, check_gguf, download_model
 from engine import LocalEngine
 from hardware import FIT_LABELS, Fit, detect_hardware, estimate_ram, model_fit
+from load_plan import allocate, plan_load
+from media import ComfyClient, MODELS
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 APP_DIR = Path(__file__).resolve().parent
-MODEL_DIR = APP_DIR / "models"
-ENGINE_PATH = APP_DIR / "engine" / "llama-server.exe"
+FROZEN = getattr(sys, "frozen", False)
+DATA_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "LocalLLM" if FROZEN else APP_DIR
+MODEL_DIR = DATA_DIR / "models"
+OUTPUT_DIR = DATA_DIR / "outputs"
+ENGINE_PATH = APP_DIR / "engine-vulkan" / "llama-server.exe"
 SAMPLE_URL = (
     "https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF/"
     "resolve/09816ac/SmolLM2-135M-Instruct-Q4_K_M.gguf"
@@ -26,14 +33,21 @@ QWEN_URL = (
     "resolve/9217f5d/qwen2.5-0.5b-instruct-q4_k_m.gguf"
 )
 
-BG = "#111724"
-PANEL = "#1a2334"
-FIELD = "#111928"
-TEXT = "#edf3ff"
-MUTED = "#aab9d1"
-ACCENT = "#8ee4c5"
-BORDER = "#34415a"
+BG = "#f1f2f4"
+PANEL = "#ffffff"
+FIELD = "#ffffff"
+TEXT = "#181a1e"
+MUTED = "#535963"
+ACCENT = "#b51e30"
+BORDER = "#cdd0d6"
+HOVER = "#e8eaee"
+SELECTED = "#e8eaf0"
 FONT = "Microsoft JhengHei UI"
+MEDIA_GUIDES = {
+    "image": "https://docs.comfy.org/tutorials/basic/text-to-image",
+    "video": "https://comfyanonymous.github.io/ComfyUI_examples/wan/",
+    "music": "https://docs.comfy.org/tutorials/audio/ace-step/ace-step-v1",
+}
 
 
 def format_size(value):
@@ -51,6 +65,13 @@ class LocalLLM:
         self.loading = self.ready = self.stopping = self.answering = self.closing = False
         self.download_cancel = None
         self.shutdown = Event()
+        self.preview_generation = 0
+        self.media_busy = False
+        self.media_result = None
+        self.media_kind = tk.StringVar(value=MODELS["image"][0])
+        self.media_port = tk.StringVar(value="8188")
+        self.media_hint = tk.StringVar()
+        self.media_status = tk.StringVar(value="先啟動本機 ComfyUI，再選擇要生成的媒體。")
         self.catalog_busy = False
         self.catalog_files = []
         self.showing_recommended = True
@@ -59,21 +80,27 @@ class LocalLLM:
         self.hardware_status = tk.StringVar()
 
         self.selected = tk.StringVar()
+        legacy_engine = APP_DIR / "engine" / "llama-server.exe"
         system_engine = shutil.which("llama-server")
-        self.executable = Path(system_engine) if system_engine and not ENGINE_PATH.is_file() else ENGINE_PATH
+        engines = (ENGINE_PATH, legacy_engine, Path(system_engine) if system_engine else ENGINE_PATH)
+        self.executable = next((path for path in engines if path.is_file()), ENGINE_PATH)
         self.engine_status = tk.StringVar(value="請選擇模型並啟動")
-        self.engine_label = tk.StringVar(value=self.executable.name)
+        self.engine_label = tk.StringVar(value="自動配置 · llama.cpp")
         self.model_info = tk.StringVar(value="尚未選擇模型")
-        self.chat_status = tk.StringVar(value="啟動模型後即可開始對話")
+        self.placement = tk.StringVar(value="選擇模型後顯示啟動預估")
+        self.chat_status = tk.StringVar(value="從模型清單下載，或選擇本機 GGUF 開始。")
         self.url = tk.StringVar(value=SAMPLE_URL)
         self.workers = tk.StringVar(value="4")
         self.download_status = tk.StringVar(value="等待下載")
         self.progress = tk.DoubleVar()
 
         self.root.title(f"Local LLM v{VERSION} · 本機模型工作台")
-        self.root.geometry("1050x690")
-        self.root.minsize(820, 610)
+        self.root.geometry("1120x740")
+        self.root.minsize(850, 660)
         self.root.configure(bg=BG)
+        self.icon = tk.PhotoImage(file=str(APP_DIR / "logo.png"))
+        self.brand_mark = self.icon.subsample(10)
+        self.root.iconphoto(True, self.icon)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
         self.style()
         self.build()
@@ -94,10 +121,10 @@ class LocalLLM:
         style.configure("Title.TLabel", font=(FONT, 22, "bold"))
         style.configure("Section.TLabel", font=(FONT, 14, "bold"))
         style.configure("TButton", padding=(11, 6), background=PANEL, foreground=TEXT, focuscolor=BORDER)
-        style.map("TButton", background=[("active", "#2b3a54")], foreground=[("disabled", "#8492a8")])
-        style.configure("Primary.TButton", background=ACCENT, foreground=BG, bordercolor=ACCENT)
-        style.map("Primary.TButton", background=[("disabled", PANEL), ("active", "#b4f4dc")],
-                  foreground=[("disabled", "#8492a8"), ("active", BG)])
+        style.map("TButton", background=[("active", HOVER)], foreground=[("disabled", "#6d737d")])
+        style.configure("Primary.TButton", background=ACCENT, foreground=PANEL, bordercolor=ACCENT)
+        style.map("Primary.TButton", background=[("disabled", HOVER), ("active", "#901725")],
+                  foreground=[("disabled", "#6d737d"), ("active", PANEL)])
         for name in ("TEntry", "TCombobox", "TSpinbox"):
             style.configure(name, fieldbackground=FIELD, foreground=TEXT, insertcolor=TEXT,
                             background=PANEL, arrowcolor=TEXT, padding=6)
@@ -107,11 +134,11 @@ class LocalLLM:
         style.configure("TNotebook.Tab", padding=(16, 9), background=PANEL, foreground=MUTED)
         style.map("TNotebook.Tab", background=[("selected", FIELD)], foreground=[("selected", ACCENT)])
         style.configure("Treeview", background=FIELD, fieldbackground=FIELD, foreground=TEXT, rowheight=26)
-        style.map("Treeview", background=[("selected", "#344967")], foreground=[("selected", TEXT)])
+        style.map("Treeview", background=[("selected", SELECTED)], foreground=[("selected", TEXT)])
         style.configure("Horizontal.TProgressbar", background=ACCENT, troughcolor=FIELD, bordercolor=BORDER)
         self.root.option_add("*TCombobox*Listbox.background", FIELD)
         self.root.option_add("*TCombobox*Listbox.foreground", TEXT)
-        self.root.option_add("*TCombobox*Listbox.selectBackground", "#2b3a54")
+        self.root.option_add("*TCombobox*Listbox.selectBackground", SELECTED)
         self.root.option_add("*TCombobox*Listbox.selectForeground", TEXT)
 
     def build(self):
@@ -121,8 +148,12 @@ class LocalLLM:
         shell.rowconfigure(1, weight=1)
         header = ttk.Frame(shell)
         header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 18))
-        ttk.Label(header, text="Local LLM", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(header, text="本機模型工作台  /  GGUF 模型下載與串流對話", style="Muted.TLabel").pack(anchor="w")
+        ttk.Label(header, image=self.brand_mark).pack(side="left", padx=(0, 12))
+        name = ttk.Frame(header)
+        name.pack(side="left")
+        ttk.Label(name, text="Local LLM", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(name, text="本機對話與媒體生成", style="Muted.TLabel").pack(anchor="w")
+        ttk.Label(header, text=f"v{VERSION}", style="Muted.TLabel").pack(side="right")
 
         side = ttk.Frame(shell, style="Card.TFrame", padding=(15, 16))
         side.grid(row=1, column=0, sticky="ns", padx=(0, 16))
@@ -136,7 +167,7 @@ class LocalLLM:
         ttk.Separator(side).pack(fill="x", pady=16)
         ttk.Label(side, text="推理引擎", style="Card.TLabel", font=(FONT, 13, "bold")).pack(anchor="w")
         ttk.Label(side, textvariable=self.engine_label, style="CardMuted.TLabel", wraplength=210).pack(anchor="w", pady=(5, 8))
-        self.engine_button = ttk.Button(side, text="選擇 llama-server…", command=self.choose_engine)
+        self.engine_button = ttk.Button(side, text="更換推理引擎…", command=self.choose_engine)
         self.engine_button.pack(fill="x")
         self.load_button = ttk.Button(side, text="啟動模型", style="Primary.TButton", command=self.load_model)
         self.load_button.pack(fill="x", pady=(10, 5))
@@ -144,18 +175,25 @@ class LocalLLM:
         self.stop_button.pack(fill="x")
         ttk.Label(side, textvariable=self.engine_status, style="CardMuted.TLabel", wraplength=210,
                   justify="left").pack(anchor="w", pady=(12, 0))
+        ttk.Separator(side).pack(fill="x", pady=12)
+        ttk.Label(side, text="啟動資源預估", style="Card.TLabel", font=(FONT, 11, "bold")).pack(anchor="w")
+        ttk.Label(side, textvariable=self.placement, style="CardMuted.TLabel", wraplength=220,
+                  justify="left").pack(anchor="w", pady=(5, 0))
 
         self.tabs = ttk.Notebook(shell)
         self.tabs.grid(row=1, column=1, sticky="nsew")
         chat = ttk.Frame(self.tabs, padding=(14, 12))
         catalog = ttk.Frame(self.tabs, padding=(16, 14))
         self.download_tab = ttk.Frame(self.tabs, padding=(20, 18))
+        media = ttk.Frame(self.tabs, padding=(20, 18))
         self.tabs.add(chat, text="對話")
         self.tabs.add(catalog, text="模型清單")
         self.tabs.add(self.download_tab, text="模型下載")
+        self.tabs.add(media, text="創作")
         self.build_chat(chat)
         self.build_catalog(catalog)
         self.build_download(self.download_tab)
+        self.build_media(media)
 
     def build_chat(self, pane):
         header = ttk.Frame(pane)
@@ -169,7 +207,7 @@ class LocalLLM:
         scrollbar.pack(side="right", fill="y")
         self.output = self.textbox(transcript, state="disabled", yscrollcommand=scrollbar.set)
         self.output.tag_configure("speaker", foreground=ACCENT, font=(FONT, 11, "bold"))
-        self.output.tag_configure("notice", foreground="#ffd08e")
+        self.output.tag_configure("notice", foreground=ACCENT)
         self.output.pack(side="left", fill="both", expand=True)
         scrollbar.configure(command=self.output.yview)
 
@@ -403,8 +441,90 @@ class LocalLLM:
         ttk.Label(pane, text="支援 Range 的來源會平行下載各區段。不支援 Range 時會標示為單一連線。",
                   style="Muted.TLabel", wraplength=500).pack(anchor="w", pady=(16, 0))
 
+    def build_media(self, pane):
+        ttk.Label(pane, text="本機創作", style="Section.TLabel").pack(anchor="w")
+        options = ttk.Frame(pane)
+        options.pack(fill="x", pady=(10, 6))
+        self.media_picker = ttk.Combobox(options, textvariable=self.media_kind,
+                                        values=[entry[0] for entry in MODELS.values()], state="readonly", width=10)
+        self.media_picker.pack(side="left")
+        self.media_picker.bind("<<ComboboxSelected>>", self.show_media_kind)
+        ttk.Button(options, text="模型安裝說明",
+                   command=lambda: webbrowser.open(MEDIA_GUIDES[self.selected_media()])).pack(side="right")
+        ttk.Label(options, text="ComfyUI 連接埠").pack(side="left", padx=(12, 5))
+        self.media_port_entry = ttk.Entry(options, textvariable=self.media_port, width=7)
+        self.media_port_entry.pack(side="left")
+        ttk.Label(pane, textvariable=self.media_hint, style="Muted.TLabel", wraplength=480).pack(anchor="w", pady=(3, 8))
+        ttk.Label(pane, text="描述你想生成的作品").pack(anchor="w")
+        self.media_prompt = self.textbox(pane, height=4)
+        self.media_prompt.pack(fill="both", expand=True, pady=(5, 8))
+        self.lyrics_row = ttk.Frame(pane)
+        ttk.Label(self.lyrics_row, text="歌詞（選填）").pack(anchor="w")
+        self.lyrics = self.textbox(self.lyrics_row, height=2)
+        self.lyrics.pack(fill="x", pady=(4, 7))
+        self.media_actions = ttk.Frame(pane)
+        self.media_actions.pack(fill="x")
+        self.media_generate = ttk.Button(self.media_actions, text="開始生成", style="Primary.TButton",
+                                         command=self.generate_media)
+        self.media_generate.pack(side="left")
+        self.media_open = ttk.Button(self.media_actions, text="開啟作品", command=self.open_media)
+        self.media_open.pack(side="left", padx=8)
+        ttk.Label(pane, textvariable=self.media_status, style="Muted.TLabel", wraplength=460).pack(
+            anchor="w", pady=(8, 0))
+        self.show_media_kind()
+
+    def selected_media(self):
+        return next(key for key, value in MODELS.items() if value[0] == self.media_kind.get())
+
+    def show_media_kind(self, event=None):
+        kind = self.selected_media()
+        model = MODELS[kind][1]
+        size = {"image": "512 × 512 · PNG", "video": "約 2 秒 · WEBM", "music": "20 秒 · FLAC"}[kind]
+        self.media_hint.set(f"{model} · {size} · 由本機 ComfyUI 生成")
+        if kind == "music":
+            self.lyrics_row.pack(fill="x", before=self.media_actions)
+        else:
+            self.lyrics_row.pack_forget()
+
+    def generate_media(self):
+        if self.media_busy or self.ready or self.loading or self.stopping or self.closing:
+            return
+        prompt = self.media_prompt.get("1.0", "end-1c").strip()
+        if not prompt:
+            self.media_status.set("請先輸入作品描述。")
+            return
+        try:
+            client = ComfyClient(int(self.media_port.get()))
+        except ValueError:
+            self.media_status.set("請輸入有效的 ComfyUI 連接埠，例如 8188。")
+            return
+        kind = self.selected_media()
+        lyrics = self.lyrics.get("1.0", "end-1c").strip() if kind == "music" else ""
+        self.media_busy = True
+        self.media_result = None
+        self.media_status.set("正在檢查 ComfyUI 和模型…")
+        self.refresh_buttons()
+
+        def report(message):
+            self.events.put((self.media_status.set, (message,)))
+
+        def done(path, error):
+            self.media_busy = False
+            self.media_result = path
+            self.media_status.set(str(error) if error else f"已儲存作品 {path.name}")
+            self.refresh_buttons()
+
+        self.background(lambda: client.generate(kind, prompt, lyrics, OUTPUT_DIR, self.shutdown, report), done)
+
+    def open_media(self):
+        if self.media_result:
+            try:
+                os.startfile(self.media_result)
+            except OSError as error:
+                self.media_status.set(str(error))
+
     def textbox(self, parent, **options):
-        return tk.Text(parent, bg=FIELD, fg=TEXT, insertbackground=TEXT, selectbackground="#344967",
+        return tk.Text(parent, bg=FIELD, fg=TEXT, insertbackground=TEXT, selectbackground=SELECTED,
                        relief="flat", highlightthickness=1, highlightbackground=BORDER, highlightcolor=ACCENT,
                        font=(FONT, 11), wrap="word", padx=12, pady=9, **options)
 
@@ -428,6 +548,27 @@ class LocalLLM:
         except OSError:
             self.model_info.set("找不到此模型檔案")
         self.refresh_buttons()
+        if self.ready or self.loading:
+            return
+        self.preview_generation += 1
+        generation = self.preview_generation
+        if not model or not self.executable.is_file():
+            self.placement.set("選擇模型與推理引擎後顯示啟動預估")
+            return
+        executable = self.executable
+        self.placement.set("正在估算顯存、RAM 與磁碟…")
+
+        def done(plan, error):
+            if generation == self.preview_generation and not self.closing and not self.loading and not self.ready:
+                self.placement.set("無法讀取模型大小" if error else self.describe_plan(plan))
+
+        self.background(lambda: plan_load(executable, model), done)
+
+    def describe_plan(self, plan):
+        gpu = f"{format_size(plan.vram)} · {plan.layers}/{plan.total_layers} 層" if plan.layers else "0 · CPU"
+        memory = "（含 GPU 共用）" if plan.shared else ""
+        disk = "磁碟映射" if plan.mmap_args else "模型檔案"
+        return f"GPU {gpu}\nRAM {format_size(plan.ram)}{memory}\n{disk} {format_size(plan.mapped_bytes)}"
 
     def import_model(self):
         selected = filedialog.askopenfilename(parent=self.root, title="選擇本機 GGUF", filetypes=[("GGUF", "*.gguf")])
@@ -449,7 +590,7 @@ class LocalLLM:
             self.executable = Path(selected)
             self.engine_label.set(self.executable.name)
             self.engine_status.set("已選擇引擎")
-            self.refresh_buttons()
+            self.show_model_info()
 
     def background(self, task, done):
         def run():
@@ -469,7 +610,7 @@ class LocalLLM:
             except Empty:
                 break
             callback(*args)
-        if self.closing and not any((self.loading, self.stopping, self.answering, self.download_cancel)):
+        if self.closing and not any((self.loading, self.stopping, self.answering, self.download_cancel, self.media_busy)):
             self.root.destroy()
             return
         self.root.after(30, self.dispatch)
@@ -481,7 +622,7 @@ class LocalLLM:
         for widget, enabled in (
             (self.import_button, not locked),
             (self.engine_button, not locked),
-            (self.load_button, not locked and bool(self.selected.get())),
+            (self.load_button, not locked and not self.media_busy and bool(self.selected.get())),
             (self.stop_button, self.ready and not self.stopping and not self.closing),
             (self.clear_button, not self.answering and not self.closing),
             (self.send_button, self.ready and not self.answering and not self.stopping and not self.closing),
@@ -491,9 +632,17 @@ class LocalLLM:
             (self.qwen_button, not downloading and not self.closing),
             (self.download_button, not downloading and not self.closing),
             (self.cancel_button, downloading and not self.download_cancel.is_set() and not self.closing),
+            (self.media_port_entry, not self.media_busy and not self.closing),
+            (self.media_generate, not self.media_busy and not locked),
+            (self.media_open, self.media_result is not None and not self.closing),
         ):
             widget.configure(state="normal" if enabled else "disabled")
         self.refresh_catalog_buttons()
+        self.media_picker.configure(state="disabled" if self.media_busy or self.closing else "readonly")
+        if self.ready or self.loading or self.stopping:
+            self.media_status.set("先停止對話模型，讓創作引擎使用記憶體。")
+        elif self.media_status.get() == "先停止對話模型，讓創作引擎使用記憶體。":
+            self.media_status.set("先啟動本機 ComfyUI，再選擇要生成的媒體。")
 
     def load_model(self):
         if not self.executable.is_file():
@@ -502,18 +651,38 @@ class LocalLLM:
         model = self.models[self.selected.get()]
         executable = self.executable
         self.loading = True
-        self.engine_status.set("正在載入模型…")
+        self.preview_generation += 1
+        self.engine_status.set("正在估算並載入模型…")
         self.chat_status.set("正在載入模型…")
         self.refresh_buttons()
 
-        def done(_, error):
+        def launch():
+            plan = plan_load(executable, model)
+            self.events.put((self.placement.set, (self.describe_plan(plan),)))
+            try:
+                self.engine.start(executable, model, self.shutdown, plan)
+                return plan, False
+            except (OSError, RuntimeError) as gpu_error:
+                if not plan.layers or self.shutdown.is_set():
+                    raise
+                cpu = allocate(plan.mapped_bytes, plan.total_layers, [], mmap_args=plan.mmap_args)
+                self.events.put((self.placement.set, (self.describe_plan(cpu),)))
+                try:
+                    self.engine.start(executable, model, self.shutdown, cpu)
+                except (OSError, RuntimeError) as cpu_error:
+                    raise RuntimeError(f"GPU：{gpu_error}\nCPU：{cpu_error}") from cpu_error
+                return cpu, True
+
+        def done(result, error):
             self.loading = False
             self.ready = error is None
             if self.closing and self.ready:
                 self.stop_model()
             elif self.ready:
                 self.clear_chat()
-                self.engine_status.set("模型已就緒 · CPU")
+                plan, fallback = result
+                self.engine_status.set("GPU 啟動失敗，已改用 CPU" if fallback
+                                       else f"模型已就緒 · {plan.device or 'CPU'}")
                 self.chat_status.set(model.name)
                 self.tabs.select(0)
                 self.prompt.focus_set()
@@ -524,7 +693,7 @@ class LocalLLM:
                 self.tabs.select(0)
             self.refresh_buttons()
 
-        self.background(lambda: self.engine.start(executable, model, self.shutdown), done)
+        self.background(launch, done)
 
     def stop_model(self):
         self.stopping = True

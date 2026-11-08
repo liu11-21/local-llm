@@ -11,6 +11,7 @@ from threading import Event, Lock
 import time
 
 from downloads import check_gguf
+from load_plan import engine_environment
 
 
 class LocalEngine:
@@ -26,7 +27,7 @@ class LocalEngine:
         with self.lock:
             return self.process is not None and self.process.poll() is None
 
-    def start(self, executable, model, cancel=None):
+    def start(self, executable, model, cancel=None, plan=None):
         cancel = cancel or Event()
         executable = Path(executable).resolve(strict=True)
         model = Path(model).resolve(strict=True)
@@ -35,8 +36,13 @@ class LocalEngine:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
         key = secrets.token_urlsafe(24)
-        env = {k: v for k, v in os.environ.items() if not k.upper().startswith("LLAMA_")}
+        env = engine_environment()
         env["LLAMA_API_KEY"] = key
+        placement = ["--n-gpu-layers", str(plan.layers if plan else 0)]
+        if plan:
+            placement.extend(plan.mmap_args)
+            if plan.device:
+                placement.extend(("--device", plan.device, "--split-mode", "none"))
         with self.lock:
             if cancel.is_set():
                 raise RuntimeError("模型啟動已取消。")
@@ -47,7 +53,7 @@ class LocalEngine:
                 process = subprocess.Popen(
                     [str(executable), "--model", str(model), "--alias", "local-model",
                      "--host", "127.0.0.1", "--port", str(port), "--ctx-size", "2048",
-                     "--parallel", "1", "--n-gpu-layers", "0"],
+                     "--parallel", "1", *placement],
                     cwd=executable.parent, env=env, stdin=subprocess.DEVNULL,
                     stdout=log, stderr=subprocess.STDOUT,
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
