@@ -76,13 +76,14 @@ def workflow(kind, prompt, lyrics="", seed=None):
 
 
 class ComfyClient:
-    def __init__(self, port=8188):
+    def __init__(self, port=8188, timeout=15):
         if not 1 <= port <= 65535:
             raise ValueError("ComfyUI 連接埠須介於 1 和 65535。")
         self.port = port
+        self.timeout = timeout
 
     def json(self, path, payload=None):
-        connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=15)
+        connection = http.client.HTTPConnection("127.0.0.1", self.port, timeout=self.timeout)
         try:
             if payload is None:
                 connection.request("GET", path)

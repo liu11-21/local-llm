@@ -2,6 +2,7 @@
 /engine-vulkan/
 /models/
 /outputs/
+/comfyui/
 /build/
 /dist/
 __pycache__/

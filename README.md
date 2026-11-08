@@ -1,6 +1,6 @@
-# Local LLM v0.4.0
+# Local LLM v0.5.0
 
-Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `LocalLLM-v0.4.0-Windows-x64.exe` 包含 Python 執行環境和 llama.cpp Vulkan／CPU 引擎。雙擊即可開啟。
+Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `LocalLLM-v0.5.0-Windows-x64.exe` 包含 Python 執行環境和 llama.cpp Vulkan／CPU 引擎。雙擊即可開啟。
 
 1. 到「模型清單」選擇依本機硬體排序的推薦模型，或搜尋 Hugging Face 公開單檔 GGUF。選好檔案後按「前往下載」。已有 GGUF 可直接按「選擇本機 GGUF」。
 2. 在「模型下載」按「開始下載」。預設 4 個執行緒，可調整為 1–16。支援 HTTP Range 的來源會平行下載，下載完成才將模型放入資料夾。
@@ -12,7 +12,13 @@ EXE 下載的模型與生成的作品會分別儲存在 `%LOCALAPPDATA%\LocalLLM
 
 ## 圖片、影片與音樂
 
-安裝並啟動 [本機 ComfyUI](https://docs.comfy.org/installation/desktop/windows)，並將下表檔案放入 ComfyUI 的模型庫。進入 Local LLM「創作」，填入 ComfyUI 的本機連接埠（預設 `8188`），選擇類型、輸入描述並按「開始生成」。音樂可另填歌詞。作品完成後可用「開啟作品」預覽。這些模型和生成引擎需另行安裝，ComfyUI 管理媒體模型的記憶體配置。
+1. 開啟「創作」，選擇符合硬體的 [ComfyUI Windows 官方便攜版](https://docs.comfy.org/installation/comfyui_portable_windows) 後按「下載並啟動」。不確定可先選 CPU 試跑，生成速度會較慢。
+2. 首次下載約 1.4–1.9 GiB。安裝時會核對 SHA-256 並解壓，建議在安裝磁碟預留 10 GiB，另加模型的空間。之後可以直接按「啟動 ComfyUI」。
+3. 按「模型資料夾」，將下表對應檔案放到指定子目錄。模型權重需另外下載。選擇創作類型、輸入描述並按「開始生成」。音樂可另填歌詞，完成後按「開啟作品」。
+
+內建啟動器使用官方 ComfyUI v0.44.0，服務只監聽 `127.0.0.1`，預設連接埠為 `8188`。「開啟網頁」可進入原生 ComfyUI 介面。按「停止 ComfyUI」或正常關閉 Local LLM 會停止它啟動的服務。如果已有 ComfyUI 在執行，可直接填入其本機連接埠並生成。ComfyUI 管理媒體模型的記憶體配置。
+
+EXE 安裝的便攜版位於 `%LOCALAPPDATA%\LocalLLM\comfyui`，從原始碼執行時則位於專案的 `comfyui`。啟動失敗可查看該版本資料夾內的 `local-llm-comfyui.log`。
 
 | 類型 | 放入 ComfyUI 的位置 | 模型檔案 |
 | --- | --- | --- |

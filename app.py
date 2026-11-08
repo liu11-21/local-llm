@@ -11,18 +11,21 @@ from tkinter import filedialog, ttk
 import webbrowser
 
 from catalog import RECOMMENDED, model_files, recommended_file, search_models
+from comfy_runtime import ASSETS, PROFILES, VERSION as COMFY_VERSION, ManagedComfy, check_port
+from comfy_runtime import install as install_comfy, install_directory, installed
 from downloads import DownloadCancelled, check_gguf, download_model
 from engine import LocalEngine
 from hardware import FIT_LABELS, Fit, detect_hardware, estimate_ram, model_fit
 from load_plan import allocate, plan_load
 from media import ComfyClient, MODELS
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 APP_DIR = Path(__file__).resolve().parent
 FROZEN = getattr(sys, "frozen", False)
 DATA_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "LocalLLM" if FROZEN else APP_DIR
 MODEL_DIR = DATA_DIR / "models"
 OUTPUT_DIR = DATA_DIR / "outputs"
+COMFY_DIR = DATA_DIR / "comfyui"
 ENGINE_PATH = APP_DIR / "engine-vulkan" / "llama-server.exe"
 SAMPLE_URL = (
     "https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF/"
@@ -68,6 +71,13 @@ class LocalLLM:
         self.preview_generation = 0
         self.media_busy = False
         self.media_result = None
+        self.comfy = ManagedComfy()
+        self.comfy_busy = False
+        self.comfy_cancel = None
+        self.comfy_profile = tk.StringVar(value=next((profile for profile in PROFILES
+            if installed(install_directory(COMFY_DIR, profile))), "CPU"))
+        self.comfy_status = tk.StringVar()
+        self.comfy_progress = tk.DoubleVar()
         self.media_kind = tk.StringVar(value=MODELS["image"][0])
         self.media_port = tk.StringVar(value="8188")
         self.media_hint = tk.StringVar()
@@ -443,6 +453,29 @@ class LocalLLM:
 
     def build_media(self, pane):
         ttk.Label(pane, text="本機創作", style="Section.TLabel").pack(anchor="w")
+        launcher = ttk.Frame(pane, style="Card.TFrame", padding=(10, 6))
+        launcher.pack(fill="x", pady=(8, 0))
+        controls = ttk.Frame(launcher, style="Card.TFrame")
+        controls.pack(fill="x")
+        ttk.Label(controls, text="ComfyUI", style="Card.TLabel").pack(side="left", padx=(0, 8))
+        self.comfy_profiles = ttk.Combobox(controls, textvariable=self.comfy_profile,
+                                          values=tuple(PROFILES), state="readonly", width=16)
+        self.comfy_profiles.pack(side="left")
+        self.comfy_profiles.bind("<<ComboboxSelected>>", self.show_comfy_profile)
+        self.comfy_action = ttk.Button(controls, command=self.toggle_comfy)
+        self.comfy_action.pack(side="left", padx=6)
+        self.comfy_cancel_button = ttk.Button(controls, text="取消", command=self.cancel_comfy)
+        self.comfy_cancel_button.pack(side="left")
+        shortcuts = ttk.Frame(launcher, style="Card.TFrame")
+        shortcuts.pack(fill="x", pady=(4, 0))
+        self.comfy_models = ttk.Button(shortcuts, text="模型資料夾", command=self.open_comfy_models)
+        self.comfy_models.pack(side="left")
+        self.comfy_web = ttk.Button(shortcuts, text="開啟網頁", command=self.open_comfy_web)
+        self.comfy_web.pack(side="left", padx=6)
+        ttk.Progressbar(shortcuts, maximum=100, variable=self.comfy_progress, length=100).pack(
+            side="left", fill="x", expand=True, padx=(8, 0))
+        ttk.Label(launcher, textvariable=self.comfy_status, style="CardMuted.TLabel", wraplength=470).pack(
+            anchor="w", pady=(5, 0))
         options = ttk.Frame(pane)
         options.pack(fill="x", pady=(10, 6))
         self.media_picker = ttk.Combobox(options, textvariable=self.media_kind,
@@ -457,21 +490,114 @@ class LocalLLM:
         ttk.Label(pane, textvariable=self.media_hint, style="Muted.TLabel", wraplength=480).pack(anchor="w", pady=(3, 8))
         ttk.Label(pane, text="描述你想生成的作品").pack(anchor="w")
         self.media_prompt = self.textbox(pane, height=4)
-        self.media_prompt.pack(fill="both", expand=True, pady=(5, 8))
         self.lyrics_row = ttk.Frame(pane)
         ttk.Label(self.lyrics_row, text="歌詞（選填）").pack(anchor="w")
         self.lyrics = self.textbox(self.lyrics_row, height=2)
         self.lyrics.pack(fill="x", pady=(4, 7))
+        ttk.Label(pane, textvariable=self.media_status, style="Muted.TLabel", wraplength=460).pack(
+            side="bottom", fill="x", pady=(8, 0))
         self.media_actions = ttk.Frame(pane)
-        self.media_actions.pack(fill="x")
+        self.media_actions.pack(side="bottom", fill="x")
         self.media_generate = ttk.Button(self.media_actions, text="開始生成", style="Primary.TButton",
                                          command=self.generate_media)
         self.media_generate.pack(side="left")
         self.media_open = ttk.Button(self.media_actions, text="開啟作品", command=self.open_media)
         self.media_open.pack(side="left", padx=8)
-        ttk.Label(pane, textvariable=self.media_status, style="Muted.TLabel", wraplength=460).pack(
-            anchor="w", pady=(8, 0))
+        self.media_prompt.pack(fill="both", expand=True, pady=(5, 8))
         self.show_media_kind()
+        self.show_comfy_profile()
+
+    def comfy_directory(self):
+        return install_directory(COMFY_DIR, self.comfy_profile.get())
+
+    def show_comfy_profile(self, event=None):
+        ready = installed(self.comfy_directory())
+        asset = ASSETS[PROFILES[self.comfy_profile.get()][0]]
+        details = "已安裝，可以直接啟動" if ready else f"首次下載 {format_size(asset.size)}，模型另裝"
+        self.comfy_status.set(f"官方便攜版 {COMFY_VERSION} · {details}")
+        self.comfy_progress.set(0)
+        if event is not None:
+            self.refresh_buttons()
+
+    def toggle_comfy(self):
+        if self.comfy_busy or self.media_busy or self.closing:
+            return
+        if self.comfy.running():
+            self.stop_comfy()
+            return
+        if self.ready or self.loading or self.stopping:
+            return
+        try:
+            port = int(self.media_port.get())
+            ComfyClient(port)
+        except ValueError:
+            self.comfy_status.set("請輸入有效的 ComfyUI 連接埠，例如 8188。")
+            return
+        profile = self.comfy_profile.get()
+        cancel = self.comfy_cancel = Event()
+        self.comfy_busy = True
+        self.comfy_progress.set(0)
+        self.refresh_buttons()
+
+        def status(message):
+            self.events.put((self.comfy_status.set, (message,)))
+
+        def progress(received, total):
+            self.events.put((self.comfy_progress.set, (received * 100 / total,)))
+            status(f"正在下載官方 ComfyUI… {format_size(received)} / {format_size(total)}")
+
+        def run():
+            check_port(port)
+            path = install_comfy(COMFY_DIR, profile, cancel, status, progress)
+            status("正在啟動 ComfyUI，首次啟動可能需要一些時間…")
+            self.comfy.start(path, profile, port, cancel)
+
+        def done(_, error):
+            self.comfy_busy = False
+            self.comfy_cancel = None
+            if error:
+                self.comfy_progress.set(0)
+                self.comfy_status.set("已取消 ComfyUI 作業。" if cancel.is_set() else str(error).strip().split("\n")[0])
+            elif self.closing or cancel.is_set():
+                self.stop_comfy()
+            else:
+                self.comfy_progress.set(100)
+                self.comfy_status.set(f"ComfyUI 已就緒 · 127.0.0.1:{port}")
+                self.media_status.set("選擇創作類型與模型，輸入描述後即可生成。")
+            self.refresh_buttons()
+
+        self.background(run, done)
+
+    def cancel_comfy(self):
+        if self.comfy_cancel is not None:
+            self.comfy_cancel.set()
+            self.comfy_status.set("正在取消 ComfyUI 作業…")
+            self.refresh_buttons()
+
+    def stop_comfy(self):
+        self.comfy_busy = True
+        self.comfy_status.set("正在停止 ComfyUI…")
+        self.refresh_buttons()
+
+        def done(_, error):
+            self.comfy_busy = False
+            self.comfy_progress.set(0)
+            self.comfy_status.set(str(error) if error else "ComfyUI 已停止，可以重新啟動。")
+            self.refresh_buttons()
+
+        self.background(self.comfy.stop, done)
+
+    def open_comfy_models(self):
+        path = self.comfy_directory() / "ComfyUI" / "models"
+        try:
+            path.mkdir(exist_ok=True)
+            os.startfile(path)
+        except OSError as error:
+            self.comfy_status.set(str(error))
+
+    def open_comfy_web(self):
+        if self.comfy.running():
+            webbrowser.open(f"http://127.0.0.1:{self.comfy.port}/")
 
     def selected_media(self):
         return next(key for key, value in MODELS.items() if value[0] == self.media_kind.get())
@@ -482,19 +608,19 @@ class LocalLLM:
         size = {"image": "512 × 512 · PNG", "video": "約 2 秒 · WEBM", "music": "20 秒 · FLAC"}[kind]
         self.media_hint.set(f"{model} · {size} · 由本機 ComfyUI 生成")
         if kind == "music":
-            self.lyrics_row.pack(fill="x", before=self.media_actions)
+            self.lyrics_row.pack(side="bottom", fill="x", before=self.media_prompt)
         else:
             self.lyrics_row.pack_forget()
 
     def generate_media(self):
-        if self.media_busy or self.ready or self.loading or self.stopping or self.closing:
+        if self.media_busy or self.comfy_busy or self.ready or self.loading or self.stopping or self.closing:
             return
         prompt = self.media_prompt.get("1.0", "end-1c").strip()
         if not prompt:
             self.media_status.set("請先輸入作品描述。")
             return
         try:
-            client = ComfyClient(int(self.media_port.get()))
+            client = ComfyClient(self.comfy.port if self.comfy.running() else int(self.media_port.get()))
         except ValueError:
             self.media_status.set("請輸入有效的 ComfyUI 連接埠，例如 8188。")
             return
@@ -610,7 +736,13 @@ class LocalLLM:
             except Empty:
                 break
             callback(*args)
-        if self.closing and not any((self.loading, self.stopping, self.answering, self.download_cancel, self.media_busy)):
+        if not self.comfy_busy and self.comfy.port is not None and not self.comfy.running():
+            self.comfy.stop()
+            self.comfy_progress.set(0)
+            self.comfy_status.set("ComfyUI 已結束。啟動日誌位於便攜版資料夾。")
+            self.refresh_buttons()
+        if self.closing and not any((self.loading, self.stopping, self.answering, self.download_cancel,
+                                     self.media_busy, self.comfy_busy)):
             self.root.destroy()
             return
         self.root.after(30, self.dispatch)
@@ -618,11 +750,17 @@ class LocalLLM:
     def refresh_buttons(self):
         locked = self.ready or self.loading or self.stopping or self.answering or self.closing
         downloading = self.download_cancel is not None
+        comfy_running = self.comfy.running()
+        comfy_idle = not self.comfy_busy and not self.closing
+        comfy_installed = installed(self.comfy_directory())
+        self.comfy_action.configure(text=("停止 ComfyUI" if comfy_running else
+                                          "啟動 ComfyUI" if comfy_installed else "下載並啟動"))
+        self.comfy_profiles.configure(state="readonly" if comfy_idle and not comfy_running else "disabled")
         self.picker.configure(state="disabled" if locked else "readonly")
         for widget, enabled in (
             (self.import_button, not locked),
             (self.engine_button, not locked),
-            (self.load_button, not locked and not self.media_busy and bool(self.selected.get())),
+            (self.load_button, not locked and not self.media_busy and not self.comfy_busy and bool(self.selected.get())),
             (self.stop_button, self.ready and not self.stopping and not self.closing),
             (self.clear_button, not self.answering and not self.closing),
             (self.send_button, self.ready and not self.answering and not self.stopping and not self.closing),
@@ -632,9 +770,14 @@ class LocalLLM:
             (self.qwen_button, not downloading and not self.closing),
             (self.download_button, not downloading and not self.closing),
             (self.cancel_button, downloading and not self.download_cancel.is_set() and not self.closing),
-            (self.media_port_entry, not self.media_busy and not self.closing),
-            (self.media_generate, not self.media_busy and not locked),
+            (self.media_port_entry, comfy_idle and not comfy_running and not self.media_busy),
+            (self.media_generate, comfy_idle and not self.media_busy and not locked),
             (self.media_open, self.media_result is not None and not self.closing),
+            (self.comfy_action, comfy_idle and not self.media_busy and (comfy_running or not locked)),
+            (self.comfy_cancel_button, not self.closing and self.comfy_cancel is not None
+             and not self.comfy_cancel.is_set()),
+            (self.comfy_models, comfy_idle and comfy_installed),
+            (self.comfy_web, comfy_idle and comfy_running),
         ):
             widget.configure(state="normal" if enabled else "disabled")
         self.refresh_catalog_buttons()
@@ -832,6 +975,9 @@ class LocalLLM:
         self.closing = True
         self.shutdown.set()
         self.cancel_download()
+        self.cancel_comfy()
+        if not self.comfy_busy and self.comfy.running():
+            self.stop_comfy()
         if self.ready and not self.stopping:
             self.stop_model()
         self.refresh_buttons()
