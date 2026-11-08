@@ -1,10 +1,10 @@
-# Local LLM v0.7.0
+# Local LLM v0.6.1
 
-Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `LocalLLM-v0.7.0-Windows-x64.exe` 包含 Python 執行環境和 llama.cpp Vulkan／CPU 引擎。雙擊即可開啟。
+Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `LocalLLM-v0.6.1-Windows-x64.exe` 包含 Python 執行環境和 llama.cpp Vulkan／CPU 引擎。雙擊即可開啟。
 
 ## 程式更新
 
-從 v0.7.0 起，Windows EXE 開啟時會在背景檢查 GitHub 的最新正式版。右上角的「程式更新」也能手動檢查。有新版時按「下載更新」，待 SHA-256 核對完成後開啟下載資料夾，關閉目前版本，再雙擊新版 EXE。各版本的模型、作品和 ComfyUI 安裝資料共用 `%LOCALAPPDATA%\LocalLLM`。
+從 v0.6.1 起，Windows EXE 開啟時會在背景檢查 GitHub 的最新正式版。右上角的「程式更新」也能手動檢查。有新版時按「下載更新」，待 SHA-256 核對完成後開啟下載資料夾，關閉目前版本，再雙擊新版 EXE。各版本的模型、作品和 ComfyUI 安裝資料共用 `%LOCALAPPDATA%\LocalLLM`。
 
 v0.6.0 或更早的 EXE 請先從 [GitHub Releases](https://github.com/liu11-21/local-llm/releases/latest) 下載一次新版。
 

@@ -21,7 +21,7 @@ from load_plan import allocate, plan_load
 from media import ComfyClient, MODELS
 from team_panel import TeamPanel
 
-VERSION = "0.7.0"
+VERSION = "0.6.1"
 APP_DIR = Path(__file__).resolve().parent
 FROZEN = getattr(sys, "frozen", False)
 DATA_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "LocalLLM" if FROZEN else APP_DIR
