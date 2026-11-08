@@ -5,6 +5,6 @@
 - 深色以石板底和淡藍強調色為主；淺色重新定義背景、表面、邊界及文字。顏色、字級、邊界、間距、圓角、陰影、焦點及動畫集中在 `desktop/src/style.css`，以 Lucide 統一圖示。
 - 內容欄在較窄的視窗改為單欄，650 px 使用可展開的導覽；尊重系統降低動態效果設定。聊天可用 Ctrl + Enter。
 - 首頁顯示最近模型、任務及硬體摘要；聊天有歷史、串流、模型／環境選擇與生成參數。模型中心顯示 GGUF、硬體推薦、搜尋、下載與載入預估。運算環境集中管理 llama.cpp、ComfyUI、外部 HTTPS 端點。
-- AI 團隊重用現有排程、草稿和整合。創作頁接入現有三種 ComfyUI 工作流程，需要對應權重。Colab 和獨立 AI 代理人頁面明示不可用。介面目前提供繁體中文，英文翻譯尚未提供。
+- AI 團隊重用現有排程、草稿和整合。獨立代理人可先預覽並核准本機唯讀工具，報告保留工具原始資料。創作頁接入三種需要各自權重的 ComfyUI 工作流程。運算環境可連線至使用者既有的 Colab Enterprise 專案。介面目前提供繁體中文。
 
 實際畫面來自 React 開發預覽，連到相同 Python Worker：[首頁](ui-preview/workspace-home.png) · [深色聊天](ui-preview/workspace-chat.png) · [淺色聊天](ui-preview/workspace-light.png)。這組畫面用於介面驗收；原生 WebView2 尚需驗收。

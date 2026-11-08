@@ -16,6 +16,8 @@ Local LLM 是 Windows x64 本機聊天與媒體創作工作台。
 
 ## 程式更新
 
+Tauri 工作台可在「設定」查看更新，程式啟動時也會自動檢查 `workspace-vX.Y.Z` 發行。下載後會驗證 SHA-256，再由使用者開啟安裝程式。GitHub Actions 的開發產物可由各次建置頁手動下載。
+
 Windows EXE 開啟時會在背景檢查 GitHub 的最新正式版，右上角的「程式更新」也能手動檢查。安裝版會下載新版 Setup，免安裝版會下載新版單檔 EXE。待 SHA-256 核對完成後，開啟下載資料夾，關閉目前版本，再雙擊下載的 EXE。各版本的模型、作品和 ComfyUI 資料共用 `%LOCALAPPDATA%\LocalLLM`。
 
 要從免安裝版改用安裝版，請直接下載 Setup 一次。v0.6.0 或更早的版本也請先手動下載新版。

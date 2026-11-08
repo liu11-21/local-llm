@@ -7,7 +7,7 @@
 | 呈現 | `desktop/src` · React / TypeScript / Tailwind | 導覽、對話、工作進度、模型與環境設定 |
 | 桌面宿主 | `desktop/src-tauri` · Tauri 2 / Rust | 單一工作台命令、大小限制、資源路徑和工作程序生命週期 |
 | Python 工作程序 | `desktop_worker.py` | JSON Lines、排程、本機聊天、SQLite 和既有功能的轉接 |
-| 運算供應商 | `runtime_provider.py` | 路由同意規則、HTTPS OpenAI-compatible、停用的 Colab 契約 |
+| 運算供應商 | `runtime_provider.py`、`colab_runtime.py` | 路由同意規則、HTTPS OpenAI-compatible、Colab Enterprise 的既有範本和 Notebook 作業 |
 | 現有能力 | `downloads.py` / `load_plan.py` / `engine.py` / `model_team.py` / `media.py` / `comfy_runtime.py` | 下載、資源估算、llama.cpp、團隊及媒體 |
 
 正式宿主把 JSON 寫入工作程序的 stdin，從 stdout 讀取回應，工作台 IPC 不開 HTTP 埠。Windows Job Object 讓宿主持有整棵工作程序樹；關閉行為仍需實際安裝驗收。llama.cpp 使用帶臨時金鑰的本機回環服務。既有 ComfyUI 為回環服務；使用外部啟動的 ComfyUI 時，程式不會停止該服務。只有瀏覽器開發預覽會使用 Vite 同來源代理；正式 bundle 不含代理。
