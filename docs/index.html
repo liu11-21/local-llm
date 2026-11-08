@@ -9,6 +9,7 @@
   <link rel="icon" href="./logo.png">
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./chat.mjs"></script>
+  <script type="module" src="./workspace.mjs"></script>
 </head>
 <body>
   <header class="topbar">
@@ -16,7 +17,15 @@
     <a href="https://github.com/liu11-21/local-llm/releases/latest">Windows 桌面版 <span aria-hidden="true">↗</span></a>
   </header>
 
-  <main class="workspace">
+  <nav class="tabs" aria-label="工作台功能">
+    <button type="button" data-view="browser" aria-pressed="true">瀏覽器對話</button>
+    <button type="button" data-view="catalog" aria-pressed="false">模型清單</button>
+    <button type="button" data-view="gguf" aria-pressed="false">本機 GGUF</button>
+    <button type="button" data-view="team" aria-pressed="false">模型團隊</button>
+    <button type="button" data-view="create" aria-pressed="false">創作</button>
+  </nav>
+
+  <main id="panel-browser" class="workspace" data-panel>
     <aside class="controls" aria-label="模型設定">
       <p class="eyebrow">瀏覽器本機推論</p>
       <h1>本機模型</h1>
@@ -61,5 +70,108 @@
       </form>
     </section>
   </main>
+
+  <section id="panel-catalog" class="tool-panel" data-panel hidden aria-labelledby="catalog-title">
+    <h1 id="catalog-title">Hugging Face 模型清單</h1>
+    <p class="muted">搜尋公開 GGUF 倉庫，選擇量化檔案。模型會存放在你的裝置。</p>
+    <form id="hub-search" class="toolbar">
+      <label class="grow">模型名稱<input id="hub-query" maxlength="120" placeholder="Qwen、Gemma、Llama…"></label>
+      <button class="button primary" type="submit">搜尋</button>
+    </form>
+    <label>模型倉庫<select id="hub-repo" disabled></select></label>
+    <label>GGUF 檔案<select id="hub-file" disabled></select></label>
+    <p id="hub-status" class="status" role="status">輸入模型名稱開始搜尋。</p>
+    <div id="hub-actions" class="toolbar" hidden>
+      <a id="hub-direct" class="button secondary" target="_blank" rel="noopener noreferrer">直接下載 GGUF ↗</a>
+      <label id="hub-workers-label" hidden>下載執行緒<input id="hub-workers" type="number" min="1" max="16" value="4"></label>
+      <button id="hub-local" class="button primary" type="button" hidden>下載到本機模型庫</button>
+    </div>
+    <div id="recommended" hidden><h2>依本機硬體推薦</h2><p id="hardware" class="muted"></p><div id="recommendations" class="card-list"></div></div>
+  </section>
+
+  <section id="panel-gguf" class="tool-panel" data-panel hidden aria-labelledby="gguf-title">
+    <h1 id="gguf-title">本機 GGUF 對話</h1>
+    <div class="local-required"></div>
+    <form id="gguf-form" data-local hidden>
+      <p id="gguf-folder" class="muted"></p>
+      <div class="toolbar"><label class="grow">已下載模型<select id="gguf-model"></select></label>
+        <button id="gguf-refresh" class="button secondary" type="button">重新整理</button></div>
+      <p id="gguf-plan" class="status" role="status"></p>
+      <div id="gguf-thread" class="result" aria-label="本機 GGUF 對話紀錄" hidden></div>
+      <label>訊息<textarea id="gguf-prompt" rows="3" maxlength="6000" required></textarea></label>
+      <div class="toolbar"><button id="gguf-send" class="button primary" type="submit">傳送</button>
+        <button id="gguf-clear" class="button secondary" type="button">清空對話</button></div>
+    </form>
+  </section>
+
+  <section id="panel-team" class="tool-panel" data-panel hidden aria-labelledby="team-title">
+    <h1 id="team-title">模型團隊</h1>
+    <p class="muted">所有成員各自回答同一個提示詞，再由指定的主模型合併成一份回答。</p>
+    <label>執行模式<select id="team-mode"><option value="browser">瀏覽器模型</option><option value="local">本機 GGUF／雲端 API</option></select></label>
+    <div id="team-browser"><p class="muted">瀏覽器依序載入模型，以降低顯存占用。</p><div id="browser-members" class="toolbar"></div></div>
+    <div id="team-native" hidden>
+      <div class="local-required"></div>
+      <div data-local hidden>
+        <div class="toolbar"><label class="grow">加入本機 GGUF<select id="team-gguf"></select></label>
+          <button id="add-gguf" class="button secondary" type="button">加入</button></div>
+        <details><summary>加入雲端模型</summary>
+          <form id="cloud-form" class="cloud-grid">
+            <label>名稱（選填）<input id="cloud-name" maxlength="60"></label>
+            <label>API 網址<input id="cloud-url" type="url" placeholder="https://api.openai.com/v1" required></label>
+            <label>模型 ID<input id="cloud-model" maxlength="200" required></label>
+            <label>API 金鑰<input id="cloud-key" type="password" autocomplete="off" required></label>
+            <button class="button secondary" type="submit">加入雲端模型</button>
+          </form>
+        </details>
+        <ul id="native-members" class="member-list"></ul>
+        <label class="check"><input id="team-serial" type="checkbox"> 本機模型一律排隊</label>
+        <p class="muted">雲端成員會收到提示詞。若主模型在雲端，它也會收到所有成功草稿。</p>
+      </div>
+    </div>
+    <form id="team-form">
+      <label>主模型<select id="team-lead"></select></label>
+      <label>提示詞<textarea id="team-prompt" rows="4" maxlength="12000" required></textarea></label>
+      <div class="toolbar"><button id="team-run" class="button primary" type="submit">執行團隊</button>
+        <button id="team-cancel" class="button secondary" type="button" hidden>停止</button>
+        <button id="team-export" class="button secondary" type="button" hidden>匯出草稿與結果</button></div>
+    </form>
+    <p id="team-status" class="status" role="status"></p>
+    <div id="team-results" class="result" hidden></div>
+  </section>
+
+  <section id="panel-create" class="tool-panel" data-panel hidden aria-labelledby="create-title">
+    <h1 id="create-title">本機創作</h1>
+    <p class="muted">用本機 ComfyUI 生成圖片、短片和音樂。作品完成後可在網頁預覽或下載。</p>
+    <div class="local-required"></div>
+    <div data-local hidden>
+      <div class="toolbar"><label class="grow">ComfyUI 版本<select id="comfy-profile"></select></label>
+        <label>連接埠<input id="comfy-port" type="number" min="1" max="65535" value="8188"></label>
+        <button id="comfy-start" class="button secondary" type="button">下載並啟動</button>
+        <button id="comfy-stop" class="button secondary" type="button" disabled>停止 ComfyUI</button></div>
+      <p id="comfy-status" class="muted"></p>
+      <p class="muted"><a href="https://github.com/liu11-21/local-llm#圖片影片與音樂">創作模型安裝說明 ↗</a></p>
+      <form id="media-form">
+        <label>創作類型<select id="media-kind"><option value="image">圖片 · Stable Diffusion 1.5</option><option value="video">短片 · Wan 2.1</option><option value="music">音樂 · ACE-Step</option></select></label>
+        <label>提示詞<textarea id="media-prompt" rows="4" maxlength="12000" required></textarea></label>
+        <label id="lyrics-label" hidden>歌詞（選填）<textarea id="media-lyrics" rows="3" maxlength="12000"></textarea></label>
+        <button class="button primary" type="submit">開始生成</button>
+      </form>
+      <div id="media-result" class="result" hidden></div>
+    </div>
+  </section>
+
+  <template id="local-instructions">
+    <div class="local-note">
+      <strong>啟動本機工作台以使用這項功能</strong>
+      <p>下載專案原始碼並解壓，使用已安裝 Python 3.12 的電腦開啟 <code>Launch-Web.cmd</code>。它會開啟同一套網頁介面，並連接這台電腦的模型和 ComfyUI。</p>
+      <div class="toolbar"><a href="https://github.com/liu11-21/local-llm/archive/refs/heads/main.zip">下載工作台原始碼 ↗</a>
+        <a href="http://127.0.0.1:8765/" target="_blank" rel="noopener noreferrer">開啟已啟動的本機工作台 ↗</a></div>
+    </div>
+  </template>
+
+  <aside id="job-strip" class="job-strip" aria-label="本機作業" hidden>
+    <span id="job-status" role="status"></span><progress id="job-progress" max="100" aria-label="作業進度" hidden></progress>
+    <button id="job-stop" class="button secondary" type="button">取消作業</button>
+  </aside>
 </body>
 </html>

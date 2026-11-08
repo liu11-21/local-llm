@@ -1,18 +1,16 @@
+import { models, openModel, webGPU } from "./web-models.mjs";
+
 const ui = Object.fromEntries(Array.from(document.querySelectorAll("[id]"), (element) => [element.id, element]));
 const encoder = new TextEncoder();
 const turns = [];
-const models = {
-  "Qwen2.5-0.5B-Instruct-q4f32_1-MLC": { name: "Qwen 2.5 · 0.5B", description: "適合先試繁體中文問答。" },
-  "SmolLM2-360M-Instruct-q4f32_1-MLC": { name: "SmolLM2 · 360M", description: "較輕量，適合英文短問答。" },
-};
-
 let engine;
-let worker;
+let modelSession;
 let activeModel;
 let gpuReady = false;
 let loading = false;
 let generating = false;
 let stopping = false;
+let teamBusy = false;
 
 function status(message, error = false) {
   ui.status.textContent = message;
@@ -20,7 +18,7 @@ function status(message, error = false) {
 }
 
 function refresh() {
-  const busy = loading || generating;
+  const busy = loading || generating || teamBusy;
   const modelReady = engine && activeModel === ui.model.value;
   ui.model.disabled = busy;
   ui.load.disabled = busy || !gpuReady || Boolean(modelReady);
@@ -51,25 +49,15 @@ async function loadModel() {
   ui.progress.hidden = false;
   ui.progress.value = 0;
   status("正在載入瀏覽器推論引擎…");
-  worker?.terminate();
-  engine = worker = activeModel = undefined;
+  releaseChatModel();
 
   try {
-    const { CreateWebWorkerMLCEngine } = await import("./engine.mjs");
-    const currentWorker = new Worker(new URL("./engine.mjs", import.meta.url), { type: "module" });
-    worker = currentWorker;
-    const workerError = new Promise((_, reject) => {
-      currentWorker.addEventListener("error", () => reject(new Error("無法啟動本機推論引擎。")), { once: true });
-    });
-    engine = await Promise.race([
-      CreateWebWorkerMLCEngine(currentWorker, selection, { initProgressCallback: loadingProgress }),
-      workerError,
-    ]);
+    modelSession = await openModel(selection, loadingProgress);
+    engine = modelSession.engine;
     activeModel = selection;
     status(`${models[selection].name} 已就緒`);
   } catch (error) {
-    worker?.terminate();
-    engine = worker = activeModel = undefined;
+    releaseChatModel();
     console.error("Model load failed", error);
     status("模型載入失敗。請確認可連線到模型來源，或換較小的模型再試。", true);
   } finally {
@@ -78,6 +66,24 @@ async function loadModel() {
     refresh();
     if (engine) ui.prompt.focus();
   }
+}
+
+function releaseChatModel() {
+  modelSession?.close();
+  engine = modelSession = activeModel = undefined;
+}
+
+export function reserveBrowserTeam() {
+  if (loading || generating || teamBusy) throw new Error("請等目前的瀏覽器聊天工作結束。");
+  teamBusy = true;
+  releaseChatModel();
+  status("瀏覽器模型正由團隊使用。");
+  refresh();
+  return () => {
+    teamBusy = false;
+    status("如需繼續單一模型聊天，請載入模型。");
+    refresh();
+  };
 }
 
 function message(role, label, content) {
@@ -112,6 +118,7 @@ async function send(event) {
   const prompt = ui.prompt.value.trim();
   if (!prompt) return;
   generating = true;
+  ui.announcer.textContent = "";
   const turn = { prompt, answer: "", model: models[activeModel].name, completed: false };
   turns.push(turn);
   ui.prompt.value = "";
@@ -194,10 +201,6 @@ ui.export.addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
-try {
-  gpuReady = Boolean(await navigator.gpu?.requestAdapter());
-} catch (error) {
-  console.error("WebGPU availability check failed", error);
-}
+gpuReady = await webGPU;
 status(gpuReady ? "按「載入模型」開始。" : "目前無法使用 WebGPU。請用新版 Chrome 或 Edge，並確認已啟用圖形加速。", !gpuReady);
 refresh();
