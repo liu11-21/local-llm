@@ -8,6 +8,12 @@ v0.6.2 的安裝包尚未做 Windows 程式碼簽署，Windows 或防毒軟體�
 
 Local LLM 是 Windows x64 本機聊天與媒體創作工作台。
 
+## 網頁工作台
+
+[GitHub Pages 網頁版](https://liu11-21.github.io/local-llm/) 可使用 WebGPU 聊天、瀏覽器模型團隊，以及搜尋和直接下載 Hugging Face GGUF。第一次載入瀏覽器模型需要下載權重。
+
+本機 GGUF 對話、多執行緒下載、硬體推薦、GGUF／雲端團隊和 ComfyUI 創作，使用本機工作台。下載或複製本專案，安裝 Python 3.12，雙擊 `Launch-Web.cmd` 或執行 `python web_bridge.py`。瀏覽器會開啟 `http://127.0.0.1:8765/`。服務只在本機監聽，沿用桌面版的模型和作品資料夾。GGUF 功能會使用桌面安裝版內附的引擎，也可依下方說明在專案的 `engine-vulkan` 準備 llama.cpp。關閉啟動工作台的命令視窗即可停止服務。
+
 ## 程式更新
 
 Windows EXE 開啟時會在背景檢查 GitHub 的最新正式版，右上角的「程式更新」也能手動檢查。安裝版會下載新版 Setup，免安裝版會下載新版單檔 EXE。待 SHA-256 核對完成後，開啟下載資料夾，關閉目前版本，再雙擊下載的 EXE。各版本的模型、作品和 ComfyUI 資料共用 `%LOCALAPPDATA%\LocalLLM`。

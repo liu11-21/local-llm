@@ -135,7 +135,7 @@ def merge_messages(prompt, drafts, limit=None):
     )}]
 
 
-def ask_local(member, executable, plan, prompt, drafts, cancel, report):
+def ask_local(member, executable, plan, prompt, drafts, cancel, report, *, history=()):
     check_cancel(cancel)
     engine = LocalEngine()
     finished = Event()
@@ -151,7 +151,7 @@ def ask_local(member, executable, plan, prompt, drafts, cancel, report):
     try:
         engine.start(executable, member.path, cancel, plan, context=CONTEXT)
         limit = ANSWER_TOKENS if drafts else DRAFT_TOKENS
-        messages = merge_messages(prompt, drafts) if drafts else [{"role": "user", "content": prompt}]
+        messages = merge_messages(prompt, drafts) if drafts else [*history, {"role": "user", "content": prompt}]
         if engine.prompt_tokens(messages) > CONTEXT - limit - 64:
             if not drafts:
                 raise ValueError("提示詞超過本機模型的上下文，請縮短後重試。")
