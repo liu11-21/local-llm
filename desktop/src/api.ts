@@ -16,7 +16,8 @@ export type Message = { role: string; content: string }
 export type Task = [string, string, string]
 export type Job = {
   id: string; state: string; message: string; answer?: string; received?: number; total?: number; plan?: Plan;
-  members?: string[]; result?: { message?: string; answer?: string; folder?: string; file?: string; plan?: Plan; drafts?: {name: string; text: string}[] };
+  members?: string[]; steps?: string[];
+  result?: { message?: string; answer?: string; folder?: string; name?: string; file?: string; plan?: Plan; drafts?: {name: string; text: string}[] };
 }
 type Reply<T> = { ok: true; value: T } | { ok: false; error: string }
 

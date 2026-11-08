@@ -113,6 +113,13 @@ class ComfyClient:
         if missing:
             raise ValueError("請先在 ComfyUI 安裝模型：" + "、".join(missing))
 
+    def cancel_prompt(self, prompt_id):
+        try:
+            result = self.json("/api/jobs/" + quote(prompt_id, safe="") + "/cancel", {})
+        except (OSError, RuntimeError, ValueError):
+            return False
+        return isinstance(result, dict) and result.get("cancelled") is True
+
     def generate(self, kind, prompt, lyrics, output_dir, cancel, report):
         self.check_models(kind)
         if cancel.is_set():
@@ -125,7 +132,9 @@ class ComfyClient:
         deadline = time.monotonic() + 3600
         while time.monotonic() < deadline:
             if cancel.wait(1):
-                raise InterruptedError("已停止等待生成。")
+                if self.cancel_prompt(prompt_id):
+                    raise InterruptedError("已取消本次 ComfyUI 生成。")
+                raise InterruptedError("已停止等待。ComfyUI 未確認取消，請在 ComfyUI 檢查任務。")
             result = self.json("/history/" + quote(prompt_id, safe="")).get(prompt_id)
             if not result:
                 continue

@@ -6,6 +6,7 @@ import socket
 from threading import Event, Thread
 from urllib.parse import urlsplit
 from uuid import uuid4
+from colab_runtime import ColabAdapter
 
 POLICIES = {"auto", "local", "performance", "cost", "privacy", "manual"}
 
@@ -20,16 +21,6 @@ def route(policy, selected, consent=False):
     if policy != "manual" or not consent:
         raise ValueError("請手動選擇運算環境，並同意將本輪及相關歷史傳到該端點。")
     return selected
-
-
-class ColabAdapter:
-    def capabilities(self):
-        return {"kind": "colab", "available": False, "requires_authorization": True,
-                "tasks": [], "managed_gpu_check": False, "cancel": False, "cleanup": False,
-                "message": "尚未接入 Colab Enterprise。需使用自己的 Google Cloud 專案、授權、GPU 配額及計費設定。"}
-
-    def submit(self, _task):
-        raise RuntimeError(self.capabilities()["message"])
 
 
 def endpoint(value):

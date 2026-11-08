@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { convertFileSrc, isTauri } from '@tauri-apps/api/core'
-import { Activity, ArrowDownToLine, ArrowRight, ArrowUp, AudioLines, Bot, Boxes, Check, ChevronRight, CircleHelp, Cpu, Film,
+import { Activity, ArrowDownToLine, ArrowRight, ArrowUp, AudioLines, Bot, Boxes, Check, ChevronRight, Cpu, Film,
   HardDrive, House, Image, Layers3, LoaderCircle, MemoryStick, Menu, MessageSquare, Moon, Plus, Search, Server, Settings,
   Square, Sun, Users, X } from 'lucide-react'
 import { rpc, type Info, type Params, type Job, type Chat, type Message, type Task, type Plan, type Recommendation } from './api'
+import { AgentWorkspace } from './AgentWorkspace'
+import { ColabWorkspace } from './ColabWorkspace'
+import { useWorkspaceUpdates } from './updates'
 import logo from './logo.png'
 import './style.css'
 
@@ -23,6 +26,7 @@ const descriptions: Record<Page, string> = {
   settings: '自訂工作台外觀與運算政策。'
 }
 const actions: Record<string, string> = { chat: '文字聊天', download: '模型下載', team: 'AI 團隊', media: '生成作品',
+  agent: '代理人任務', 'update-download': '工作台更新',
   'engine-start': '啟動文字引擎', 'engine-stop': '停止文字引擎', 'engine-install': '安裝 llama.cpp', 'comfy-start': '啟動 ComfyUI', 'comfy-stop': '停止 ComfyUI' }
 const states: Record<string, string> = { running: '進行中', done: '完成', cancelled: '已取消', error: '失敗', interrupted: '已中斷' }
 const gb = (n?: number | null) => n == null ? '—' : `${(n / 2 ** 30).toFixed(n < 2 ** 30 ? 2 : 1)} GB`
@@ -85,6 +89,8 @@ function App() {
   const [serial, setSerial] = useState(false)
   const [teamResult, setTeamResult] = useState<Job['result']>()
   const [jobAction, setJobAction] = useState('')
+  const updates = useWorkspaceUpdates()
+  const [updateFile, setUpdateFile] = useState<string>()
   const working = useRef(false)
   const last = useRef<HTMLDivElement>(null)
   const provider = info?.providers.find(p => p.id === runtime)
@@ -118,7 +124,7 @@ function App() {
         setJob(value)
         if (value.state === 'error') throw new Error(value.message)
         if (value.state === 'cancelled') {
-          setNotice({text: value.result?.message || '工作已取消。', error: false})
+          setNotice({text: value.result?.message || value.message || '工作已取消。', error: false})
           return action === 'team' ? value.result : undefined
         }
         if (value.state === 'done') {
@@ -300,7 +306,7 @@ function App() {
             {info?.providers.map(p=><div className="list-row" key={p.id}><span><b>{p.label}</b><small>{p.host}:{p.port} · {p.connected ? `${p.models.length} 個模型` : '已中斷'}</small></span>
               <button className="button" disabled={busy} onClick={async()=>{try{await rpc('provider-remove',{id:p.id});if(runtime===p.id)setRuntime('local');await refresh()}catch(e){report(e)}}}>移除</button></div>)}
           </Panel>
-          <Panel title="Google Colab"><span className="tag">尚未開放</span><p className="section-note muted">Colab Enterprise 需要自己的 Google Cloud 專案、授權、GPU 配額及計費設定。這個版本不會建立執行環境或使用額度。</p></Panel>
+          <ColabWorkspace policy={policy} report={report}/>
         </>}
         {page === 'team' && <>
           <Panel title="建立模型團隊" description="至少選擇兩個成員。本機依資源預估決定是否並行；使用外部端點前會先確認。">
@@ -332,11 +338,24 @@ function App() {
               <Empty>{mediaResult?.kind===page ? mediaResult.file.split('/').pop() : '生成後會在這裡顯示預覽。'}</Empty>}
               {mediaResult?.kind===page && <p className="small muted section-note">{info?.output_folder}</p>}</Panel></div>
         </>}
-        {page === 'agent' && <Panel title="代理人工作流程尚未開放" description="工具權限與人工確認尚未實作，這個版本不會替你執行工具。"><Empty><CircleHelp size={19}/> 現在可使用模型團隊分工，並查看每個成員的回答。</Empty><button className="button section-note" onClick={()=>go('team')}>前往 AI 團隊 <ArrowRight size={16}/></button></Panel>}
+        {page === 'agent' && <AgentWorkspace models={models} engine={!!info?.engine} busy={busy}
+          job={jobAction === 'agent' ? job : undefined} run={run} report={report}/>}
         {page === 'settings' && <div className="dashboard"><Panel title="外觀"><label>色彩模式<select value={theme} onChange={e=>setTheme(e.target.value)}><option value="system">依系統設定</option><option value="dark">深色</option><option value="light">淺色</option></select></label><p className="muted section-note">介面語言：繁體中文</p></Panel>
           <Panel title="運算政策"><label>預設政策<select value={policy} onChange={e=>setPolicy(e.target.value)}><option value="auto">自動（僅本機）</option><option value="local">只用本機</option>
             <option value="privacy">隱私優先</option><option value="manual">手動選擇</option><option value="performance">效能優先（僅本機）</option><option value="cost">成本優先（僅本機）</option></select></label>
-            <p className="muted section-note">只有手動選擇已連線端點，並確認當次資料傳送後，才會呼叫外部模型。</p></Panel></div>}
+            <p className="muted section-note">只有手動選擇已連線端點，並確認當次資料傳送後，才會呼叫外部模型。</p></Panel>
+          <Panel title="工作台更新">
+            <p className="section-note muted">目前版本 {updates.status?.version || '—'} · {
+              updates.status?.state === 'available' ? `可下載 ${updates.status.tag}` :
+              updates.status?.state === 'current' ? '目前沒有新版' :
+              updates.status?.state === 'error' ? updates.status.message : '正在檢查…'}</p>
+            <div className="row"><button className="button" disabled={busy || updates.status?.state === 'checking'}
+              onClick={() => void updates.check()}>檢查更新</button>
+            {updates.status?.tag && <button className="button primary" disabled={busy}
+              onClick={async () => setUpdateFile((await run('update-download', { tag: updates.status?.tag }))?.name)}>下載並驗證</button>}</div>
+            {updateFile && <><p className="muted section-note">已驗證 {updateFile}。關閉工作台後可執行安裝程式。</p>
+              <button className="button" onClick={() => void rpc('update-folder').catch(report)}>開啟更新資料夾</button></>}
+          </Panel></div>}
         </>}
       </div>
     </main>

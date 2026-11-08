@@ -105,10 +105,16 @@ class Workspace:
             try:
                 result = self.perform(action, data, cancel, update)
             except Exception as error:
-                update(state="cancelled" if cancel.is_set() else "error", message=(
-                    "已取消。" if cancel.is_set() else str(error).strip()[:1500] or "本機工作失敗。"))
+                detail = str(error).strip()[:1500]
+                if cancel.is_set():
+                    update(state="cancelled", message=detail if isinstance(error, InterruptedError) and detail else "已取消。")
+                else:
+                    update(state="error", message=detail or "本機工作失敗。")
             else:
-                update(state="cancelled" if cancel.is_set() else "done", result=result)
+                if cancel.is_set():
+                    update(state="cancelled", result=result, message="已取消。")
+                else:
+                    update(state="done", result=result)
             finally:
                 with self.lock:
                     self.cancel = None

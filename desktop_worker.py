@@ -13,9 +13,13 @@ import hashlib
 import hmac
 import shutil
 import tempfile
+from threading import Thread
 import zipfile
 
+from app_update import check_workspace_update, download_update
 from catalog import model_files, search_models
+from colab_runtime import ColabAdapter
+from desktop_agent import create_plan, messages_for_plan
 from engine import LocalEngine
 from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
@@ -29,8 +33,9 @@ ENGINE_HASH = "96a04cf289479b3404a559eab0db7dba9877080a61f5f5fdba9d85eb6ca0f324"
 ENGINE_BYTES = 36868097
 ENGINE_LICENSE_HASH = "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
 MAX_LINE = 256 * 1024
+WORKSPACE_VERSION = "0.6.2"
 ACTIONS = {"chat", "download", "team", "comfy-start", "comfy-stop", "media", "engine-start",
-           "engine-stop", "engine-install"}
+           "engine-stop", "engine-install", "agent", "update-download"}
 
 
 def install_engine(root, cancel, update):
@@ -81,6 +86,9 @@ class Desktop(Workspace):
         self.providers = Providers()
         self.database = self.data / "desktop.sqlite3"
         self.hardware_cache = None
+        self.agent_plan = None
+        self.update_candidate = None
+        self.update_state = {"state": "idle"}
         with self.connect() as db:
             db.executescript("""
               PRAGMA journal_mode=WAL;
@@ -89,6 +97,8 @@ class Desktop(Workspace):
               CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY, action TEXT, state TEXT, message TEXT,
                                               touched TEXT DEFAULT CURRENT_TIMESTAMP);
               CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
+              CREATE TABLE IF NOT EXISTS agent_reports(id TEXT PRIMARY KEY, role TEXT, model TEXT,
+                  prompt TEXT, answer TEXT, steps TEXT, created TEXT DEFAULT CURRENT_TIMESTAMP);
             """)
             db.execute("UPDATE tasks SET state='interrupted' WHERE state='running'")
 
@@ -135,7 +145,72 @@ class Desktop(Workspace):
         self.active = (name, mode, context, asdict(plan))
         return asdict(plan)
 
+    def start_update_check(self):
+        with self.lock:
+            if self.update_state["state"] == "checking":
+                return
+            self.update_state = {"state": "checking"}
+            self.update_candidate = None
+
+        def check():
+            try:
+                candidate = check_workspace_update(WORKSPACE_VERSION)
+            except Exception:
+                status = {"state": "error", "message": "無法讀取 GitHub 的工作台版本。請檢查網路後重試。"}
+            else:
+                status = ({"state": "available", "tag": candidate.tag, "bytes": candidate.size} if candidate
+                          else {"state": "current"})
+                with self.lock:
+                    self.update_candidate = candidate
+            with self.lock:
+                self.update_state = status
+
+        Thread(target=check, daemon=True).start()
+
+    def execute_agent(self, plan, cancel, update):
+        steps = []
+
+        def report(step):
+            steps.append(step)
+            update(steps=steps.copy(), message=step)
+
+        prepared = messages_for_plan(plan, self.models, cancel, report)
+        if prepared is None or cancel.is_set():
+            return None
+        messages, evidence = prepared
+        self.prepare({"model": plan["model"], "context": 4096}, cancel, update)
+        budget = 320
+        if self.local.prompt_tokens(messages) + budget > 4096:
+            raise ValueError("代理人任務超出模型上下文長度，請縮短描述或減少工具。")
+        report(plan["steps"][-1])
+        answer = ""
+        with closing(self.local.stream(messages, max_tokens=budget, temperature=0.2, cancel=cancel)) as stream:
+            for fragment in stream:
+                if cancel.is_set():
+                    return None
+                answer += fragment
+                update(answer=answer)
+        if cancel.is_set():
+            return None
+        if not answer.strip():
+            raise RuntimeError("本機模型未傳回回答。")
+        with self.connect() as db:
+            db.execute("INSERT INTO agent_reports(id,role,model,prompt,answer,steps) VALUES(?,?,?,?,?,?)",
+                       (plan["id"], plan["role"], plan["model"], plan["prompt"], answer,
+                        json.dumps({"steps": steps, "evidence": evidence}, ensure_ascii=False)))
+        return {"answer": answer, "message": "代理人報告已儲存。"}
+
     def perform(self, action, data, cancel, update):
+        if action == "agent":
+            return self.execute_agent(data, cancel, update)
+        if action == "update-download":
+            candidate = self.update_candidate
+            if not candidate or field(data, "tag", 50) != candidate.tag:
+                raise ValueError("更新版本已變更。請重新檢查。")
+            path = download_update(candidate, self.data / "updates" / "workspace", cancel,
+                                   lambda received, total: update(received=received, total=total,
+                                                                  message="正在下載並驗證更新…"))
+            return {"folder": str(path.parent), "name": path.name, "message": "更新已下載並通過 SHA-256 驗證。"}
         if action == "engine-install":
             if not engine_path(self.data):
                 install_engine(self.data, cancel, update)
@@ -215,6 +290,26 @@ class Desktop(Workspace):
         return super().perform(action, data, cancel, update)
 
     def rpc(self, op, data):
+        if op == "agent-plan":
+            plan = create_plan(data)
+            self.model(plan["model"])
+            self.agent_plan = plan
+            return {**plan, "tools": plan["tools"].copy(), "steps": plan["steps"].copy()}
+        if op == "agent-reports":
+            with self.connect() as db:
+                return db.execute("SELECT id,role,model,prompt,answer,steps,created "
+                                  "FROM agent_reports ORDER BY rowid DESC LIMIT 12").fetchall()
+        if op == "update-check":
+            self.start_update_check()
+        if op in ("update-check", "update-status"):
+            with self.lock:
+                return {"version": WORKSPACE_VERSION, **self.update_state}
+        if op == "update-folder":
+            directory = self.data / "updates" / "workspace"
+            if os.name != "nt" or not directory.is_dir():
+                raise ValueError("找不到已下載的 Windows 更新資料夾。")
+            os.startfile(directory)
+            return None
         if op == "info":
             info = self.info()
             if self.hardware_cache is None:
@@ -237,7 +332,13 @@ class Desktop(Workspace):
             action = field(data, "action", 30)
             if action not in ACTIONS:
                 raise ValueError("未支援的工作。")
-            response = self.launch(action, data)
+            if action == "agent":
+                if data.get("confirmed") is not True or not self.agent_plan or self.agent_plan["id"] != data.get("id"):
+                    raise ValueError("請先預覽並確認代理人計畫。")
+                response = self.launch(action, self.agent_plan)
+                self.agent_plan = None
+            else:
+                response = self.launch(action, data)
             with self.connect() as db:
                 db.execute("INSERT INTO tasks(id,action,state,message) VALUES(?,?,?,?)",
                            (response["id"], action, "running", "正在準備…"))
@@ -264,6 +365,19 @@ class Desktop(Workspace):
             return self.providers.list()
         if op == "colab":
             return self.providers.colab.capabilities()
+        if op == "colab-connect":
+            return self.providers.colab.connect(field(data, "project", 30), field(data, "region", 32),
+                                                field(data, "token", 4096))
+        if op == "colab-disconnect":
+            self.providers.colab = ColabAdapter()
+            return self.providers.colab.capabilities()
+        if op == "colab-jobs":
+            return self.providers.colab.list_jobs()
+        if op == "colab-submit":
+            route(data.get("policy", "auto"), "colab", data.get("confirmed") is True)
+            return self.providers.colab.submit(field(data, "template", 250), field(data, "source", 900),
+                                               field(data, "output", 80), field(data, "account", 180),
+                                               data.get("confirmed"))
         raise ValueError("未支援的操作。")
 
     def close(self):

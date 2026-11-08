@@ -5,8 +5,9 @@ from tempfile import TemporaryDirectory
 from threading import Event
 import unittest
 from unittest.mock import patch
+from urllib.parse import quote
 
-from app_update import RELEASES, ReleaseRedirect, download_update, select_update
+from app_update import RELEASES, ReleaseRedirect, download_update, select_update, select_workspace_update
 from downloads import DownloadCancelled
 
 
@@ -56,6 +57,18 @@ class UpdateTests(unittest.TestCase):
                 with self.assertRaises(DownloadCancelled):
                     download_update(offer, folder, cancel, lambda *_: cancel.set())
             self.assertEqual(list(folder.iterdir()), [])
+
+    def test_workspace_updates_ignore_legacy_releases_and_unverified_assets(self):
+        name = "Local LLM Workspace_0.6.3_x64-setup.exe"
+        tag = "workspace-v0.6.3"
+        asset = dict(self.asset, name=name, browser_download_url=f"{RELEASES}/download/{tag}/{quote(name)}")
+        release = {"tag_name": tag, "assets": [asset]}
+        self.assertIsNone(select_workspace_update([self.release], "0.6.2"))
+        self.assertIsNone(select_workspace_update([dict(release, prerelease=True)], "0.6.2"))
+        self.assertEqual(select_workspace_update([self.release, release], "0.6.2").name, name)
+        self.assertIsNone(select_workspace_update([release], "0.6.3"))
+        asset["digest"] = None
+        self.assertIsNone(select_workspace_update([release], "0.6.2"))
 
 
 if __name__ == "__main__":

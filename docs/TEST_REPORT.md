@@ -14,8 +14,10 @@
 | PASS | 已下載 CI 產物，ZIP 符合 GitHub Actions 公布的 SHA-256，安裝 EXE 符合 `BUILD.json` 的 SHA-256 `21f64c053624187b1774a717ec2a09634a45c58815a57146f34db21b74eed969`。建置提交為 `ba504ee`。[Windows 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42482360729/artifacts/13618575102) |
 | NEEDS WINDOWS TEST | 在 Windows 10／11 使用互動安裝介面與桌面捷徑，手動驗收原生介面的完整聊天與媒體流程。 |
 | NEEDS WINDOWS TEST | 以 Defender、Norton、Avast、AVG 的最新定義掃描乾淨安裝與運行；記錄產品版本、事件與 SHA-256。這次未確認 `Custody` 原因。 |
-| NEEDS GPU TEST | 實際 GPU 分層與估算偏差，ComfyUI 便攜版、三種作品預覽、取消及 GPU 資源釋放。 |
-| NEEDS CLOUD AUTHORIZATION | 自有 HTTPS 遠端／雲端端點的相容性、串流、錯誤與額度；Colab Enterprise 尚未接入。 |
+| PASS | Windows 11 Intel Iris Xe 實際執行 llama.cpp Vulkan 分層，SmolLM2 30 層分配給 GPU，完成代理人工作並保存報告。 |
+| PASS | 工作台實際讀取官方 GitHub 版本清單，已能排除舊桌面通道；新版選擇、下載校驗及中止行為以測試資產驗證。 |
+| NEEDS GPU TEST | 其他 GPU 分層與估算偏差，三種 ComfyUI 工作流程的真實權重推理、作品預覽與 GPU 資源釋放。 |
+| NEEDS CLOUD AUTHORIZATION | Colab Enterprise 已接入既有範本、工作提交與狀態查詢，合約測試通過。真正的 Notebook 執行、外部 HTTPS 服務與額度須使用授權帳戶驗收。 |
 | NOT RUN | Tauri 更新簽章、正式 Authenticode、簽章後驗證。正式發行未進行。 |
 
 Windows 驗收順序：對照 Actions 的 `BUILD.json` 和 `SHA256SUMS.txt` → 非管理員安裝 → 從捷徑啟動 → 安裝引擎 → 下載小 GGUF → 聊天、中止、重新開啟查歷史 → 切換服務與關閉，檢查子程序 → 解除安裝後重裝，確認模型／作品／對話仍在。GPU 與付費端點需獨立驗收，這些通過前不標記可公開發行。

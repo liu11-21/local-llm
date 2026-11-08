@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from tempfile import NamedTemporaryFile
 import time
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 from urllib.request import Request, build_opener
 
 from downloads import DownloadCancelled, HttpsRedirect, check_encoding
@@ -15,6 +15,7 @@ from downloads import DownloadCancelled, HttpsRedirect, check_encoding
 REPOSITORY = "liu11-21/local-llm"
 RELEASES = f"https://github.com/{REPOSITORY}/releases"
 LATEST = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
+STABLE_RELEASES = f"https://api.github.com/repos/{REPOSITORY}/releases?per_page=30"
 MAX_EXE = 1024 ** 3
 VERSION_PATTERN = re.compile(r"(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})")
 
@@ -69,6 +70,41 @@ def check_for_update(current, *, installer=False):
     if len(raw) > 1024 ** 2:
         raise ValueError("GitHub 版本資料超出大小限制。")
     return select_update(json.loads(raw), current, installer=installer)
+
+
+def select_workspace_update(releases, current):
+    current_match = VERSION_PATTERN.fullmatch(current)
+    if current_match is None or not isinstance(releases, list):
+        raise ValueError("工作台更新資料格式不符。")
+    candidates = []
+    for release in releases:
+        if not isinstance(release, dict) or release.get("draft") or release.get("prerelease"):
+            continue
+        tag = release.get("tag_name")
+        if not isinstance(tag, str) or not tag.startswith("workspace-v"):
+            continue
+        version = tag.removeprefix("workspace-v")
+        match = VERSION_PATTERN.fullmatch(version)
+        if match is None or tuple(map(int, match.groups())) <= tuple(map(int, current_match.groups())):
+            continue
+        name = f"Local LLM Workspace_{version}_x64-setup.exe"
+        url = f"{RELEASES}/download/{tag}/{quote(name)}"
+        for asset in release.get("assets", []):
+            if asset.get("name") != name or asset.get("state") != "uploaded":
+                continue
+            size, digest = asset.get("size"), asset.get("digest")
+            if (asset.get("browser_download_url") == url and type(size) is int and 0 < size <= MAX_EXE
+                    and isinstance(digest, str) and re.fullmatch(r"sha256:[a-fA-F0-9]{64}", digest)):
+                candidates.append((tuple(map(int, match.groups())), Update(tag, name, url, size, digest[7:].lower())))
+    return max(candidates, key=lambda item: item[0])[1] if candidates else None
+
+
+def check_workspace_update(current):
+    with open_github(STABLE_RELEASES, "application/vnd.github+json") as response:
+        raw = response.read(2 * 1024 ** 2 + 1)
+    if len(raw) > 2 * 1024 ** 2:
+        raise ValueError("GitHub 版本資料超出大小限制。")
+    return select_workspace_update(json.loads(raw), current)
 
 
 def download_update(update, directory, cancel, progress):

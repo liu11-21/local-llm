@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from desktop_worker import Desktop, ENGINE_LICENSE_HASH
+from media import ComfyClient
 from runtime_provider import ColabAdapter, OpenAIProvider, Providers, endpoint, route
 
 ROOT = Path(__file__).resolve().parent
@@ -37,13 +38,31 @@ class RuntimePolicyTests(unittest.TestCase):
             with self.subTest(url=url), self.assertRaises(ValueError):
                 endpoint(url)
 
-    def test_colab_has_no_enabled_tasks_or_provisioning(self):
+    def test_colab_submission_uses_existing_template_and_requires_confirmation(self):
         adapter = ColabAdapter()
         self.assertFalse(adapter.capabilities()["available"])
         self.assertTrue(adapter.capabilities()["requires_authorization"])
-        self.assertEqual(adapter.capabilities()["tasks"], [])
-        with self.assertRaises(RuntimeError):
-            adapter.submit({"type": "chat"})
+        template = "projects/my-project/locations/us-central1/notebookRuntimeTemplates/123"
+        token = "test-token-only-for-unit-test"
+        with patch.object(ColabAdapter, "request", return_value={"notebookRuntimeTemplates": [
+            {"name": template, "displayName": "Existing GPU", "machineSpec": {
+                "machineType": "g2-standard-4", "acceleratorType": "NVIDIA_L4", "acceleratorCount": 1}}]}) as request:
+            status = adapter.connect("my-project", "us-central1", token)
+            request.assert_called_once()
+        self.assertEqual(status["templates"][0]["gpu"], "NVIDIA_L4")
+        self.assertNotIn(token, json.dumps(status))
+        args = (template, "gs://my-bucket/test.ipynb", "gs://result-bucket", "worker@my-project.iam.gserviceaccount.com")
+        with patch.object(adapter, "request", return_value={"name": "operations/test"}) as request:
+            with self.assertRaises(ValueError):
+                adapter.submit(*args, False)
+            request.assert_not_called()
+            result = adapter.submit(*args, True)
+            request.assert_called_once()
+        method, resource, payload = request.call_args.args
+        self.assertEqual((method, resource), ("POST", "notebookExecutionJobs"))
+        self.assertEqual(payload["executionTimeout"], "900s")
+        self.assertEqual(payload["notebookRuntimeTemplateResourceName"], template)
+        self.assertEqual(result["id"], request.call_args.kwargs["query"]["notebookExecutionJobId"])
 
     def test_provider_summary_does_not_expose_the_key(self):
         providers = Providers()
@@ -68,6 +87,40 @@ class RuntimePolicyTests(unittest.TestCase):
 
 
 class ConversationTests(unittest.TestCase):
+    def test_media_cancels_only_the_submitted_comfy_job(self):
+        client = ComfyClient()
+        stop = Event()
+
+        def submit(path, payload=None):
+            if path == "/prompt":
+                stop.set()
+                return {"prompt_id": "one-job"}
+            if path == "/api/jobs/one-job/cancel":
+                return {"cancelled": True}
+            self.fail(f"Unexpected ComfyUI request: {path}")
+
+        with patch.object(client, "check_models"), patch.object(client, "json", side_effect=submit) as request:
+            with self.assertRaisesRegex(InterruptedError, "已取消本次"):
+                client.generate("image", "test", "", Path("."), stop, lambda _: None)
+        self.assertEqual(request.call_args.args, ("/api/jobs/one-job/cancel", {}))
+
+    def test_agent_executes_only_the_previewed_plan_once(self):
+        with TemporaryDirectory() as directory:
+            desktop = Desktop(Path(directory))
+            desktop.models.mkdir()
+            (desktop.models / "test.gguf").touch()
+            plan = desktop.rpc("agent-plan", {"role": "general", "model": "test.gguf",
+                                              "prompt": "List models", "tools": ["models"]})
+            plan["tools"].append("hardware")
+            with patch.object(desktop, "launch", return_value={"id": "test-job"}) as launch:
+                with self.assertRaises(ValueError):
+                    desktop.rpc("run", {"action": "agent", "id": plan["id"]})
+                desktop.rpc("run", {"action": "agent", "id": plan["id"], "confirmed": True, "tools": ["hardware"]})
+                with self.assertRaises(ValueError):
+                    desktop.rpc("run", {"action": "agent", "id": plan["id"], "confirmed": True})
+            launch.assert_called_once()
+            self.assertEqual(launch.call_args.args[1]["tools"], ["models"])
+
     def test_persists_completed_exchange_but_not_a_cancelled_exchange(self):
         with TemporaryDirectory() as directory:
             desktop = Desktop(Path(directory))
