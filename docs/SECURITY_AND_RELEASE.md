@@ -26,4 +26,4 @@ GitHub Actions 對開發分支只產生 Artifact：固定工具鏈、Actions com
 
 ## 隔離事件處理
 
-記錄精確資產名、版本、來源、SHA-256、簽章、Windows 版本、安全產品與定義版本、偵測名稱與事件時間。保留可重現步驟與不含個資的記錄。先核對官方產物，交叉比對來源／CI／依賴，記錄複現與各產品結果；可疑變更先停止公開發行。經核准才向 [Microsoft Defender](https://www.microsoft.com/wdsi/filesubmission)、[Norton](https://support.norton.com/sp/en/us/home/current/solutions/kb20090410134005EN)、[Avast](https://www.avast.com/false-positive-file-form.php) 或 [AVG](https://www.avg.com/en-ww/report-false-positive) 提報公開樣本與偵測 ID。本次未提交樣本，也未變更防毒設定。
+記錄精確資產名、版本、來源、SHA-256、簽章、Windows 版本、安全產品與定義版本、偵測名稱與事件時間。保留可重現步驟與不含個資的記錄。先核對官方產物，交叉比對來源／CI／依賴，記錄複現與各產品結果；可疑變更先停止公開發行。經核准才向 [Microsoft Defender](https://www.microsoft.com/wdsi/filesubmission)、[Norton](https://support.norton.com/sp/en/us/home/current/solutions/kb20090410134005EN)、[Avast](https://support.avast.com/en-en/article/258/) 或 [AVG](https://www.avg.com/en-ww/report-false-positive) 提報公開樣本與偵測 ID。本次未提交樣本，也未變更防毒設定。

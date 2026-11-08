@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from desktop_worker import Desktop
-from runtime_provider import ColabAdapter, Providers, endpoint, route
+from runtime_provider import ColabAdapter, OpenAIProvider, Providers, endpoint, route
 
 ROOT = Path(__file__).resolve().parent
 PACKAGED = ROOT / "build" / "desktop-worker" / "LocalLLMWorker" / "LocalLLMWorker.exe"
@@ -48,6 +48,19 @@ class RuntimePolicyTests(unittest.TestCase):
         self.assertNotIn(key, json.dumps(summary))
         self.assertNotIn(key, repr(providers.get(summary["id"])))
 
+    def test_provider_stream_uses_chat_completions_and_parses_fragments(self):
+        from io import BytesIO
+        provider = OpenAIProvider("id", "remote", "Test", "example.test", 443, "/v1", "test-key", ["model"])
+        response = BytesIO(b'data: {"choices":[{"delta":{"content":"hello"}}]}\n\ndata: [DONE]\n')
+        response.getheader = lambda *_: "text/event-stream"
+        connection = unittest.mock.Mock(sock=None)
+        with patch.object(provider, "request", return_value=(connection, response)) as request:
+            fragments = list(provider.stream("model", [{"role": "user", "content": "test"}], 96, .4, Event()))
+        self.assertEqual(fragments, ["hello"])
+        self.assertEqual(request.call_args.args[:2], ("POST", "/chat/completions"))
+        self.assertEqual(json.loads(request.call_args.args[2])["max_tokens"], 96)
+        connection.close.assert_called_once()
+
 
 class ConversationTests(unittest.TestCase):
     def test_persists_completed_exchange_but_not_a_cancelled_exchange(self):
@@ -56,6 +69,7 @@ class ConversationTests(unittest.TestCase):
             chat = "a" * 32
             cancel = Event()
             provider = unittest.mock.Mock()
+            provider.token = "private-key"
             provider.stream.return_value = (part for part in ("繁體", "中文"))
             events = []
             data = dict(prompt="你好", model="demo", chat=chat, policy="manual", runtime="test", consent=True)

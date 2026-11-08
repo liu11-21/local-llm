@@ -109,9 +109,9 @@ select { text-overflow:ellipsis; }
 .chat-grid { display:grid; gap:12px; grid-template-columns:minmax(145px,205px) minmax(0,1fr); }
 .chat-grid h2 { margin-bottom:9px; }
 .history { display:grid; gap:3px; margin-top:10px; }
-.history-item { display:flex; align-items:center; gap:7px; color:var(--muted); text-align:left; border-radius:6px; padding:7px; }
+.history-item { display:flex; width:100%; min-width:0; align-items:center; gap:7px; color:var(--muted); text-align:left; border-radius:6px; padding:7px; }
 .history-item svg { flex:none; }
-.history-item span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.history-item span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .history-item.current { background:var(--accent-bg); color:var(--accent); }
 .chat-controls,.parameters { display:grid; gap:8px; grid-template-columns:1fr 1.35fr; }
 .parameters { padding:7px 0; grid-template-columns:repeat(4,minmax(0,1fr)); }

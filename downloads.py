@@ -14,6 +14,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 BLOCK_SIZE = 256 * 1024
 RETRY_SPAN = 4 * 1024 ** 2
 RANGE_HEADER = re.compile(r"bytes (\d+)-(\d+)/(\d+)")
+RETRYABLE_STATUS = {408, 429, 500, 502, 503, 504}
 
 
 class DownloadCancelled(Exception):
@@ -102,22 +103,32 @@ def download_model(url, directory, workers, cancel, report, *, opener=open_downl
             received += length
             report(received, total, count)
 
-    check_cancelled()
-    with opener(url, (0, 0)) as probe:
-        check_encoding(probe)
-        if probe.status == 206:
-            first, last, total = content_range(probe)
-            if (first, last) != (0, 0) or total < 24 or len(probe.read(2)) != 1:
-                raise ValueError("下載來源回傳錯誤的檔案範圍。")
-            ranged = True
-            count = min(workers, total)
-        elif probe.status == 200:
-            total = int(probe.headers.get("Content-Length") or 0)
-            ranged = False
-            count = 1
-        else:
+    def probe_source():
+        with opener(url, (0, 0)) as probe:
+            check_encoding(probe)
+            if probe.status == 206:
+                first, last, length = content_range(probe)
+                if (first, last) != (0, 0) or length < 24 or len(probe.read(2)) != 1:
+                    raise ValueError("下載來源回傳錯誤的檔案範圍。")
+                return length, True, entity_tag(probe)
+            if probe.status == 200:
+                return int(probe.headers.get("Content-Length") or 0), False, entity_tag(probe)
             raise ValueError(f"下載來源回傳 HTTP {probe.status}。")
-        etag = entity_tag(probe)
+
+    for attempt in range(3):
+        check_cancelled()
+        try:
+            total, ranged, etag = probe_source()
+            break
+        except HTTPError as error:
+            if error.code not in RETRYABLE_STATUS or attempt == 2:
+                raise
+        except (URLError, ConnectionError, TimeoutError, HTTPException):
+            if attempt == 2:
+                raise ConnectionError("無法連接模型下載來源。請檢查網路，或稍後重試。") from None
+        if cancel.wait(0.5 * (attempt + 1)):
+            raise DownloadCancelled()
+    count = min(workers, total) if ranged else 1
 
     if total > shutil.disk_usage(target.parent).free:
         raise OSError("可用磁碟空間不足，無法下載此模型。")
@@ -154,11 +165,11 @@ def download_model(url, directory, workers, cancel, report, *, opener=open_downl
                     attempt = 0
                     continue
                 except HTTPError as error:
-                    if error.code not in (408, 429, 500, 502, 503, 504) or attempt == 2:
+                    if error.code not in RETRYABLE_STATUS or attempt == 2:
                         raise
                 except (URLError, ConnectionError, TimeoutError, HTTPException):
                     if attempt == 2:
-                        raise
+                        raise ConnectionError("模型下載連線中斷。請檢查網路後重試；未留下不完整的模型。") from None
                 attempt += 1
                 span = min(span, RETRY_SPAN)
                 if cancel.wait(0.5 * attempt):

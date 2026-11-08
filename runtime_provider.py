@@ -40,10 +40,12 @@ def endpoint(value):
             or url.query or url.fragment or any(c.isspace() for c in value.strip())):
         raise ValueError("端點必須是 HTTPS，且不得包含登入資訊、查詢參數或片段。")
     try:
-        port = url.port or 443
+        port = url.port
+        if port == 0:
+            raise ValueError
     except ValueError:
         raise ValueError("端點的連接埠無效。") from None
-    return url.hostname, port, url.path.rstrip("/") or "/v1"
+    return url.hostname, port or 443, url.path.rstrip("/") or "/v1"
 
 
 @dataclass
@@ -101,8 +103,9 @@ class OpenAIProvider:
     def stream(self, model, messages, max_tokens, temperature, cancel):
         if model not in self.models:
             raise ValueError("請從已連線端點的模型清單選擇模型。")
-        body = json.dumps(dict(model=model, messages=messages, max_tokens=max_tokens,
-                               temperature=temperature, stream=True)).encode()
+        limit = "max_completion_tokens" if self.host == "api.openai.com" else "max_tokens"
+        body = json.dumps(dict(model=model, messages=messages, temperature=temperature,
+                               stream=True, **{limit: max_tokens})).encode()
         if cancel.is_set():
             return
         connection, response = self.request("POST", "/chat/completions", body)

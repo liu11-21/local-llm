@@ -64,8 +64,7 @@ def install_engine(root, cancel, update):
                         shutil.copyfileobj(source, dest)
         if not (files / "llama-server.exe").is_file() or not (files / "LICENSE-LLVM-OpenMP").is_file():
             raise ValueError("引擎套件缺少執行檔或授權文件。")
-        with urlopen(f"https://raw.githubusercontent.com/ggml-org/llama.cpp/{ENGINE_VERSION}/LICENSE", timeout=15) as source:
-            license_text = source.read(4096)
+        license_text = (Path(__file__).resolve().parent / "third_party" / "llama.cpp-b11810-LICENSE").read_bytes()
         if not hmac.compare_digest(hashlib.sha256(license_text).hexdigest(), ENGINE_LICENSE_HASH):
             raise ValueError("引擎授權文件校驗失敗，未安裝任何檔案。")
         (files / "LICENSE-llama.cpp").write_bytes(license_text)
@@ -179,9 +178,14 @@ class Desktop(Workspace):
                     if cancel.is_set():
                         return None
                     answer += token
-                    update(answer=answer)
+                    if chosen == "local":
+                        update(answer=answer)
+                    else:
+                        update(answer=answer.replace(provider.token, "[已遮蔽金鑰]"))
             if cancel.is_set():
                 return None
+            if chosen != "local":
+                answer = answer.replace(provider.token, "[已遮蔽金鑰]")
             if not answer.strip():
                 raise RuntimeError("模型沒有傳回可顯示的文字。")
             with self.connect() as db:
