@@ -1,6 +1,12 @@
-# Local LLM v0.6.0
+# Local LLM v0.7.0
 
-Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `LocalLLM-v0.6.0-Windows-x64.exe` 包含 Python 執行環境和 llama.cpp Vulkan／CPU 引擎。雙擊即可開啟。
+Local LLM 是 Windows x64 本機聊天與媒體創作工作台。發行版的 `LocalLLM-v0.7.0-Windows-x64.exe` 包含 Python 執行環境和 llama.cpp Vulkan／CPU 引擎。雙擊即可開啟。
+
+## 程式更新
+
+從 v0.7.0 起，Windows EXE 開啟時會在背景檢查 GitHub 的最新正式版。右上角的「程式更新」也能手動檢查。有新版時按「下載更新」，待 SHA-256 核對完成後開啟下載資料夾，關閉目前版本，再雙擊新版 EXE。各版本的模型、作品和 ComfyUI 安裝資料共用 `%LOCALAPPDATA%\LocalLLM`。
+
+v0.6.0 或更早的 EXE 請先從 [GitHub Releases](https://github.com/liu11-21/local-llm/releases/latest) 下載一次新版。
 
 1. 到「模型清單」選擇依本機硬體排序的推薦模型，或搜尋 Hugging Face 公開單檔 GGUF。選好檔案後按「前往下載」。已有 GGUF 可直接按「選擇本機 GGUF」。
 2. 在「模型下載」按「開始下載」。預設 4 個執行緒，可調整為 1–16。支援 HTTP Range 的來源會平行下載，下載完成才將模型放入資料夾。

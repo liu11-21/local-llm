@@ -1,0 +1,54 @@
+import hashlib
+import io
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from threading import Event
+import unittest
+from unittest.mock import patch
+
+from app_update import RELEASES, ReleaseRedirect, download_update, select_update
+from downloads import DownloadCancelled
+
+
+class Reply(io.BytesIO):
+    status = 200
+    headers = {}
+
+
+class UpdateTests(unittest.TestCase):
+    def setUp(self):
+        self.data = b"MZ update contents"
+        tag = "v0.10.0"
+        name = f"LocalLLM-{tag}-Windows-x64.exe"
+        self.asset = {"name": name, "state": "uploaded", "size": len(self.data),
+                      "digest": "sha256:" + hashlib.sha256(self.data).hexdigest(),
+                      "browser_download_url": f"{RELEASES}/download/{tag}/{name}"}
+        self.release = {"tag_name": tag, "draft": False, "prerelease": False, "assets": [self.asset]}
+
+    def test_only_official_newer_asset_is_offered(self):
+        self.assertEqual(select_update(self.release, "0.9.9").tag, "v0.10.0")
+        self.assertIsNone(select_update(self.release, "0.10.0"))
+        self.assertIsNone(select_update(self.release, "1.0.0"))
+        self.asset["browser_download_url"] = "https://example.invalid/update.exe"
+        with self.assertRaises(ValueError):
+            select_update(self.release, "0.9.9")
+        with self.assertRaises(ValueError):
+            ReleaseRedirect().redirect_request(None, None, 302, "", {}, "https://example.invalid/update.exe")
+
+    def test_corrupt_and_cancelled_downloads_never_publish_exe(self):
+        offer = select_update(self.release, "0.9.9")
+        with TemporaryDirectory() as directory:
+            folder = Path(directory)
+            with patch("app_update.open_github", return_value=Reply(b"X" * offer.size)):
+                with self.assertRaisesRegex(ValueError, "SHA-256"):
+                    download_update(offer, folder, Event(), lambda *_: None)
+            self.assertEqual(list(folder.iterdir()), [])
+            cancel = Event()
+            with patch("app_update.open_github", return_value=Reply(self.data)):
+                with self.assertRaises(DownloadCancelled):
+                    download_update(offer, folder, cancel, lambda *_: cancel.set())
+            self.assertEqual(list(folder.iterdir()), [])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 import webbrowser
 
+from app_update import RELEASES, check_for_update, download_update
 from catalog import RECOMMENDED, model_files, recommended_file, search_models
 from comfy_runtime import ASSETS, PROFILES, VERSION as COMFY_VERSION, ManagedComfy, check_port
 from comfy_runtime import install as install_comfy, install_directory, installed
@@ -20,7 +21,7 @@ from load_plan import allocate, plan_load
 from media import ComfyClient, MODELS
 from team_panel import TeamPanel
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 APP_DIR = Path(__file__).resolve().parent
 FROZEN = getattr(sys, "frozen", False)
 DATA_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "LocalLLM" if FROZEN else APP_DIR
@@ -68,6 +69,12 @@ class LocalLLM:
         self.history = []
         self.loading = self.ready = self.stopping = self.answering = self.closing = False
         self.download_cancel = None
+        self.update_checking = self.update_checked = False
+        self.update_cancel = None
+        self.update_offer = self.update_file = self.update_dialog = None
+        self.update_badge = tk.StringVar(value="程式更新")
+        self.update_status = tk.StringVar(value="尚未檢查更新。")
+        self.update_progress = tk.DoubleVar()
         self.shutdown = Event()
         self.preview_generation = 0
         self.media_busy = False
@@ -118,6 +125,8 @@ class LocalLLM:
         self.refresh_models()
         self.refresh_buttons()
         self.root.after(30, self.dispatch)
+        if FROZEN:
+            self.root.after(700, lambda: not self.update_checked and self.check_update())
 
     def style(self):
         style = ttk.Style(self.root)
@@ -165,6 +174,7 @@ class LocalLLM:
         ttk.Label(name, text="Local LLM", style="Title.TLabel").pack(anchor="w")
         ttk.Label(name, text="本機對話與媒體生成", style="Muted.TLabel").pack(anchor="w")
         ttk.Label(header, text=f"v{VERSION}", style="Muted.TLabel").pack(side="right")
+        ttk.Button(header, textvariable=self.update_badge, command=self.show_update).pack(side="right", padx=(0, 10))
 
         side = ttk.Frame(shell, style="Card.TFrame", padding=(15, 16))
         side.grid(row=1, column=0, sticky="ns", padx=(0, 16))
@@ -735,6 +745,115 @@ class LocalLLM:
 
         Thread(target=run, daemon=True).start()
 
+    def show_update(self):
+        if self.update_dialog is not None and self.update_dialog.winfo_exists():
+            self.update_dialog.lift()
+            return
+        dialog = self.update_dialog = tk.Toplevel(self.root)
+        dialog.title("Local LLM 程式更新")
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        pane = ttk.Frame(dialog, padding=16)
+        pane.pack(fill="both", expand=True)
+        ttk.Label(pane, text=f"目前版本 v{VERSION}", style="Section.TLabel").pack(anchor="w")
+        ttk.Label(pane, textvariable=self.update_status, wraplength=410).pack(anchor="w", pady=8)
+        ttk.Progressbar(pane, maximum=100, variable=self.update_progress).pack(fill="x", pady=(0, 8))
+        buttons = ttk.Frame(pane)
+        buttons.pack(fill="x")
+        self.update_check_button = ttk.Button(buttons, text="檢查更新", command=self.check_update)
+        self.update_check_button.pack(side="left")
+        self.update_download_button = ttk.Button(buttons, text="下載更新", style="Primary.TButton",
+                                                 command=self.fetch_update)
+        self.update_download_button.pack(side="left", padx=5)
+        self.update_cancel_button = ttk.Button(buttons, text="取消下載", command=self.cancel_update)
+        self.update_cancel_button.pack(side="left")
+        links = ttk.Frame(pane)
+        links.pack(fill="x", pady=(7, 0))
+        self.update_folder_button = ttk.Button(links, text="開啟下載資料夾", command=self.open_update_folder)
+        self.update_folder_button.pack(side="left")
+        ttk.Button(links, text="GitHub 發行頁", command=lambda: webbrowser.open(RELEASES)).pack(side="left", padx=5)
+        self.refresh_update()
+        if not self.update_checked:
+            self.check_update()
+
+    def refresh_update(self):
+        if self.update_dialog is None or not self.update_dialog.winfo_exists():
+            return
+        idle = not self.update_checking and self.update_cancel is None and not self.closing
+        for widget, enabled in (
+            (self.update_check_button, idle),
+            (self.update_download_button, idle and self.update_offer is not None and self.update_file is None),
+            (self.update_cancel_button, self.update_cancel is not None and not self.update_cancel.is_set()),
+            (self.update_folder_button, self.update_file is not None and not self.closing),
+        ):
+            widget.configure(state="normal" if enabled else "disabled")
+
+    def check_update(self):
+        if self.update_checking or self.update_cancel is not None or self.closing:
+            return
+        self.update_checking = self.update_checked = True
+        self.update_status.set("正在向 GitHub 檢查正式版本…")
+        self.refresh_update()
+
+        def done(offer, error):
+            self.update_checking = False
+            if error:
+                self.update_status.set(f"無法檢查更新。{error}")
+            else:
+                if offer != self.update_offer:
+                    self.update_file = None
+                    self.update_progress.set(0)
+                self.update_offer = offer
+                self.update_badge.set(f"更新 {offer.tag}" if offer else "程式更新")
+                if not offer:
+                    self.update_status.set("目前已是最新版本。")
+                elif self.update_file and self.update_file.is_file():
+                    self.update_status.set(f"{offer.tag} 已下載。請關閉目前版本，再開啟新版 EXE。")
+                else:
+                    self.update_file = None
+                    self.update_status.set(f"{offer.tag} 可下載 · {format_size(offer.size)}")
+            self.refresh_update()
+
+        self.background(lambda: check_for_update(VERSION), done)
+
+    def fetch_update(self):
+        offer = self.update_offer
+        if offer is None or self.update_checking or self.update_cancel is not None or self.closing:
+            return
+        cancel = self.update_cancel = Event()
+        self.update_progress.set(0)
+        self.update_status.set(f"正在下載 {offer.tag}…")
+        self.refresh_update()
+
+        def progress(received, total):
+            self.events.put((self.update_progress.set, (received * 100 / total,)))
+
+        def done(path, error):
+            self.update_cancel = None
+            if error:
+                self.update_progress.set(0)
+                message = "已取消更新下載。" if isinstance(error, DownloadCancelled) else f"更新下載失敗。{error}"
+                self.update_status.set(message)
+            else:
+                self.update_file = path
+                self.update_progress.set(100)
+                self.update_status.set(f"{offer.tag} 已下載並通過 SHA-256 校驗。請關閉目前版本，再開啟新版 EXE。")
+            self.refresh_update()
+
+        self.background(lambda: download_update(offer, DATA_DIR / "updates", cancel, progress), done)
+
+    def cancel_update(self):
+        if self.update_cancel is not None:
+            self.update_cancel.set()
+            self.update_status.set("正在取消更新下載…")
+            self.refresh_update()
+
+    def open_update_folder(self):
+        try:
+            os.startfile(self.update_file.parent)
+        except OSError as error:
+            self.update_status.set(f"無法開啟資料夾。{error}")
+
     def dispatch(self):
         for _ in range(150):
             try:
@@ -748,7 +867,7 @@ class LocalLLM:
             self.comfy_status.set("ComfyUI 已結束。啟動日誌位於便攜版資料夾。")
             self.refresh_buttons()
         if self.closing and not any((self.loading, self.stopping, self.answering, self.download_cancel,
-                                     self.media_busy, self.comfy_busy, self.team.cancel)):
+                                     self.media_busy, self.comfy_busy, self.team.cancel, self.update_cancel)):
             self.root.destroy()
             return
         self.root.after(30, self.dispatch)
@@ -984,6 +1103,7 @@ class LocalLLM:
         self.closing = True
         self.shutdown.set()
         self.cancel_download()
+        self.cancel_update()
         self.cancel_comfy()
         self.team.request_cancel()
         if not self.comfy_busy and self.comfy.running():

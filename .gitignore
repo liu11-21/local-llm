@@ -3,6 +3,7 @@
 /models/
 /outputs/
 /comfyui/
+/updates/
 /build/
 /dist/
 __pycache__/
