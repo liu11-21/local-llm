@@ -4,14 +4,13 @@
 
 | 狀態 | 範圍與證據 |
 |---|---|
-| PASS | 14 個 Python 測試：既有更新與團隊回歸；新增路由同意、HTTPS 驗證、金鑰省略、停用 Colab、SSE 串流／取消、SQLite、區段續傳及實際打包 Worker UTF-8 IPC。 |
+| PASS | 15 個 Python 測試，涵蓋既有更新與團隊回歸、路由同意、HTTPS 驗證、金鑰省略、停用 Colab、SSE 串流與取消、SQLite、區段續傳、授權檔完整性及打包 Worker UTF-8 IPC。 |
 | PASS | Windows 11 上用 llama.cpp 與 SmolLM2 GGUF：CPU 啟動、聊天回應、對話保存、引擎停止。 |
 | PASS | npm/TypeScript/Vite 正式資源建置；Chromium 開發預覽使用真實 Worker，驗證首頁、模型估算、聊天、淺色模式和 650 px 導覽。 |
-| PASS | PyInstaller 6.22.3 / Python 3.12.10 onedir 已建置；隔離資料目錄中由 Worker EXE 下載及驗證官方引擎，使用既有 GGUF 完成 CPU 聊天與兩成員順序執行、兩份草稿及主模型整合。 |
+| PASS | PyInstaller 6.22.3 / Python 3.12.10 onedir 已建置。隔離的全新資料目錄中，由 Worker EXE 下載並驗證官方引擎、以四執行緒下載 105,454,432 位元組的 SmolLM2 GGUF，完成 CPU 聊天、歷史保存、引擎停止、兩成員依序執行及主模型整合。 |
 | PASS | v0.6.1 公開 EXE 的 SHA-256、PE、封裝與官方 llama.cpp 位元組比對；固定官方引擎下載與解壓。 |
-| PASS | Hugging Face 搜尋與固定版本 GGUF 檔案清單；模擬來源中途斷線，兩個執行緒續傳後檔案位元組完整。 |
-| FAIL | 公開 Hugging Face 權重實下載：105 MB 下載曾啟用四執行緒，但來源連線重設；重試與 1.2 MB 測試資產也未取得完整檔案。需於另一個網路完成端對端驗收。 |
-| NEEDS WINDOWS TEST | 在 Windows 10／11 x64 乾淨環境建置／安裝 Tauri NSIS；驗證 WebView2、捷徑、資料路徑、GPU 子程序關閉及卸載。現機未安裝 Rust 編譯器與 MSVC C++ Build Tools；GitHub 未登入，CI 尚未執行。 |
+| PASS | Hugging Face 搜尋、固定版本檔案清單、四執行緒下載 1,185,376 位元組的官方 tinyllamas 測試資產。模擬區段斷線後續傳的位元組比對亦通過。先前連線重設的案例在本輪重跑成功。 |
+| NEEDS WINDOWS TEST | 原生 Tauri NSIS 建置及 WebView2 驗收。CI 已加入靜默安裝、桌面與開始功能表捷徑、實際啟動 Worker、關閉及解除安裝後保存 SQLite／資料的測試。現機缺少 Rust 編譯器與 MSVC C++ Build Tools，GitHub CI 尚未執行。 |
 | NEEDS WINDOWS TEST | 以 Defender、Norton、Avast、AVG 的最新定義掃描乾淨安裝與運行；記錄產品版本、事件與 SHA-256。這次未確認 `Custody` 原因。 |
 | NEEDS GPU TEST | 實際 GPU 分層與估算偏差，ComfyUI 便攜版、三種作品預覽、取消及 GPU 資源釋放。 |
 | NEEDS CLOUD AUTHORIZATION | 自有 HTTPS 遠端／雲端端點的相容性、串流、錯誤與額度；Colab Enterprise 尚未接入。 |

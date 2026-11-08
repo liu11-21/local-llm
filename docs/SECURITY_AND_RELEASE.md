@@ -16,7 +16,7 @@ llama.cpp 以 [b11810 官方資產](https://github.com/ggml-org/llama.cpp/releas
 
 ## 建置與三種驗證
 
-GitHub Actions 對開發分支只產生 Artifact：固定工具鏈、Actions commit、npm／Cargo lock、Windows packager 版本，跑測試，產生安裝 EXE、`BUILD.json` 和 `SHA256SUMS.txt`。暫時不啟用自動更新或簽章。安裝程式和 Worker 都沒有可信 Authenticode。
+GitHub Actions 對開發分支只產生 Artifact。流程固定工具鏈、Actions commit、npm／Cargo lock 及 Windows packager 版本，產生安裝 EXE、`BUILD.json` 和 `SHA256SUMS.txt`。上傳前會執行安裝、啟動工作程序及卸載資料保留測試。正式自動更新及可信 Authenticode 仍待接入。
 
 1. **Windows Authenticode**：正式憑證／服務可用後，在可信的 CI job 簽主 EXE、Worker 自有 PE、安裝程式與卸載程式，使用時間戳；原封保留第三方已有簽章。簽完逐一跑 `signtool verify /pa /all /v`，對安裝器及安裝後檔案檢查發行者。Tauri 用 Windows [簽章設定](https://v2.tauri.app/distribute/sign/windows/) 或核准服務；私鑰不進 Git 或開發 Artifact。簽章不保證不被防毒攔截。
 2. **Tauri 更新簽章**：待正式通道驗收後加入 [Updater](https://v2.tauri.app/plugin/updater/) 公鑰、HTTPS manifest 與版本遞增規則，隔離私鑰並測試錯誤簽章、降版、失敗復原、資料保留。不能替代 Windows 發行者驗證。

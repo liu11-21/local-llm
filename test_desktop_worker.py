@@ -1,4 +1,5 @@
 import json
+from hashlib import sha256
 from pathlib import Path
 import subprocess
 import sys
@@ -7,7 +8,7 @@ from threading import Event
 import unittest
 from unittest.mock import patch
 
-from desktop_worker import Desktop
+from desktop_worker import Desktop, ENGINE_LICENSE_HASH
 from runtime_provider import ColabAdapter, OpenAIProvider, Providers, endpoint, route
 
 ROOT = Path(__file__).resolve().parent
@@ -15,6 +16,10 @@ PACKAGED = ROOT / "build" / "desktop-worker" / "LocalLLMWorker" / "LocalLLMWorke
 
 
 class RuntimePolicyTests(unittest.TestCase):
+    def test_bundled_engine_license_has_the_pinned_upstream_bytes(self):
+        license_file = ROOT / "third_party" / "llama.cpp-b11810-LICENSE"
+        self.assertEqual(sha256(license_file.read_bytes()).hexdigest(), ENGINE_LICENSE_HASH)
+
     def test_never_automatically_sends_to_an_external_runtime(self):
         for policy in ("auto", "local", "performance", "cost", "privacy"):
             with self.subTest(policy=policy):

@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: ['dev/desktop-workspace']
-    paths: ['desktop/**', '*.py', 'logo.ico', '.github/workflows/desktop-windows.yml']
+    paths: ['desktop/**', '*.py', 'logo.ico', 'third_party/**', '.gitattributes', '.github/workflows/desktop-windows.yml']
   pull_request:
-    paths: ['desktop/**', '*.py', 'logo.ico', '.github/workflows/desktop-windows.yml']
+    paths: ['desktop/**', '*.py', 'logo.ico', 'third_party/**', '.gitattributes', '.github/workflows/desktop-windows.yml']
 
 permissions:
   contents: read
@@ -74,6 +74,11 @@ jobs:
               authenticode = $signature.Status.ToString(); sha256 = $hash; bytes = $file.Length
             } | ConvertTo-Json | Set-Content (Join-Path $out 'BUILD.json')
           }
+      - name: Exercise the installed desktop app and uninstall
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem build/windows-review -Filter '*.exe' -File
+          ./desktop/smoke-install.ps1 -Installer $installer.FullName
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: LocalLLM-workspace-Windows-x64-unsigned
