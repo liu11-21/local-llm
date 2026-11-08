@@ -11,16 +11,40 @@ from urllib.request import Request, urlopen
 from downloads import model_filename
 
 HUB = "https://huggingface.co"
-RECOMMENDED = (
-    ("bartowski/SmolLM2-135M-Instruct-GGUF", "小型英文測試"),
-    ("HuggingFaceTB/SmolLM2-360M-Instruct-GGUF", "輕量英文對話"),
-    ("Qwen/Qwen2.5-0.5B-Instruct-GGUF", "輕量中文對話"),
-    ("Qwen/Qwen2.5-1.5B-Instruct-GGUF", "中文對話"),
-    ("Qwen/Qwen2.5-3B-Instruct-GGUF", "較大型中文對話"),
-)
+RECOMMENDED = {
+    "bartowski/SmolLM2-135M-Instruct-GGUF": (
+        "小型英文測試", "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+        105454432, "09816acd5d99df7be770d85ea30822623dab342c",
+    ),
+    "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF": (
+        "輕量英文對話", "smollm2-360m-instruct-q8_0.gguf",
+        386404992, "593b5a2e04c8f3e4ee880263f93e0bd2901ad47f",
+    ),
+    "Qwen/Qwen2.5-0.5B-Instruct-GGUF": (
+        "輕量中文對話", "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        491400032, "9217f5db79a29953eb74d5343926648285ec7e67",
+    ),
+    "Qwen/Qwen2.5-1.5B-Instruct-GGUF": (
+        "中文對話", "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        1117320736, "91cad51170dc346986eccefdc2dd33a9da36ead9",
+    ),
+    "Qwen/Qwen2.5-3B-Instruct-GGUF": (
+        "較大型中文對話", "qwen2.5-3b-instruct-q4_k_m.gguf",
+        2104932768, "7dabda4d13d513e3e842b20f0d435c732f172cbe",
+    ),
+}
 REPO_ID = re.compile(r"[\w][\w.-]*/[\w][\w.-]*", re.ASCII)
 REVISION = re.compile(r"[0-9a-f]{40}")
 METADATA_LIMIT = 8 * 1024 * 1024
+
+
+def download_url(repo, revision, filename):
+    return f"{HUB}/{quote(repo, safe='/')}/resolve/{revision}/{quote(filename, safe='/')}"
+
+
+def recommended_file(repo):
+    _, filename, size, revision = RECOMMENDED[repo]
+    return filename, size, download_url(repo, revision, filename)
 
 
 def read_metadata(path):
@@ -85,7 +109,7 @@ def model_files(repo):
             continue
         if re.search(r"(^|[._-])mmproj", PurePosixPath(filename).name, re.IGNORECASE):
             continue
-        url = f"{HUB}/{repo_path}/resolve/{revision}/{quote(filename, safe='/')}"
+        url = download_url(repo, revision, filename)
         try:
             model_filename(url)
         except ValueError:

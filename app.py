@@ -8,11 +8,12 @@ import time
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from catalog import RECOMMENDED, model_files, search_models
+from catalog import RECOMMENDED, model_files, recommended_file, search_models
 from downloads import DownloadCancelled, check_gguf, download_model
 from engine import LocalEngine
+from hardware import FIT_LABELS, Fit, detect_hardware, estimate_ram, model_fit
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 APP_DIR = Path(__file__).resolve().parent
 MODEL_DIR = APP_DIR / "models"
 ENGINE_PATH = APP_DIR / "engine" / "llama-server.exe"
@@ -52,8 +53,10 @@ class LocalLLM:
         self.shutdown = Event()
         self.catalog_busy = False
         self.catalog_files = []
+        self.showing_recommended = True
         self.catalog_query = tk.StringVar()
         self.catalog_status = tk.StringVar()
+        self.hardware_status = tk.StringVar()
 
         self.selected = tk.StringVar()
         system_engine = shutil.which("llama-server")
@@ -181,22 +184,26 @@ class LocalLLM:
 
     def build_catalog(self, pane):
         ttk.Label(pane, text="推薦模型與 Hugging Face 搜尋", style="Section.TLabel").pack(anchor="w")
+        hardware = ttk.Frame(pane)
+        hardware.pack(fill="x", pady=(6, 0))
+        ttk.Label(hardware, textvariable=self.hardware_status, style="Muted.TLabel", wraplength=360).pack(
+            side="left", fill="x", expand=True)
+        self.hardware_refresh = ttk.Button(hardware, text="重新偵測並推薦", command=self.show_recommended)
+        self.hardware_refresh.pack(side="right", padx=(6, 0))
         search = ttk.Frame(pane)
         search.pack(fill="x", pady=(10, 8))
         self.catalog_entry = ttk.Entry(search, textvariable=self.catalog_query)
         self.catalog_entry.pack(side="left", fill="x", expand=True)
         self.catalog_entry.bind("<Return>", lambda _: self.find_models())
         self.catalog_search = ttk.Button(search, text="線上搜尋", command=self.find_models)
-        self.catalog_search.pack(side="left", padx=6)
-        self.catalog_recommended = ttk.Button(search, text="推薦模型", command=self.show_recommended)
-        self.catalog_recommended.pack(side="left")
+        self.catalog_search.pack(side="left", padx=(6, 0))
 
         listing = ttk.Frame(pane)
         listing.pack(fill="both", expand=True)
         self.catalog_list = ttk.Treeview(listing, columns=("repo", "info"), show="headings",
                                          selectmode="browse", height=5)
         self.catalog_list.heading("repo", text="Hugging Face 倉庫")
-        self.catalog_list.heading("info", text="用途 / 下載次數")
+        self.catalog_list.heading("info", text="適配 / 下載次數")
         self.catalog_list.column("repo", width=290, minwidth=120)
         self.catalog_list.column("info", width=130, minwidth=85, stretch=False)
         scrollbar = ttk.Scrollbar(listing, command=self.catalog_list.yview)
@@ -211,6 +218,7 @@ class LocalLLM:
         choose.pack(fill="x")
         self.catalog_picker = ttk.Combobox(choose, state="disabled", width=20)
         self.catalog_picker.pack(side="left", fill="x", expand=True)
+        self.catalog_picker.bind("<<ComboboxSelected>>", self.show_file_fit)
         self.catalog_download = ttk.Button(choose, text="前往下載", style="Primary.TButton",
                                            command=self.use_catalog_file)
         self.catalog_download.pack(side="right", padx=(8, 0))
@@ -225,14 +233,75 @@ class LocalLLM:
         self.catalog_selection_changed()
 
     def show_recommended(self):
-        self.set_catalog_rows(RECOMMENDED)
-        self.catalog_status.set("選擇模型後查看版本。留空搜尋可瀏覽熱門 GGUF。")
+        self.detect_resources()
+        self.showing_recommended = True
+        ranked = []
+        for repo in RECOMMENDED:
+            filename, size, _ = recommended_file(repo)
+            ranked.append((self.file_fit(filename, size), size, repo))
+        prefer_larger = (self.hardware.cpu_threads or 0) >= 8
+        ranked.sort(key=lambda item: (item[0], -item[1] if prefer_larger and item[0] == Fit.GOOD else item[1]))
+        self.set_catalog_rows((repo, FIT_LABELS[fit]) for fit, _, repo in ranked)
+        self.catalog_status.set("可選擇模型查看估算，或留空搜尋熱門 GGUF。")
+        if ranked[0][0] == Fit.GOOD:
+            first = self.catalog_list.get_children()[0]
+            self.catalog_list.selection_set(first)
+            self.catalog_selection_changed()
+
+    def detect_resources(self):
+        self.hardware = detect_hardware(MODEL_DIR)
+        threads = self.hardware.cpu_threads or "未知"
+        available = format_size(self.hardware.ram_available) if self.hardware.ram_available is not None else "未知"
+        total = format_size(self.hardware.ram_total) if self.hardware.ram_total is not None else "未知"
+        disk = format_size(self.hardware.disk_available) if self.hardware.disk_available is not None else "未知"
+        self.hardware_status.set(f"CPU {threads} 執行緒 · 可用 RAM {available} / {total}\n模型磁碟剩餘 {disk}")
+
+    def file_fit(self, filename, size):
+        local = MODEL_DIR / Path(filename).name
+        try:
+            installed = local.is_file() and local.stat().st_size == size
+        except OSError:
+            installed = False
+        return model_fit(self.hardware, size, installed=installed)
+
+    def set_catalog_files(self, files):
+        self.catalog_files = files
+        self.catalog_picker.configure(values=[
+            f"{name} · {format_size(size)} · {FIT_LABELS[self.file_fit(name, size)]}" if size else f"{name} · 大小未知"
+            for name, size, _ in files
+        ])
+        if files:
+            self.catalog_picker.current(0)
+        else:
+            self.catalog_picker.set("")
 
     def catalog_selection_changed(self, event=None):
-        self.catalog_files = []
-        self.catalog_picker.configure(values=())
-        self.catalog_picker.set("")
+        selected = self.catalog_list.selection()
+        if selected and self.showing_recommended:
+            repo = self.catalog_list.item(selected[0], "values")[0]
+            self.set_catalog_files([recommended_file(repo)])
+            self.show_file_fit()
+        else:
+            self.set_catalog_files([])
+            if selected and not self.catalog_busy:
+                self.catalog_status.set("按「查看 GGUF 版本」讀取檔案與適配估算。")
         self.refresh_catalog_buttons()
+
+    def show_file_fit(self, event=None):
+        index = self.catalog_picker.current()
+        if index < 0:
+            return
+        name, size, _ = self.catalog_files[index]
+        fit = FIT_LABELS[self.file_fit(name, size)]
+        if not size:
+            self.catalog_status.set("Hugging Face 未提供大小，無法估算所需記憶體。")
+            return
+        selected = self.catalog_list.selection()
+        purpose = ""
+        if self.showing_recommended and selected:
+            repo = self.catalog_list.item(selected[0], "values")[0]
+            purpose = RECOMMENDED[repo][0] + " · "
+        self.catalog_status.set(f"{purpose}{fit} · 估計需 {format_size(estimate_ram(size))} 可用 RAM")
 
     def refresh_catalog_buttons(self):
         available = not self.catalog_busy and not self.closing
@@ -241,7 +310,7 @@ class LocalLLM:
         for widget, enabled in (
             (self.catalog_entry, available),
             (self.catalog_search, available),
-            (self.catalog_recommended, available),
+            (self.hardware_refresh, available),
             (self.catalog_versions, available and bool(self.catalog_list.selection())),
             (self.catalog_download, has_files and self.download_cancel is None),
         ):
@@ -268,6 +337,7 @@ class LocalLLM:
         if self.catalog_busy or self.closing:
             return
         query = self.catalog_query.get().strip()
+        self.showing_recommended = False
         self.set_catalog_rows(())
 
         def show(results):
@@ -281,20 +351,19 @@ class LocalLLM:
         if not selected:
             return
         repo = self.catalog_list.item(selected[0], "values")[0]
-        self.catalog_selection_changed()
+        self.detect_resources()
 
         def show(files):
             if self.catalog_list.selection() != selected:
                 self.catalog_status.set("請按「查看 GGUF 版本」載入目前選擇的模型。")
                 return
-            self.catalog_files = files
-            self.catalog_picker.configure(values=[
-                f"{name}  ·  {format_size(size)}" if size else name for name, size, _ in files
-            ])
+            preferred = RECOMMENDED[repo][1] if repo in RECOMMENDED else None
+            files.sort(key=lambda item: (self.file_fit(item[0], item[1]), item[0] != preferred, item[1] or 0))
+            self.set_catalog_files(files)
             if files:
-                self.catalog_picker.current(0)
-            self.catalog_status.set(f"找到 {len(files)} 個可下載的 GGUF 檔案。" if files
-                                    else "此倉庫沒有支援的單檔 GGUF。")
+                self.show_file_fit()
+            else:
+                self.catalog_status.set("此倉庫沒有支援的單檔 GGUF。")
 
         self.catalog_request(lambda: model_files(repo), f"正在讀取 {repo}…", show)
 
