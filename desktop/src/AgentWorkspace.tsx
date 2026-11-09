@@ -165,7 +165,7 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
         <option value="general">一般助理</option><option value="research">研究整理</option>
         <option value="technical">技術分析</option>
       </select></label>
-      <label>本機模型<SelectModels models={models} registry={registry} disabled={disabled || !models.length}
+      <label>本機模型<SelectModels ariaLabel="本機模型" models={models} registry={registry} disabled={disabled || !models.length}
         value={selectedModel} change={value => { setModel(value); invalidatePlan() }}/></label>
       {mode !== 'simple' && <p className="small section-note">目前選定模型的工具能力未驗證。可嘗試結構化輸出；若無法遵循格式，可切換簡易模式。</p>}
       <label>任務描述<textarea disabled={disabled} value={prompt} maxLength={2400}

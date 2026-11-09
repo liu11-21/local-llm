@@ -12,7 +12,8 @@ function previewWorker(port: number): Plugin {
   return {
     name: 'development-only-local-worker',
     configureServer(server) {
-      const args = [fileURLToPath(new URL('../desktop_worker.py', import.meta.url))]
+      const worker = process.env.LOCALLLM_PREVIEW_DATA && process.env.LOCALLLM_PREVIEW_WORKER
+      const args = [worker || fileURLToPath(new URL('../desktop_worker.py', import.meta.url))]
       if (process.env.LOCALLLM_PREVIEW_DATA) args.push('--data', process.env.LOCALLLM_PREVIEW_DATA)
       const child = spawn(process.env.LOCALLLM_PYTHON || 'python', args,
         { windowsHide: true, stdio: ['pipe', 'pipe', 'inherit'] })

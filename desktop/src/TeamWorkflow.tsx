@@ -6,7 +6,7 @@ import { Empty, Panel, SelectModels } from './ui'
 type Member = {id: string; name: string; role: string; system: string; goal: string;
   model: string; runtime: string; tools: string[]; tokens: number; steps: number}
 type Node = {id: string; agent: string; label: string; task: string; deps: string[]; partial: boolean;
-  state?: string; text?: string; error?: string; evidence?: unknown[]}
+  state?: string; text?: string; error?: string; evidence?: unknown[]; finished?: string}
 type Team = {id?: string; name: string; mode: string; lead: string; expected: string; members: Member[];
   final?: string; nodes?: Node[]; seconds?: number}
 type Role = {id: string; name: string; system: string}
@@ -22,6 +22,7 @@ function Graph({nodes, members}: {nodes: Node[]; members: Member[]}) {
   return <ol className="team-graph">{nodes.map(item => <li key={item.id}>
     <div className="team-node-heading"><strong>{item.label}</strong>{item.state && <span className="tag">{states[item.state] || item.state}</span>}</div>
     <p className="muted small">{names.get(item.agent)} · {item.id} · {item.deps.length ? '依賴 ' + item.deps.join('、') : '獨立輸入'}</p>
+    {item.finished && <time className="small" dateTime={item.finished}>{new Date(item.finished).toLocaleTimeString()}</time>}
     {item.error && <p className="pre creation-error">{item.error}</p>}
     {item.text && <details><summary>查看{item.label}輸出</summary><p className="pre">{item.text}</p></details>}
     {!!item.evidence?.length && <details><summary>工具事實及執行結果</summary><pre className="pre">{JSON.stringify(item.evidence,null,2)}</pre></details>}
@@ -107,6 +108,7 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
       const result = await rpc<Team>(save ? 'team-config-save' : 'team-preview',
         {team:payload(), ...(save && !copy && savedId ? {id:savedId} : {})})
       setPreview(result)
+      setRecord(undefined)
       if (save) {setSavedId(result.id); void refreshSaved()}
     } catch (error) {report(error)}
     finally {setChecking(false)}
@@ -222,7 +224,7 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
       </>}
     </Panel>
     <Panel title="依賴與結果">
-      {preview?.nodes && <><h3>已驗證的工作流程</h3><Graph nodes={preview.nodes} members={preview.members}/></>}
+      {preview?.nodes && !record && <><h3>已驗證的工作流程</h3><Graph nodes={preview.nodes} members={preview.members}/></>}
       {busy && <div className="section-note"><p role="status">{job?.message || '正在提交…'}</p>
         {job?.id && <button className="button" onClick={()=>cancel(job.id)}>取消角色流程</button>}</div>}
       {record && <section className="agent-record"><h3>{record.spec.name} · {states[record.state] || record.state}</h3>

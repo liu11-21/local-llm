@@ -5,6 +5,7 @@ import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import { createServer } from 'vite'
+import { exerciseWorkflows } from './workflow-ui.mjs'
 
 const desktop = fileURLToPath(new URL('../', import.meta.url))
 const root = await realpath(tmpdir())
@@ -19,8 +20,10 @@ try {
   await mkdir(join(profile, 'models'))
   // Layout fixture only. Neither this file nor the task lifecycle below is used for inference.
   await writeFile(join(profile, 'models', model), 'layout only')
+  await writeFile(join(profile, 'models', 'Protocol-Fixture-Q4_K_M.gguf'), 'protocol fixture only')
   process.env.LOCALLLM_PREVIEW_DATA = profile
   process.env.LOCALLLM_PREVIEW_PORT = port
+  process.env.LOCALLLM_PREVIEW_WORKER = join(desktop,'tests','workflow_fixture.py')
   server = await createServer({root:desktop, mode:'preview-worker', logLevel:'warn'})
   await server.listen()
   browser = await chromium.launch({
@@ -108,8 +111,9 @@ try {
   await navigate('圖片生成')
   await page.getByText('生成完成後，作品會顯示在這裡。').waitFor()
   await noOverflow()
-  assert.deepEqual(exceptions, [])
   console.log('PASS workspace layout in both themes at 1280, 1024, 800, and 650 px')
+  await exerciseWorkflows(page,navigate,noOverflow)
+  assert.deepEqual(exceptions, [])
 } finally {
   if (browser) await browser.close()
   if (server) await server.close()

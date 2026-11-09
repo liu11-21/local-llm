@@ -21,3 +21,10 @@
 - 創作頁生成前顯示連線和權重狀態，生成中顯示實際工作狀態，完成時直接預覽。使用「沿用上次設定」可讀回同類型最近作品的生成參數。 [缺少影片權重](ui-preview/phase3-creation-missing.png) · [實際生成中](ui-preview/phase3-creation-running.png) · [生成結果](ui-preview/phase3-creation-result.png)
 - 運算環境先選本機、另一台電腦、雲端 AI 或 Colab Notebook。只有選定來源才出現該類設定。外部服務保留資料傳送和可能費用說明。模型中心可檢視來源或從中斷的下載續傳。 [來源選擇](ui-preview/phase3-runtime.png) · [Colab 進階設定](ui-preview/phase3-runtime-colab.png) · [模型來源未知](ui-preview/phase3-models.png) · [已核對模型來源](ui-preview/phase3-models-verified.png)
 - 引擎健康診斷顯示實際錯誤碼和可採取的操作。 [Windows 原則封鎖時的引擎診斷](ui-preview/phase3-runtime-policy.png)
+
+## Batch 2 工作流程
+
+- Agent 從模式、模型、允許工具及任務開始。計畫預覽顯示版本與授權範圍。核准整體計畫後，逐次模式會分開顯示當次工具和參數。時間軸保留決策、工具結果、拒絕、錯誤及最終回答。 [計畫](ui-preview/batch2-agent-plan.png) · [工具核准](ui-preview/batch2-agent-approval.png) · [時間軸](ui-preview/batch2-agent-timeline.png) · [格式錯誤](ui-preview/batch2-agent-error.png)
+- 團隊保留多模型整合入口。角色工作流程先套用範本並指派模型，再展開角色、System Prompt、工具、節點與限制。預覽顯示依賴，執行結果保留初稿、審查、修正版與失敗或略過的節點。 [角色](ui-preview/batch2-team-roles.png) · [工作流程](ui-preview/batch2-team-workflow.png) · [審查結果](ui-preview/batch2-team-review.png) · [窄版部分失敗](ui-preview/batch2-team-error.png)
+
+這組截圖來自實際 React 開發預覽及 Python Worker。推理回應由可控的本機 SSE 協定測試端點產生，畫面中的 Protocol Fixture 是測試資料。
