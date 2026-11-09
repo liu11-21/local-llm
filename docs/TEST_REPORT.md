@@ -6,8 +6,14 @@
 
 | 狀態 | 範圍與證據 |
 |---|---|
-| PASS | 23 項 Python 測試，含兩筆下載與聊天重疊、第二筆本機推理排隊、目的地去重、排隊取消、失敗重試、歷史寫入暫時失敗、重開復原、聊天重新生成及工作流程參數驗證。並行測試用同步事件驗證排程，實際 Hugging Face 下載請見前輪記錄。 |
-| PASS | TypeScript 型別檢查及 Vite production build。Chromium 開發預覽連接實際 Worker，以先前本機生成的對話與代理人報告驗證頁面。 |
+| PASS | 23 項 Python 測試，含兩筆下載與聊天重疊、第二筆本機推理排隊、目的地去重、排隊取消、失敗重試、歷史寫入暫時失敗、重開復原、聊天重新生成及工作流程參數驗證。並行回歸測試用同步事件驗證排程。 |
+| PASS | TypeScript 型別檢查及 Vite production build。Chromium 開發預覽連接實際 Worker，以先前本機生成的對話與代理人報告驗證複製、改名、刪除確認、代理人計畫預覽、深淺主題、鍵盤焦點及 650 px 導覽。 |
+| PASS | 抽測聊天內容、輸入區標示、模型選擇器、側欄選取項和主要按鈕的靜態文字對比。深色最低 7.71:1，淺色最低 6.24:1。 |
+| PASS | 官方 ComfyUI CPU 版實際執行 `sd15-preview`，以種子 42、4 步生成 384×384 PNG。工作台保存 189,967 位元組的作品，作品索引可讀回流程 ID、種子與步數。 |
+| PASS | 新版桌面任務 RPC 實際同時下載 Hugging Face 的 `stories260K.gguf`（1,185,376 bytes）和 `SmolLM2-135M-Instruct-Q4_K_M.gguf`（105,454,432 bytes）。每筆使用四個區段執行緒，完成後確認 GGUF 標頭和檔案長度。 |
+| PASS | `c01f33c` 於 GitHub Actions 的 Windows Server 2022 x64 完成 Worker 打包、Rust／Tauri 建置、安裝程式與校驗檔產出。靜默安裝、桌面和開始功能表捷徑、WebView2 啟動 Worker、關閉程序，以及卸載保留使用者資料均通過。[CI 紀錄](https://github.com/liu11-21/local-llm/actions/runs/42552053727) · [開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42552053727/artifacts/13645398237) |
+| PASS | 從 GitHub 下載的 ZIP 符合 Actions 的 SHA-256。內含 `Local LLM Workspace_0.6.2_x64-setup.exe`，已核對 `BUILD.json` 的提交與 EXE SHA-256 `df4998796d31e14ddc16ac95569d42040f47ee9cf5f272421ebf45fdb3d4b8ff`。 |
+| FAIL | 並行測試中另兩個候選檔案發生來源連線重設。工作台顯示失敗且未發布成 GGUF。另一次測試在仍有下載時退出程序，留下隱藏的暫存檔，強制退出後的暫存清理待補。 |
 | FAIL | 本機 Windows 的應用程式控制原則封鎖 llama.cpp。新版送出與重新生成的實機推理需在允許執行的 Windows 環境重跑，重新生成的資料庫行為已通過回歸測試。 |
 | NEEDS GPU | CUDA／其他 Vulkan 裝置、實際影片與音樂生成及不同硬體的資源估算。 |
 | NEEDS CLOUD AUTH | 付費端點與實際 Colab Notebook 作業、額度和結果匯入。 |
