@@ -27,14 +27,71 @@ RESULT_LIMIT = 512 * 1024 ** 2
 JSON_LIMIT = 8 * 1024 ** 2
 
 
-def workflow(kind, prompt, lyrics="", seed=None):
+PARAMETERS = {
+    "width": ("寬度", 256, 1024, 16, "4", "width"),
+    "height": ("高度", 256, 1024, 16, "4", "height"),
+    "frames": ("影格數", 9, 65, 4, "4", "length"),
+    "fps": ("每秒影格", 8, 30, 1, "9", "fps"),
+    "seconds": ("秒數", 5, 60, 1, "4", "seconds"),
+    "steps": ("取樣步數", 1, 80, 1, "7", "steps"),
+    "cfg": ("提示詞強度", 1, 20, 1, "7", "cfg"),
+    "seed": ("種子（留白為隨機）", 0, 2**53 - 1, 1, "7", "seed"),
+    "negative": ("排除提示詞", 0, 2000, 1, "3", "text"),
+}
+
+WORKFLOWS = {
+    "sd15": ("image", "Stable Diffusion 1.5", {"width":512, "height":512, "steps":24, "cfg":7, "seed":None, "negative":""}),
+    "sd15-preview": ("image", "Stable Diffusion 1.5 · 快速預覽", {"width":384, "height":384, "steps":10, "cfg":7, "seed":None, "negative":""}),
+    "wan21": ("video", "Wan 2.1 T2V 1.3B", {"width":480, "height":272, "frames":33, "fps":16, "steps":24, "cfg":5, "seed":None, "negative":""}),
+    "ace-step": ("music", "ACE-Step v1", {"seconds":20, "steps":30, "cfg":4, "seed":None}),
+}
+DEFAULT_WORKFLOWS = {"image": "sd15", "video": "wan21", "music": "ace-step"}
+
+
+def workflow_spec(kind, workflow_id=None):
+    spec = WORKFLOWS.get(workflow_id or DEFAULT_WORKFLOWS.get(kind))
+    if spec is None or spec[0] != kind:
+        raise ValueError("此工作流程與創作類型不相容。")
+    return spec
+
+
+def workflow_manifest():
+    return [{"id": key, "kind": kind, "label": label, "engine": "comfyui",
+             "models": [file for _, _, file in MODELS[kind][2]], "output": FORMATS[kind][0],
+             "parameters": [{"key": param, "label": PARAMETERS[param][0], "default": default,
+                             "min": PARAMETERS[param][1], "max": PARAMETERS[param][2], "step": PARAMETERS[param][3],
+                             "type": "text" if param == "negative" else "integer"}
+                            for param, default in defaults.items()]}
+            for key, (kind, label, defaults) in WORKFLOWS.items()]
+
+
+def workflow_options(kind, workflow_id, options):
+    _, _, defaults = workflow_spec(kind, workflow_id)
+    if options is None:
+        options = {}
+    if not isinstance(options, dict) or options.keys() - defaults.keys():
+        raise ValueError("包含此工作流程不支援的參數。")
+    settings = {**defaults, **options}
+    for key, value in settings.items():
+        label, minimum, maximum, step, _, _ = PARAMETERS[key]
+        if key == "negative" and isinstance(value, str) and len(value) <= maximum:
+            continue
+        if key == "seed" and value is None:
+            continue
+        if key == "negative" or type(value) is not int or not minimum <= value <= maximum or (value - minimum) % step:
+            raise ValueError(f"{label}超出此工作流程支援的範圍。")
+    return settings
+
+
+def workflow(kind, prompt, lyrics="", seed=None, *, workflow_id=None, options=None):
+    settings = workflow_options(kind, workflow_id, options)
     graph = {}
 
     def node(number, class_type, **inputs):
         graph[str(number)] = {"class_type": class_type, "inputs": inputs}
 
-    if seed is None:
-        seed = secrets.randbits(53)
+    seed = seed if seed is not None else settings["seed"]
+    settings["seed"] = secrets.randbits(53) if seed is None else seed
     prefix = f"LocalLLM/{kind}"
     if kind == "image":
         node(1, "CheckpointLoaderSimple", ckpt_name=IMAGE_MODEL)
@@ -72,6 +129,9 @@ def workflow(kind, prompt, lyrics="", seed=None):
         node(9, "SaveWEBM", images=["8", 0], filename_prefix=prefix, codec="vp9", fps=16.0, crf=32.0)
     else:
         node(9, "SaveImage", images=["8", 0], filename_prefix=prefix)
+    for key, value in settings.items():
+        _, _, _, _, node_id, argument = PARAMETERS[key]
+        graph[node_id]["inputs"][argument] = value
     return graph
 
 
@@ -120,11 +180,12 @@ class ComfyClient:
             return False
         return isinstance(result, dict) and result.get("cancelled") is True
 
-    def generate(self, kind, prompt, lyrics, output_dir, cancel, report):
+    def generate(self, kind, prompt, lyrics, output_dir, cancel, report, *, workflow_id=None, options=None):
+        graph = workflow(kind, prompt, lyrics, workflow_id=workflow_id, options=options)
         self.check_models(kind)
         if cancel.is_set():
             raise InterruptedError("已停止等待生成。")
-        job = self.json("/prompt", {"prompt": workflow(kind, prompt, lyrics), "client_id": str(uuid4())})
+        job = self.json("/prompt", {"prompt": graph, "client_id": str(uuid4())})
         prompt_id = job.get("prompt_id")
         if not isinstance(prompt_id, str) or not prompt_id:
             raise RuntimeError("ComfyUI 沒有傳回生成任務編號。")

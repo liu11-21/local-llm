@@ -87,6 +87,33 @@ class RuntimePolicyTests(unittest.TestCase):
 
 
 class ConversationTests(unittest.TestCase):
+    def test_regeneration_keeps_original_on_failure_and_updates_only_final_reply(self):
+        with TemporaryDirectory() as directory:
+            desktop = Desktop(Path(directory))
+            chat = "c" * 32
+            data = dict(chat=chat, prompt="original", model="demo", policy="manual", runtime="test", consent=True)
+            provider = unittest.mock.Mock(token="test-key")
+            with patch.object(desktop.providers, "get", return_value=provider):
+                provider.stream.return_value = (part for part in ("first reply",))
+                desktop.perform("chat", data, Event(), lambda **_: None)
+                provider.stream.side_effect = OSError("stream interrupted")
+                with self.assertRaises(OSError):
+                    desktop.perform("chat", {**data, "regenerate": True}, Event(), lambda **_: None)
+                self.assertEqual(desktop.history(chat)[-1]["content"], "first reply")
+                provider.stream.side_effect = None
+                provider.stream.return_value = (part for part in ("second reply",))
+                desktop.perform("chat", {**data, "prompt": "ignored", "regenerate": True}, Event(), lambda **_: None)
+                self.assertEqual(desktop.history(chat), [
+                    {"role": "user", "content": "original"}, {"role": "assistant", "content": "second reply"}])
+                self.assertEqual(provider.stream.call_args.args[1], [{"role": "user", "content": "original"}])
+
+            desktop.rpc("chat-rename", {"chat": chat, "title": "Renamed"})
+            self.assertEqual(desktop.rpc("chats", {}), [(chat, "Renamed")])
+            with self.assertRaises(ValueError):
+                desktop.rpc("chat-delete", {"chat": chat})
+            desktop.rpc("chat-delete", {"chat": chat, "confirmed": True})
+            self.assertEqual(desktop.history(chat), [])
+
     def test_media_cancels_only_the_submitted_comfy_job(self):
         client = ComfyClient()
         stop = Event()

@@ -5,6 +5,8 @@ from dataclasses import asdict
 import json
 import os
 from pathlib import Path
+import re
+import secrets
 import sqlite3
 import sys
 from urllib.request import urlopen
@@ -19,12 +21,15 @@ import zipfile
 from app_update import check_workspace_update, download_update
 from catalog import model_files, search_models
 from colab_runtime import ColabAdapter
+from comfy_runtime import PROFILES, install, install_directory, installed
 from desktop_agent import create_plan, messages_for_plan
 from engine import LocalEngine
 from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
-from media import MODELS
+from media import DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
+from registries import recent_works, workspace_registry
 from runtime_provider import Providers, route
+from task_manager import TaskManager, timestamp
 from web_bridge import Workspace, engine_path, field
 
 ENGINE_VERSION = "b11810"
@@ -35,7 +40,14 @@ ENGINE_LICENSE_HASH = "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0
 MAX_LINE = 256 * 1024
 WORKSPACE_VERSION = "0.6.2"
 ACTIONS = {"chat", "download", "team", "comfy-start", "comfy-stop", "media", "engine-start",
-           "engine-stop", "engine-install", "agent", "update-download"}
+           "engine-stop", "engine-install", "comfy-install", "agent", "update-download"}
+
+
+def chat_id(data):
+    value = field(data, "chat", 32)
+    if not re.fullmatch(r"[a-f0-9]{32}", value):
+        raise ValueError("對話識別碼無效。")
+    return value
 
 
 def install_engine(root, cancel, update):
@@ -99,8 +111,17 @@ class Desktop(Workspace):
               CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
               CREATE TABLE IF NOT EXISTS agent_reports(id TEXT PRIMARY KEY, role TEXT, model TEXT,
                   prompt TEXT, answer TEXT, steps TEXT, created TEXT DEFAULT CURRENT_TIMESTAMP);
+              CREATE TABLE IF NOT EXISTS task_metadata(id TEXT PRIMARY KEY, snapshot TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS creations(name TEXT PRIMARY KEY, details TEXT NOT NULL);
             """)
-            db.execute("UPDATE tasks SET state='interrupted' WHERE state='running'")
+            db.execute("UPDATE tasks SET state='interrupted', message='工作台已關閉。' WHERE state IN ('running','queued')")
+            db.execute("""UPDATE task_metadata SET snapshot=json_set(snapshot, '$.state', 'interrupted',
+                          '$.finished', ?, '$.message', '工作台已關閉。')
+                          WHERE json_extract(snapshot,'$.state') IN ('queued','running')""", (timestamp(),))
+            db.execute("CREATE INDEX IF NOT EXISTS messages_chat ON messages(chat)")
+            if db.execute("PRAGMA user_version").fetchone()[0] < 1:
+                db.execute("PRAGMA user_version=1")
+        self.scheduler = TaskManager(self.perform, self.save_task)
 
     @contextmanager
     def connect(self):
@@ -111,6 +132,27 @@ class Desktop(Workspace):
         with self.connect() as db:
             return [{"role": role, "content": value} for role, value in db.execute(
                 "SELECT role,text FROM messages WHERE chat=? ORDER BY rowid", (chat,))]
+
+    def save_task(self, record):
+        with self.connect() as db:
+            db.execute("""INSERT INTO tasks(id,action,state,message) VALUES(?,?,?,?)
+                       ON CONFLICT(id) DO UPDATE SET state=excluded.state,message=excluded.message""",
+                       (record["id"], record["action"], record["state"], record["message"]))
+            db.execute("INSERT OR REPLACE INTO task_metadata VALUES(?,?)", (record["id"], json.dumps(record)))
+
+    def task_list(self):
+        live = {job["id"]: job for job in self.scheduler.list()}
+        with self.connect() as db:
+            saved = db.execute("""SELECT tasks.id,action,state,message,touched,snapshot FROM tasks
+                                LEFT JOIN task_metadata USING(id) ORDER BY tasks.rowid DESC LIMIT 60""").fetchall()
+        for task_id, action, state, message, created, snapshot in saved:
+            if task_id in live:
+                continue
+            record = json.loads(snapshot) if snapshot else {"id": task_id, "action": action,
+                       "kind": action, "state": {"done":"completed", "error":"failed"}.get(state, state),
+                       "message": message, "created": created.replace(" ", "T") + "Z"}
+            live[task_id] = {**record, "retryable": False}
+        return sorted(live.values(), key=lambda job: job["created"], reverse=True)[:60]
 
     def prepare(self, data, cancel, update):
         name = field(data, "model", 180)
@@ -201,6 +243,18 @@ class Desktop(Workspace):
         return {"answer": answer, "message": "代理人報告已儲存。"}
 
     def perform(self, action, data, cancel, update):
+        if action in ("comfy-start", "comfy-install"):
+            profile = field(data, "profile", 40)
+            if profile not in PROFILES:
+                raise ValueError("請選擇有效的 ComfyUI 便攜版。")
+            if action == "comfy-install":
+                root = self.data / "comfyui"
+                if not installed(install_directory(root, profile)):
+                    install(root, profile, cancel, lambda message: update(message=message),
+                            lambda received, total: update(received=received, total=total))
+                return {"message": "ComfyUI 已安裝，可以啟動服務。"}
+            if not installed(install_directory(self.data / "comfyui", profile)):
+                raise ValueError("請先安裝這個 ComfyUI 便攜版。")
         if action == "agent":
             return self.execute_agent(data, cancel, update)
         if action == "update-download":
@@ -223,10 +277,16 @@ class Desktop(Workspace):
         if action == "engine-start":
             return {"plan": self.prepare(data, cancel, update), "message": "文字引擎已就緒。"}
         if action == "chat":
-            prompt = field(data, "prompt", 12000)
-            chat = field(data, "chat", 32)
-            if len(chat) != 32 or any(c not in "0123456789abcdef" for c in chat):
-                raise ValueError("對話識別碼無效。")
+            chat = chat_id(data)
+            replace = data.get("regenerate") is True
+            old = self.history(chat)[-12:]
+            if replace:
+                if len(old) < 2 or [row["role"] for row in old[-2:]] != ["user", "assistant"]:
+                    raise ValueError("這個對話尚無可重新生成的回答。")
+                prompt = old[-2]["content"]
+                old = old[:-2]
+            else:
+                prompt = field(data, "prompt", 12000)
             model = field(data, "model", 200)
             budget, temperature = data.get("max_tokens", 512), data.get("temperature", 0.4)
             if type(budget) is not int or not 64 <= budget <= 2048 or type(temperature) not in (int, float) or not 0 <= temperature <= 2:
@@ -237,14 +297,17 @@ class Desktop(Workspace):
                 plan = None
             else:
                 plan = self.prepare(data, cancel, update)
-            old = self.history(chat)[-12:]
             messages = old + [{"role": "user", "content": prompt}]
+            usage = None
             if chosen == "local":
-                while self.local.prompt_tokens(messages) + budget > self.active[2]:
+                original = len(messages)
+                while (input_tokens := self.local.prompt_tokens(messages)) + budget > self.active[2]:
                     if len(messages) < 3:
                         raise ValueError("提示詞和回答長度超過上下文限制。請縮短輸入或提高上下文長度。")
                     messages = messages[2:]
-            update(message="正在生成回答…", answer="")
+                usage = {"input": input_tokens, "context": self.active[2], "max_output": budget,
+                         "omitted_turns": (original - len(messages)) // 2}
+            update(message="正在生成回答…", answer="", usage=usage)
             answer = ""
             stream = (self.local.stream(messages, max_tokens=budget, temperature=temperature, cancel=cancel)
                       if chosen == "local" else provider.stream(model, messages, budget, temperature, cancel))
@@ -266,10 +329,23 @@ class Desktop(Workspace):
             with self.connect() as db:
                 db.execute("INSERT OR IGNORE INTO chats(id,title) VALUES(?,?)", (chat, prompt[:42]))
                 db.execute("UPDATE chats SET touched=CURRENT_TIMESTAMP WHERE id=?", (chat,))
-                db.executemany("INSERT INTO messages VALUES(?,?,?)",
-                               [(chat, "user", prompt), (chat, "assistant", answer)])
+                if replace:
+                    updated = db.execute("""UPDATE messages SET text=? WHERE role='assistant' AND rowid=
+                              (SELECT MAX(rowid) FROM messages WHERE chat=?)""", (answer, chat))
+                    if updated.rowcount != 1:
+                        raise ValueError("原回答已不存在。")
+                else:
+                    db.executemany("INSERT INTO messages VALUES(?,?,?)",
+                                   [(chat, "user", prompt), (chat, "assistant", answer)])
                 db.execute("INSERT OR REPLACE INTO settings VALUES('recent_model',?)", (model,))
-            return {"answer": answer, "plan": plan, "message": "回答已儲存。"}
+            return {"answer": answer, "plan": plan, "usage": usage, "message": "回答已儲存。"}
+        if action == "media":
+            kind = field(data, "kind", 12)
+            selected = field(data, "workflow", 40, optional=True) or DEFAULT_WORKFLOWS.get(kind)
+            settings = workflow_options(kind, selected, data.get("options"))
+            if settings["seed"] is None:
+                settings["seed"] = secrets.randbits(53)
+            data = {**data, "workflow":selected, "options":settings}
         if action in ("comfy-start", "team", "media"):
             self.local.stop()
             self.active = None
@@ -287,7 +363,16 @@ class Desktop(Workspace):
                 entries.append({"kind": "local", "model": model} if selected == "local" else
                                self.providers.get(selected).team_entry(model))
             data = {**data, "members": entries}
-        return super().perform(action, data, cancel, update)
+        result = super().perform(action, data, cancel, update)
+        if action == "media" and result and result.get("file"):
+            kind = field(data, "kind", 12)
+            selected = field(data, "workflow", 40, optional=True) or DEFAULT_WORKFLOWS[kind]
+            details = {"workflow":selected, "model":workflow_spec(kind, selected)[1],
+                       "prompt":field(data, "prompt", 12000), "lyrics":field(data, "lyrics", 12000, optional=True),
+                       "options":workflow_options(kind, selected, data.get("options"))}
+            with self.connect() as db:
+                db.execute("INSERT INTO creations VALUES(?,?)", (result["file"].rsplit("/", 1)[-1], json.dumps(details)))
+        return result
 
     def rpc(self, op, data):
         if op == "agent-plan":
@@ -317,10 +402,22 @@ class Desktop(Workspace):
                 self.hardware_cache = engine_devices(executable) if executable else []
             info.update(devices=self.hardware_cache, active=self.active if self.local.running() else None,
                         media=MODELS, output_folder=str(self.outputs), providers=self.providers.list())
+            info["comfy_profiles_installed"] = [name for name in PROFILES if installed(install_directory(self.data / "comfyui", name))]
+            info["comfy_installed"] = bool(info["comfy_profiles_installed"])
+            info["colab_ready"] = self.providers.colab.capabilities()["available"]
+            info["registry"] = workspace_registry(info, self.models, ENGINE_VERSION)
             with self.connect() as db:
                 recent = db.execute("SELECT value FROM settings WHERE key='recent_model'").fetchone()
                 info["recent_model"] = recent[0] if recent else None
             return info
+        if op == "works":
+            records = recent_works(self.outputs)
+            with self.connect() as db:
+                for item in records:
+                    row = db.execute("SELECT details FROM creations WHERE name=?", (item["name"],)).fetchone()
+                    if row:
+                        item.update(json.loads(row[0]))
+            return records
         if op == "search":
             return search_models(field(data, "query", 180, optional=True))
         if op == "files":
@@ -339,19 +436,28 @@ class Desktop(Workspace):
                 self.agent_plan = None
             else:
                 response = self.launch(action, data)
-            with self.connect() as db:
-                db.execute("INSERT INTO tasks(id,action,state,message) VALUES(?,?,?,?)",
-                           (response["id"], action, "running", "正在準備…"))
             return response
         if op in ("job", "cancel"):
-            job = self.snapshot(field(data, "id", 32), cancel=op == "cancel")
-            if job["state"] != "running":
-                with self.connect() as db:
-                    db.execute("UPDATE tasks SET state=?,message=? WHERE id=?",
-                               (job["state"], job["state"], job["id"]))
-            return job
+            return self.scheduler.snapshot(field(data, "id", 32), cancel=op == "cancel")
+        if op == "task-list":
+            return self.task_list()
+        if op == "task-retry":
+            return self.scheduler.retry(field(data, "id", 32))
         if op == "history":
-            return self.history(field(data, "chat", 32))
+            return self.history(chat_id(data))
+        if op in ("chat-rename", "chat-delete"):
+            chat = chat_id(data)
+            if self.scheduler.has_chat(chat):
+                raise ValueError("請等這個對話的任務結束。")
+            with self.connect() as db:
+                if op == "chat-rename":
+                    db.execute("UPDATE chats SET title=? WHERE id=?", (field(data, "title", 80), chat))
+                else:
+                    if data.get("confirmed") is not True:
+                        raise ValueError("請先確認刪除此對話。")
+                    db.execute("DELETE FROM messages WHERE chat=?", (chat,))
+                    db.execute("DELETE FROM chats WHERE id=?", (chat,))
+            return None
         if op == "chats":
             with self.connect() as db:
                 return db.execute("SELECT id,title FROM chats ORDER BY touched DESC,rowid DESC LIMIT 100").fetchall()
@@ -381,9 +487,7 @@ class Desktop(Workspace):
         raise ValueError("未支援的操作。")
 
     def close(self):
-        with self.lock:
-            if self.cancel:
-                self.cancel.set()
+        self.scheduler.close()
         self.local.stop()
         self.comfy.stop()
 

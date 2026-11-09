@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { rpc, type Job, type Params } from './api'
+import { rpc, type Job, type Params, type Registry } from './api'
+import { SelectModels } from './ui'
 
 type AgentPlan = { id: string; role: string; model: string; prompt: string; steps: string[] }
 type AgentReport = [string, string, string, string, string, string, string]
@@ -12,8 +13,9 @@ function executionRecord(raw: string): ExecutionRecord {
   } catch { return { steps: [] } }
 }
 
-export function AgentWorkspace({ models, engine, busy, job, run, report }: {
+export function AgentWorkspace({ models, registry, engine, busy, job, run, report }: {
   models: string[]
+  registry?: Registry['models']
   engine: boolean
   busy: boolean
   job?: Job
@@ -65,11 +67,8 @@ export function AgentWorkspace({ models, engine, busy, job, run, report }: {
         <option value="general">一般助理</option><option value="research">研究整理</option>
         <option value="technical">技術分析</option>
       </select></label>
-      <label>本機模型<select disabled={disabled || !models.length} value={selectedModel}
-        onChange={e => { setModel(e.target.value); setPlan(undefined) }}>
-        {!models.length && <option value="">請先下載模型</option>}
-        {models.map(value => <option key={value}>{value}</option>)}
-      </select></label>
+      <label>本機模型<SelectModels models={models} registry={registry} disabled={disabled || !models.length}
+        value={selectedModel} change={value => { setModel(value); setPlan(undefined) }}/></label>
       <label>任務描述<textarea disabled={disabled} value={prompt} maxLength={2400}
         onChange={e => { setPrompt(e.target.value); setPlan(undefined) }}/></label>
       <p className="section-note">本次允許的唯讀工具</p>

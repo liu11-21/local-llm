@@ -1,5 +1,21 @@
 # 桌面工作台測試紀錄
 
+## 第二階段基礎
+
+基準為開發分支 `fa81a2c`。維持工作台版本 `0.6.2`。
+
+| 狀態 | 範圍與證據 |
+|---|---|
+| PASS | 23 項 Python 測試，含兩筆下載與聊天重疊、第二筆本機推理排隊、目的地去重、排隊取消、失敗重試、歷史寫入暫時失敗、重開復原、聊天重新生成及工作流程參數驗證。並行測試用同步事件驗證排程，實際 Hugging Face 下載請見前輪記錄。 |
+| PASS | TypeScript 型別檢查及 Vite production build。Chromium 開發預覽連接實際 Worker，以先前本機生成的對話與代理人報告驗證頁面。 |
+| FAIL | 本機 Windows 的應用程式控制原則封鎖 llama.cpp。新版送出與重新生成的實機推理需在允許執行的 Windows 環境重跑，重新生成的資料庫行為已通過回歸測試。 |
+| NEEDS GPU | CUDA／其他 Vulkan 裝置、實際影片與音樂生成及不同硬體的資源估算。 |
+| NEEDS CLOUD AUTH | 付費端點與實際 Colab Notebook 作業、額度和結果匯入。 |
+| NEEDS WINDOWS TEST | 一般 Windows 10／11 的原生互動和多款防毒軟體。 |
+| NOT RUN | 正式簽章、誤判申訴和正式 Release。 |
+
+## 前輪測試
+
 基準：GitHub `main` `8447047496691d34d5c6b24cb846c81d6bcce07f`，正式下載 v0.6.2；新增工作留在 `dev/desktop-workspace`。基準為 6 個 Python 單元測試全數通過。已知問題：舊版未簽署、舊 onefile 需解壓、網頁的原生功能依賴本機橋接，並非 GitHub Pages 可獨立執行。
 
 | 狀態 | 範圍與證據 |

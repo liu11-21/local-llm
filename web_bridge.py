@@ -7,9 +7,8 @@ import os
 from pathlib import Path
 import re
 import shutil
-from threading import Event, Lock, Thread
+from threading import Lock
 from urllib.parse import parse_qs, unquote, urlsplit
-from uuid import uuid4
 import webbrowser
 
 from catalog import RECOMMENDED, model_files, recommended_file, search_models
@@ -19,6 +18,7 @@ from hardware import FIT_LABELS, detect_hardware, model_fit
 from load_plan import plan_load
 from media import FORMATS, MODELS, ComfyClient
 from model_team import Member, ask_local, cloud_member, run_team
+from task_manager import TaskManager
 
 ROOT = Path(__file__).resolve().parent
 WEB = ROOT / "docs"
@@ -31,7 +31,7 @@ MAX_BODY = 64 * 1024
 
 
 def engine_path(data):
-    for folder in (ROOT / "engine-vulkan", data / "engine-vulkan", ROOT / "engine",
+    for folder in (data / "engine-vulkan", ROOT / "engine-vulkan", ROOT / "engine",
                    data.parent / "Programs" / "Local LLM" / "_internal" / "engine-vulkan"):
         candidate = folder / "llama-server.exe"
         if candidate.is_file():
@@ -57,8 +57,7 @@ class Workspace:
         self.outputs = self.data / "outputs"
         self.comfy = ManagedComfy()
         self.lock = Lock()
-        self.job = None
-        self.cancel = None
+        self.scheduler = TaskManager(self.perform)
 
     def model(self, name):
         if name != Path(name).name or not name.lower().endswith(".gguf"):
@@ -91,44 +90,12 @@ class Workspace:
                 "profiles": list(PROFILES), "recommended": [row[2] for row in recommendations]}
 
     def launch(self, action, data):
-        with self.lock:
-            if self.cancel is not None:
-                raise ValueError("已有本機工作進行中，請稍候或取消該工作。")
-            cancel = self.cancel = Event()
-            job = self.job = {"id": uuid4().hex, "state": "running", "message": "正在準備…"}
-
-        def update(**values):
-            with self.lock:
-                job.update(values)
-
-        def run():
-            try:
-                result = self.perform(action, data, cancel, update)
-            except Exception as error:
-                detail = str(error).strip()[:1500]
-                if cancel.is_set():
-                    update(state="cancelled", message=detail if isinstance(error, InterruptedError) and detail else "已取消。")
-                else:
-                    update(state="error", message=detail or "本機工作失敗。")
-            else:
-                if cancel.is_set():
-                    update(state="cancelled", result=result, message="已取消。")
-                else:
-                    update(state="done", result=result)
-            finally:
-                with self.lock:
-                    self.cancel = None
-
-        Thread(target=run, daemon=True).start()
-        return {"id": job["id"]}
+        return self.scheduler.submit(action, data)
 
     def snapshot(self, job_id, cancel=False):
-        with self.lock:
-            if not self.job or self.job["id"] != job_id:
-                raise ValueError("找不到這筆工作。")
-            if cancel and self.cancel is not None:
-                self.cancel.set()
-            return dict(self.job)
+        job = self.scheduler.snapshot(job_id, cancel)
+        job["state"] = {"queued": "running", "completed": "done", "failed": "error"}.get(job["state"], job["state"])
+        return job
 
     def perform(self, action, data, cancel, update):
         def report(message):
@@ -222,7 +189,9 @@ class Workspace:
             if type(port) is not int:
                 raise ValueError("請填寫 ComfyUI 連接埠。")
             path = ComfyClient(port).generate(kind, field(data, "prompt", 12000),
-                                              field(data, "lyrics", 12000, optional=True), self.outputs, cancel, report)
+                                              field(data, "lyrics", 12000, optional=True), self.outputs, cancel, report,
+                                              workflow_id=field(data, "workflow", 40, optional=True),
+                                              options=data.get("options"))
             return {"file": f"/output/{path.name}", "message": f"已保存 {path.name}"}
         raise ValueError("這個本機功能不存在。")
 
@@ -325,9 +294,7 @@ def main():
         except KeyboardInterrupt:
             pass
         finally:
-            with workspace.lock:
-                if workspace.cancel:
-                    workspace.cancel.set()
+            workspace.scheduler.close()
             workspace.comfy.stop()
 
 
