@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
-import { once } from 'node:events'
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
+import { createServer } from 'vite'
 
 const desktop = fileURLToPath(new URL('../', import.meta.url))
 const root = await realpath(tmpdir())
@@ -20,18 +19,10 @@ try {
   await mkdir(join(profile, 'models'))
   // Layout fixture only. Neither this file nor the task lifecycle below is used for inference.
   await writeFile(join(profile, 'models', model), 'layout only')
-  server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--mode', 'preview-worker'], {
-    cwd:desktop, env:{...process.env, LOCALLLM_PREVIEW_DATA:profile, LOCALLLM_PREVIEW_PORT:port},
-    windowsHide:true, stdio:['ignore','pipe','inherit'],
-  })
-  await new Promise((ready, fail) => {
-    const timeout = setTimeout(() => fail(Error('Preview startup timed out')), 20000)
-    server.stdout.on('data', bytes => {
-      if (String(bytes).includes(url)) { clearTimeout(timeout); ready() }
-    })
-    server.once('error', e => { clearTimeout(timeout); fail(e) })
-    server.once('exit', code => { clearTimeout(timeout); fail(Error('Preview exited ' + code)) })
-  })
+  process.env.LOCALLLM_PREVIEW_DATA = profile
+  process.env.LOCALLLM_PREVIEW_PORT = port
+  server = await createServer({root:desktop, mode:'preview-worker', logLevel:'warn'})
+  await server.listen()
   browser = await chromium.launch({
     executablePath:process.env.LOCALLLM_BROWSER || join(process.env.ProgramFiles || 'C:\\Program Files',
       'Google', 'Chrome', 'Application', 'chrome.exe'),
@@ -121,11 +112,7 @@ try {
   console.log('PASS workspace layout in both themes at 1280, 1024, 800, and 650 px')
 } finally {
   if (browser) await browser.close()
-  if (server && server.exitCode === null) {
-    const ended = once(server,'exit')
-    server.kill()
-    await ended
-  }
+  if (server) await server.close()
   const target = await realpath(profile)
   if (dirname(target) === root && basename(target).startsWith('localllm-layout-')) {
     await rm(target, {recursive:true,force:true,maxRetries:4,retryDelay:250})

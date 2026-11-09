@@ -44,7 +44,7 @@ jobs:
           python build_desktop_worker.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m unittest -v test_desktop_worker.PackagedWorkerTests
-      - name: Build Windows per-user installer (unsigned)
+      - name: Exercise desktop layout in Chromium
         working-directory: desktop
         shell: pwsh
         run: |
@@ -52,6 +52,10 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           npm run test:layout
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build Windows per-user installer (unsigned)
+        working-directory: desktop
+        shell: pwsh
+        run: |
           cargo metadata --locked --format-version 1 --manifest-path src-tauri/Cargo.toml | Out-Null
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           npm run tauri -- build --target x86_64-pc-windows-msvc -- --locked
