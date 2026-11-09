@@ -130,7 +130,7 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
     setBusy(true); setRecord(undefined); setJob(undefined)
     let id: string | undefined
     try {
-      await run('team-workflow',{team:payload(),prompt,policy,consent,confirm_tools:confirmTools}, current => {
+      await run('team-workflow',{team:preview,prompt,policy,consent,confirm_tools:confirmTools}, current => {
         id = current.team_run_id; setJob(current)
       })
       if (id) setRecord(await rpc('team-run-get',{id}))
@@ -141,7 +141,7 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
 
   return <div hidden={!visible} className="dashboard team-flow">
     <Panel title="角色工作流程" description="節點使用各自的上下文。本機依序排程，依賴完成才會開始下一步。">
-      {!team || !definitions ? <Empty>正在讀取工作台範本…</Empty> : <>
+      {!team || !definitions ? <Empty>正在讀取工作台範本…</Empty> : <fieldset className="team-editor" disabled={busy || checking}>
         <div className="team-flow-fields">
           <label>團隊範本<select value="" disabled={busy} onChange={e => {
             const item = definitions.templates.find(value=>value.id===e.target.value); if (item) load(item)
@@ -221,7 +221,7 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
             team.members.some(member=>!modelOptions(member).includes(member.model) || (member.runtime==='local' && !info?.engine))}
             onClick={()=>void execute()}>執行角色流程</button>
         </div>
-      </>}
+      </fieldset>}
     </Panel>
     <Panel title="依賴與結果">
       {preview?.nodes && !record && <><h3>已驗證的工作流程</h3><Graph nodes={preview.nodes} members={preview.members}/></>}

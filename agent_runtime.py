@@ -94,9 +94,11 @@ def native_decision(events):
 
 
 class Deadline:
-    def __init__(self, cancel, wall_deadline):
+    def __init__(self, cancel, wall_deadline, label="代理人", code="AGENT_TIME_LIMIT"):
         self.cancel = cancel
         self.end = monotonic() + max(0, wall_deadline - time())
+        self.label = label
+        self.code = code
 
     def is_set(self):
         return self.cancel.is_set() or monotonic() >= self.end
@@ -107,9 +109,9 @@ class Deadline:
 
     def check(self):
         if self.cancel.is_set():
-            raise InterruptedError("已取消代理人任務。")
+            raise InterruptedError(f"已取消{self.label}任務。")
         if self.is_set():
-            raise TimeoutError("AGENT_TIME_LIMIT · 代理人已到達執行時間上限。")
+            raise TimeoutError(f"{self.code} · {self.label}已到達執行時間上限。")
 
 
 class AgentRuntime:

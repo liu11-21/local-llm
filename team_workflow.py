@@ -234,7 +234,7 @@ def run_team(store, ident, registry, ask, cancel, update):
            for member in agents.values()):
         raise ValueError("TEAM_EXTERNAL_NOT_GRANTED · 團隊外部運算未取得此次授權。")
     records = {item["id"]: item for item in run["nodes"]}
-    deadline = Deadline(cancel, time() + spec["seconds"])
+    deadline = Deadline(cancel, time() + spec["seconds"], "團隊", "TEAM_TIME_LIMIT")
     for item in run["nodes"]:
         deadline.check()
         deps = [records[dep] for dep in item["deps"]]
