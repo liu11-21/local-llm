@@ -125,6 +125,23 @@ class LocalEngine:
                 raise RuntimeError("請先啟動模型。")
             return self.port, self.key
 
+    def health_probe(self):
+        port, key = self.endpoint()
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
+        try:
+            connection.request("GET", "/health")
+            with connection.getresponse() as response:
+                if response.status != 200 or json.loads(response.read(64 * 1024)).get("status") != "ok":
+                    return False
+            connection.request("GET", "/v1/models", headers={"Authorization": f"Bearer {key}"})
+            with connection.getresponse() as response:
+                return response.status == 200 and any(item.get("id") == "local-model"
+                    for item in json.loads(response.read(64 * 1024)).get("data", []))
+        except (http.client.HTTPException, TypeError, AttributeError):
+            return False
+        finally:
+            connection.close()
+
     def prompt_tokens(self, messages):
         port, key = self.endpoint()
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=10)

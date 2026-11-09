@@ -3,6 +3,9 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
 export type Params = Record<string, unknown>
 export type Plan = { device: string | null; layers: number; total_layers: number; ram: number; vram: number; mapped_bytes: number }
 export type Provider = { id: string; kind: string; label: string; host: string; port: number; models: string[]; connected: boolean }
+export type EngineStatus = { state: 'not_installed' | 'installed' | 'starting' | 'ready' | 'busy' | 'stopping' | 'stopped' | 'unhealthy' | 'failed';
+  code?: string | null; hint?: string | null; checked_at?: string }
+export type EngineHealth = { llama: EngineStatus; comfyui: EngineStatus }
 export type Recommendation = { repo: string; name: string; description: string; size: number; url: string; fit: string }
 export type WorkflowParameter = { key: string; label: string; type: 'integer' | 'text'; default: number | string | null; min: number; max: number; step: number }
 export type MediaKind = 'image' | 'video' | 'music'

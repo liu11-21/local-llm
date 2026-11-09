@@ -194,6 +194,15 @@ class ManagedComfy:
     def running(self):
         return self.process is not None and self.process.poll() is None
 
+    def health_probe(self):
+        if not self.running():
+            return False
+        try:
+            stats = ComfyClient(self.port, timeout=2).json("/system_stats")
+            return isinstance(stats, dict) and isinstance(stats.get("system"), dict)
+        except HTTPException:
+            return False
+
     def start(self, directory, profile, port, cancel):
         if self.running():
             raise RuntimeError("ComfyUI 已啟動。")

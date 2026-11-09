@@ -13,6 +13,7 @@ import { RuntimeWorkspace } from './RuntimeWorkspace'
 import { SettingsWorkspace } from './SettingsWorkspace'
 import { TeamWorkspace } from './TeamWorkspace'
 import { activeTask, TaskCenter, useTaskQueue, type Run } from './taskQueue'
+import { engineLabels, useEngineHealth } from './engineHealth'
 import logo from './logo.png'
 
 const navigation = [
@@ -51,7 +52,9 @@ export function App() {
   useEffect(() => { localStorage.setItem('policy', policy) }, [policy])
   const queue = useTaskQueue(report, refresh)
   const count = queue.tasks.filter(activeTask).length
-  const runningEngine = info?.registry.engines.some(engine => engine.running)
+  const health = useEngineHealth()
+  const engineStates = [health?.llama.state, health?.comfyui.state]
+  const engineState = (['failed','unhealthy','starting','stopping','busy','ready'] as const).find(state => engineStates.includes(state))
   const go = (value: Page) => {setPage(value);setMenu(false)}
   const [_, title, Icon] = pages.find(item => item[0] === page)!
   const creation = page === 'image' || page === 'video' || page === 'music'
@@ -88,7 +91,8 @@ export function App() {
         <span>工作區</span><ChevronRight size={14}/><b>{title}</b>
       </div><div>
         <button className="button top-tasks" onClick={() => go('tasks')}><Activity size={16}/>任務{count > 0 && ' ' + count}</button>
-        <span className="status-chip engine-chip"><span className={runningEngine ? 'signal good' : 'signal'}/>{runningEngine ? '引擎運行中' : '引擎待命'}</span>
+        <span className="status-chip engine-chip"><span className={engineState === 'ready' || engineState === 'busy' ? 'signal good' : 'signal'}/>
+          {engineState ? engineLabels[engineState] : health ? '引擎待命' : '正在查詢引擎'}</span>
         <button className="icon" title="切換主題" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
           {theme === 'light' ? <Moon size={17}/> : <Sun size={17}/>}
         </button>
@@ -106,7 +110,7 @@ export function App() {
           report={report} notice={notice} go={go}/></div>
         {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError}/>}
         {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go} refresh={refresh}/>}
-        {page === 'runtime' && <RuntimeWorkspace info={info} policy={policy} tasks={queue.tasks} run={queue.run} report={report} notice={notice} refresh={refresh}/>}
+        {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run} report={report} notice={notice} refresh={refresh}/>}
         <div hidden={page !== 'team'}><TeamWorkspace info={info} policy={policy} run={queue.run} report={report}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} preset={preset} run={queue.run} go={go} openWork={openSavedWork}/>}
         {page === 'works' && <Works info={info} works={works} selected={selected} choose={setSelected}

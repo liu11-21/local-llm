@@ -26,6 +26,7 @@ from desktop_agent import create_plan, messages_for_plan
 from download_recovery import recover_downloads
 from downloads import check_gguf, download_model
 from engine import LocalEngine
+from engine_health import EngineHealth
 from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
 from media import DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
@@ -96,6 +97,8 @@ class Desktop(Workspace):
     def __init__(self, data):
         super().__init__(data)
         self.local = LocalEngine()
+        self.llama_health = EngineHealth(self.local.running, self.local.health_probe)
+        self.comfy_health = EngineHealth(self.comfy.running, self.comfy.health_probe)
         self.active = None
         self.providers = Providers()
         self.database = self.data / "desktop.sqlite3"
@@ -197,8 +200,14 @@ class Desktop(Workspace):
         if self.comfy.running():
             raise ValueError("請先停止 ComfyUI，釋放記憶體後再載入文字模型。")
         path, executable = self.model(name), self.engine()
-        if self.active and self.active[:3] == (name, mode, context) and self.local.running():
+        if self.active and self.active[:3] == (name, mode, context) and self.llama_health.usable():
             return self.active[-1]
+        with self.llama_health.transition(True, cancel):
+            plan = self.load_model(path, executable, mode, context, cancel, update)
+        self.active = (name, mode, context, plan)
+        return plan
+
+    def load_model(self, path, executable, mode, context, cancel, update):
         self.local.stop()
         self.active = None
         update(message="正在估算系統記憶體與 GPU 分層…")
@@ -218,8 +227,20 @@ class Desktop(Workspace):
                 self.local.start(executable, path, cancel, plan, context=context)
             else:
                 raise error
-        self.active = (name, mode, context, asdict(plan))
         return asdict(plan)
+
+    def stop_local(self):
+        with self.llama_health.transition(False):
+            self.local.stop()
+            self.active = None
+
+    def engine_health(self):
+        active = [task for task in self.scheduler.list() if task["state"] == "running"]
+        llama_busy = any(task["action"] in ("chat", "agent") and task["runtime"] == "local" for task in active)
+        comfy_busy = any(task["action"] == "media" for task in active)
+        comfy_installed = any(installed(install_directory(self.data / "comfyui", profile)) for profile in PROFILES)
+        return {"llama": self.llama_health.snapshot(engine_path(self.data) is not None, llama_busy),
+                "comfyui": self.comfy_health.snapshot(comfy_installed, comfy_busy)}
 
     def start_update_check(self):
         with self.lock:
@@ -307,8 +328,7 @@ class Desktop(Workspace):
             self.hardware_cache = None
             return {"message": "llama.cpp 已就緒。"}
         if action == "engine-stop":
-            self.local.stop()
-            self.active = None
+            self.stop_local()
             return {"message": "文字引擎已停止。"}
         if action == "engine-start":
             return {"plan": self.prepare(data, cancel, update), "message": "文字引擎已就緒。"}
@@ -382,9 +402,8 @@ class Desktop(Workspace):
             if settings["seed"] is None:
                 settings["seed"] = secrets.randbits(53)
             data = {**data, "workflow":selected, "options":settings}
-        if action in ("comfy-start", "team", "media"):
-            self.local.stop()
-            self.active = None
+        if action in ("comfy-start", "team", "media") and (self.local.running() or self.active):
+            self.stop_local()
         if action == "team":
             if self.comfy.running():
                 raise ValueError("請先停止 ComfyUI，再執行模型團隊。")
@@ -399,6 +418,11 @@ class Desktop(Workspace):
                 entries.append({"kind": "local", "model": model} if selected == "local" else
                                self.providers.get(selected).team_entry(model))
             data = {**data, "members": entries}
+        if action in ("comfy-start", "comfy-stop"):
+            if action == "comfy-start" and self.comfy.running():
+                raise ValueError("請先停止已啟動的 ComfyUI，再更換版本。")
+            with self.comfy_health.transition(action == "comfy-start", cancel):
+                return super().perform(action, data, cancel, update)
         result = super().perform(action, data, cancel, update)
         if action == "media" and result and result.get("file"):
             kind = field(data, "kind", 12)
@@ -411,6 +435,8 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == "engine-health":
+            return self.engine_health()
         if op == "agent-plan":
             plan = create_plan(data)
             self.model(plan["model"])
