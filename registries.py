@@ -3,7 +3,6 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from catalog import RECOMMENDED, recommended_file
 from comfy_runtime import PROFILES, VERSION as COMFY_VERSION
 from hardware import estimate_ram
 from media import DEFAULT_WORKFLOWS, workflow_manifest
@@ -20,28 +19,39 @@ def model_label(name):
     return (stem[:match.start()] if match else stem).replace("_", " ").replace("-Instruct", " Instruct")
 
 
-def installed_models(directory, names):
-    sources = {spec[1]: (repo, spec[3], recommended_file(repo)[2]) for repo, spec in RECOMMENDED.items()}
+def model_identity(path):
+    stat = path.stat()
+    return [stat.st_size, stat.st_mtime_ns, stat.st_ino, stat.st_dev]
+
+
+def installed_models(directory, names, sources):
     result = []
     for name in names:
         path = directory / name
         try:
             if path.resolve().parent != directory.resolve():
                 continue
-            size = path.stat().st_size
+            identity = model_identity(path)
         except OSError:
             continue
-        repo, revision, url = sources.get(name, (None, None, None))
+        record = sources.get(name.casefold(), {})
+        if record.get("identity") != identity:
+            record = {}
+        size = identity[0]
+        repo = record.get("repository")
         quant, parameters = QUANT.search(Path(name).stem), SIZE.search(model_label(name))
         result.append({"id": name, "label": model_label(name), "format": "GGUF", "publisher": repo.split("/")[0] if repo else None,
-                       "version": revision, "parameters": parameters[1].upper() if parameters else None,
+                       "version": record.get("version"), "parameters": parameters[1].upper() if parameters else None,
                        "quantization": quant[1].upper() if quant else None, "bytes": size, "ram": estimate_ram(size),
                        "tasks": ["chat", "agent", "team"], "engine": "llama", "runtime": "local",
-                       "source": url, "source_verified": False, "installed": True, "license": None})
+                       "source": record.get("source"), "repository": repo, "sha256": record.get("sha256"),
+                       "verification": record.get("verification", "unknown"), "downloaded": record.get("downloaded"),
+                       "source_verified": record.get("verification") == "verified",
+                       "installed": True, "license": record.get("license")})
     return result
 
 
-def workspace_registry(info, models, engine_version):
+def workspace_registry(info, models, engine_version, sources):
     engines = [
         {"id":"llama", "label":"llama.cpp", "version":engine_version, "formats":["GGUF"], "tasks":["chat","agent","team"],
          "hardware":["CPU","Vulkan"], "installed":info["engine"], "running":bool(info["active"]),
@@ -56,7 +66,7 @@ def workspace_registry(info, models, engine_version):
                      "models":p["models"], "tasks":["chat","team"]} for p in info["providers"])
     runtimes.append({"id":"colab", "label":"Colab Enterprise", "kind":"notebook", "ready":info["colab_ready"],
                      "models":[], "tasks":["notebook"]})
-    return {"models":installed_models(models, info["models"]), "engines":engines,
+    return {"models":installed_models(models, info["models"], sources), "engines":engines,
             "runtimes":runtimes, "workflows":workflow_manifest()}
 
 

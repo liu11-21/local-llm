@@ -5,7 +5,7 @@ from pathlib import PurePosixPath
 import re
 import time
 from urllib.error import HTTPError
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, unquote, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from downloads import model_filename
@@ -45,6 +45,50 @@ def download_url(repo, revision, filename):
 def recommended_file(repo):
     _, filename, size, revision = RECOMMENDED[repo]
     return filename, size, download_url(repo, revision, filename)
+
+
+def pinned_model(url):
+    parts = urlsplit(url)
+    match = re.fullmatch(r"/([^/]+/[^/]+)/resolve/([0-9a-f]{40})/(.+)", unquote(parts.path))
+    if parts.scheme != "https" or parts.netloc != "huggingface.co" or parts.query or parts.fragment or not match:
+        return None
+    repo, revision, file = match.groups()
+    if not REPO_ID.fullmatch(repo) or any(piece in ("", ".", "..") for piece in file.split("/")) or "\\" in file:
+        return None
+    if model_filename(url) != PurePosixPath(file).name or download_url(repo, revision, file) != url:
+        return None
+    return {"source": url, "repository": repo, "version": revision, "file": file}
+
+
+def model_source(url):
+    source = pinned_model(url)
+    if not source:
+        return {"source": url}
+    repo, revision, file = (source[key] for key in ("repository", "version", "file"))
+    try:
+        info = read_metadata(f"/api/models/{quote(repo, safe='/')}/revision/{revision}?blobs=true")
+    except ValueError:
+        return source
+    if not isinstance(info, dict) or info.get("sha") != revision or info.get("gated") or info.get("private"):
+        return source
+    siblings = info.get("siblings")
+    if not isinstance(siblings, list):
+        return source
+    for entry in siblings:
+        if not isinstance(entry, dict) or entry.get("rfilename") != file:
+            continue
+        card, lfs = info.get("cardData"), entry.get("lfs")
+        license_id = card.get("license") if isinstance(card, dict) else None
+        if isinstance(license_id, str) and re.fullmatch(r"[\w.+-]{1,80}", license_id):
+            source["license"] = license_id
+        size = entry.get("size")
+        if type(size) is int and size > 0:
+            source["size"] = size
+        sha = lfs.get("sha256") if isinstance(lfs, dict) else None
+        if isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{64}", sha):
+            source["expected_sha256"] = sha
+        break
+    return source
 
 
 def read_metadata(path):

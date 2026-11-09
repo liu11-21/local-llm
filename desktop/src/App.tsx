@@ -105,7 +105,7 @@ export function App() {
         <div hidden={page !== 'chat'}><ChatWorkspace info={info} policy={policy} run={queue.run} cancel={queue.cancel}
           report={report} notice={notice} go={go}/></div>
         {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError}/>}
-        {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go}/>}
+        {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go} refresh={refresh}/>}
         {page === 'runtime' && <RuntimeWorkspace info={info} policy={policy} tasks={queue.tasks} run={queue.run} report={report} notice={notice} refresh={refresh}/>}
         <div hidden={page !== 'team'}><TeamWorkspace info={info} policy={policy} run={queue.run} report={report}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} preset={preset} run={queue.run} go={go} openWork={openSavedWork}/>}

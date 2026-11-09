@@ -19,15 +19,17 @@ from threading import Thread
 import zipfile
 
 from app_update import check_workspace_update, download_update
-from catalog import model_files, search_models
+from catalog import model_files, model_source, pinned_model, search_models
 from colab_runtime import ColabAdapter
 from comfy_runtime import PROFILES, install, install_directory, installed
 from desktop_agent import create_plan, messages_for_plan
+from download_recovery import recover_downloads
+from downloads import check_gguf, download_model
 from engine import LocalEngine
 from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
 from media import DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
-from registries import recent_works, workspace_registry
+from registries import model_identity, recent_works, workspace_registry
 from runtime_provider import Providers, route
 from task_manager import TaskManager, timestamp
 from web_bridge import Workspace, engine_path, field
@@ -97,6 +99,7 @@ class Desktop(Workspace):
         self.active = None
         self.providers = Providers()
         self.database = self.data / "desktop.sqlite3"
+        self.download_cache = self.models / ".localllm-downloads"
         self.hardware_cache = None
         self.agent_plan = None
         self.update_candidate = None
@@ -113,14 +116,16 @@ class Desktop(Workspace):
                   prompt TEXT, answer TEXT, steps TEXT, created TEXT DEFAULT CURRENT_TIMESTAMP);
               CREATE TABLE IF NOT EXISTS task_metadata(id TEXT PRIMARY KEY, snapshot TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS creations(name TEXT PRIMARY KEY, details TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS model_sources(name TEXT PRIMARY KEY COLLATE NOCASE, details TEXT NOT NULL);
             """)
             db.execute("UPDATE tasks SET state='interrupted', message='工作台已關閉。' WHERE state IN ('running','queued')")
             db.execute("""UPDATE task_metadata SET snapshot=json_set(snapshot, '$.state', 'interrupted',
                           '$.finished', ?, '$.message', '工作台已關閉。')
                           WHERE json_extract(snapshot,'$.state') IN ('queued','running')""", (timestamp(),))
             db.execute("CREATE INDEX IF NOT EXISTS messages_chat ON messages(chat)")
-            if db.execute("PRAGMA user_version").fetchone()[0] < 1:
-                db.execute("PRAGMA user_version=1")
+            if db.execute("PRAGMA user_version").fetchone()[0] < 2:
+                db.execute("PRAGMA user_version=2")
+        recover_downloads(self.download_cache, self.models, pinned_model, clean=True)
         self.scheduler = TaskManager(self.perform, self.save_task)
 
     @contextmanager
@@ -139,6 +144,35 @@ class Desktop(Workspace):
                        ON CONFLICT(id) DO UPDATE SET state=excluded.state,message=excluded.message""",
                        (record["id"], record["action"], record["state"], record["message"]))
             db.execute("INSERT OR REPLACE INTO task_metadata VALUES(?,?)", (record["id"], json.dumps(record)))
+
+    def save_model_source(self, name, path, source):
+        record = {**source, "identity": model_identity(path)}
+        with self.connect() as db:
+            db.execute("INSERT OR REPLACE INTO model_sources VALUES(?,?)", (name, json.dumps(record)))
+
+    def download(self, data, cancel, update):
+        url = field(data, "url", 1400)
+        source = pinned_model(url)
+        if not source:
+            raise ValueError("請在模型中心選擇固定提交版本的 Hugging Face GGUF。")
+        workers = data.get("workers")
+        if type(workers) is not int or not 1 <= workers <= 16:
+            raise ValueError("下載執行緒須介於 1 到 16。")
+        name = source["file"].rsplit("/", 1)[-1]
+        update(message="正在查詢固定版本的來源與校驗資訊…")
+        source = model_source(url)
+        expected = source.get("expected_sha256")
+
+        def save(path, sha):
+            self.save_model_source(name, path, {**source, "sha256": sha, "downloaded": timestamp(),
+                                   "verification": "verified" if expected else "known"})
+
+        path = download_model(url, self.models, workers, cancel,
+                              lambda received, total, count: update(received=received, total=total,
+                                                                   message=f"下載中 · {count} 個執行緒"),
+                              recovery=self.download_cache, expected_size=source.get("size"),
+                              expected_sha=expected, before_publish=save)
+        return {"name": path.name, "message": f"已下載 {path.name}"}
 
     def task_list(self):
         live = {job["id"]: job for job in self.scheduler.list()}
@@ -243,6 +277,8 @@ class Desktop(Workspace):
         return {"answer": answer, "message": "代理人報告已儲存。"}
 
     def perform(self, action, data, cancel, update):
+        if action == "download":
+            return self.download(data, cancel, update)
         if action in ("comfy-start", "comfy-install"):
             profile = field(data, "profile", 40)
             if profile not in PROFILES:
@@ -405,11 +441,22 @@ class Desktop(Workspace):
             info["comfy_profiles_installed"] = [name for name in PROFILES if installed(install_directory(self.data / "comfyui", name))]
             info["comfy_installed"] = bool(info["comfy_profiles_installed"])
             info["colab_ready"] = self.providers.colab.capabilities()["available"]
-            info["registry"] = workspace_registry(info, self.models, ENGINE_VERSION)
             with self.connect() as db:
                 recent = db.execute("SELECT value FROM settings WHERE key='recent_model'").fetchone()
-                info["recent_model"] = recent[0] if recent else None
+                sources = {name.casefold(): json.loads(details) for name, details in db.execute("SELECT * FROM model_sources")}
+            info["registry"] = workspace_registry(info, self.models, ENGINE_VERSION, sources)
+            info["recoverable_downloads"] = recover_downloads(self.download_cache, self.models, pinned_model)
+            info["recent_model"] = recent[0] if recent else None
             return info
+        if op == "model-imported":
+            path = self.model(field(data, "model", 180))
+            check_gguf(path)
+            with self.connect() as db:
+                existing = db.execute("SELECT details FROM model_sources WHERE name=?", (path.name,)).fetchone()
+            if existing and json.loads(existing[0]).get("identity") == model_identity(path):
+                raise ValueError("這個檔案已有來源紀錄。")
+            self.save_model_source(path.name, path, {"verification": "imported"})
+            return None
         if op == "works":
             records = recent_works(self.outputs)
             with self.connect() as db:

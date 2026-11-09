@@ -9,7 +9,9 @@ export type MediaKind = 'image' | 'video' | 'music'
 export type Workflow = { id: string; label: string; kind: MediaKind; models: string[]; output: string; parameters: WorkflowParameter[] }
 export type Work = { name: string; kind: MediaKind; created: string; bytes: number; model?: string; workflow?: string; prompt?: string; lyrics?: string; options?: Params }
 export type Registry = {
-  models: { id: string; label: string; bytes: number; quantization: string | null; format: string; publisher?: string; ram: number }[];
+  models: { id: string; label: string; bytes: number; quantization: string | null; format: string; publisher?: string; ram: number;
+    verification: 'verified' | 'known' | 'imported' | 'unknown'; repository?: string; version?: string; source?: string;
+    sha256?: string; license?: string; downloaded?: string }[];
   engines: { id: string; label: string; version: string; installed: boolean; running: boolean }[];
   runtimes: { id: string; label: string; kind: string; ready: boolean; tasks: string[] }[];
   workflows: Workflow[];
@@ -20,6 +22,7 @@ export type Info = {
   active: [string, string, number, Plan] | null; devices: [string, number, boolean][]; recent_model: string | null;
   comfy_running: boolean; comfy_port: number | null; profiles: string[]; comfy_profiles_installed: string[]; providers: Provider[];
   registry: Registry; recommended: Recommendation[];
+  recoverable_downloads: {name: string; url: string; received: number; total: number}[];
 }
 export type Chat = [string, string]
 export type Message = { role: string; content: string }

@@ -1,5 +1,7 @@
 """Download GGUF files with bounded parallel HTTP range requests."""
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import nullcontext
+import hashlib
 from http.client import HTTPException
 import os
 from pathlib import Path
@@ -10,6 +12,8 @@ from threading import Event, Lock
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+from download_recovery import BLOCK, download_lock
 
 BLOCK_SIZE = 256 * 1024
 RETRY_SPAN = 4 * 1024 ** 2
@@ -80,13 +84,22 @@ def check_gguf(path):
         raise ValueError("檔案的標頭不是支援的 GGUF 格式。")
 
 
-def download_model(url, directory, workers, cancel, report, *, opener=open_download):
+def download_model(url, directory, workers, cancel, report, *, opener=open_download, recovery=None,
+                   expected_size=None, expected_sha=None, before_publish=None):
     """Report (downloaded bytes, total bytes, worker count) and publish only complete files."""
     if not 1 <= workers <= 16:
         raise ValueError("下載執行緒須介於 1 到 16。")
-    target = Path(directory) / model_filename(url)
+    target = Path(directory).resolve() / model_filename(url)
     target.parent.mkdir(parents=True, exist_ok=True)
-    if target.exists():
+    with download_lock(recovery, target) if recovery else nullcontext() as checkpoints:
+        return _download(url, target, workers, cancel, report, opener, checkpoints,
+                         expected_size, expected_sha, before_publish)
+
+
+def _download(url, target, workers, cancel, report, opener, checkpoints, expected_size, expected_sha, before_publish):
+    if target.exists() or target.is_symlink():
+        if checkpoints:
+            checkpoints.discard_unrecoverable()
         raise FileExistsError(f"模型已存在：{target.name}")
 
     stop = Event()
@@ -129,14 +142,30 @@ def download_model(url, directory, workers, cancel, report, *, opener=open_downl
         if cancel.wait(0.5 * (attempt + 1)):
             raise DownloadCancelled()
     count = min(workers, total) if ranged else 1
-
-    if total > shutil.disk_usage(target.parent).free:
+    if expected_size is not None and total and total != expected_size:
+        raise ValueError("下載長度與模型倉庫公布的大小不符。")
+    resumed = checkpoints.prepare(url, total, etag, expected_sha) if checkpoints and total else None
+    if resumed is None:
+        checkpoints = None
+    resumable = checkpoints and ranged and (etag or expected_sha)
+    if checkpoints and not resumable:
+        checkpoints.clear()
+        resumed = checkpoints.prepare(url, total, etag, expected_sha)
+    if resumable:
+        received = sum(min(BLOCK, total - int(index) * BLOCK) for index in resumed)
+        if total >= BLOCK:
+            count = min(workers, (total + BLOCK - 1) // BLOCK)
+    if total - received > shutil.disk_usage(target.parent).free:
         raise OSError("可用磁碟空間不足，無法下載此模型。")
-    report(0, total, count)
-    with NamedTemporaryFile(dir=target.parent, prefix=".model-", suffix=".part", delete=False) as stream:
-        staging = Path(stream.name)
+    report(received, total, count)
+    if checkpoints:
+        staging = checkpoints.staging
+        staging.touch(exist_ok=True)
+    else:
+        with NamedTemporaryFile(dir=target.parent, prefix=".model-", suffix=".part", delete=False) as stream:
+            staging = Path(stream.name)
 
-    def download_range(start, end):
+    def download_range(start, end, block=None):
         position = start
         attempt = 0
         span = end - start + 1
@@ -174,16 +203,24 @@ def download_model(url, directory, workers, cancel, report, *, opener=open_downl
                 span = min(span, RETRY_SPAN)
                 if cancel.wait(0.5 * attempt):
                     raise DownloadCancelled()
+            if block is not None:
+                checkpoints.checkpoint(block, output, start, end - start + 1)
 
+    keep = False
     try:
         if ranged:
             with staging.open("r+b") as output:
                 output.truncate(total)
             with ThreadPoolExecutor(max_workers=count, thread_name_prefix="gguf-range") as pool:
-                jobs = [
-                    pool.submit(download_range, total * index // count, total * (index + 1) // count - 1)
-                    for index in range(count)
-                ]
+                if resumable and total >= BLOCK:
+                    def download_blocks(worker):
+                        for index in range(worker, (total + BLOCK - 1) // BLOCK, count):
+                            if str(index) not in resumed:
+                                download_range(index * BLOCK, min(total, (index + 1) * BLOCK) - 1, index)
+                    jobs = [pool.submit(download_blocks, index) for index in range(count)]
+                else:
+                    jobs = [pool.submit(download_range, total * index // count, total * (index + 1) // count - 1)
+                            for index in range(count)]
                 try:
                     for job in as_completed(jobs):
                         job.result()
@@ -209,11 +246,32 @@ def download_model(url, directory, workers, cancel, report, *, opener=open_downl
         check_cancelled()
         if total and received != total:
             raise ValueError("模型下載不完整。")
+        if expected_size is not None and received != expected_size:
+            raise ValueError("下載長度與模型倉庫公布的大小不符。")
         check_gguf(staging)
+        if expected_sha or before_publish:
+            digest = hashlib.sha256()
+            with staging.open("rb") as source:
+                while data := source.read(1024 ** 2):
+                    check_cancelled()
+                    digest.update(data)
+            sha = digest.hexdigest()
+            if expected_sha and sha != expected_sha:
+                raise ValueError("模型 SHA-256 與固定版本的倉庫記錄不符。")
+            check_cancelled()
+            if before_publish:
+                before_publish(staging, sha)
         if os.name == "nt":
             staging.rename(target)
         else:
             os.link(staging, target)
         return target
+    except (URLError, ConnectionError, TimeoutError, HTTPException):
+        keep = bool(resumable and checkpoints.record["blocks"] and not cancel.is_set())
+        raise
     finally:
-        staging.unlink(missing_ok=True)
+        if not keep:
+            if checkpoints:
+                checkpoints.clear()
+            else:
+                staging.unlink(missing_ok=True)
