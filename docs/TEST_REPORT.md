@@ -8,9 +8,12 @@
 |---|---|
 | PASS | 33 項本機 Python 測試。使用可控制的 HTTP 回應，在 Windows 子程序中實際強制退出，驗證重開後保留已完成區段且不重抓、取消不發布、上游校驗不符、同名鎖、清理範圍、來源紀錄隨檔案變更而失效，以及引擎健康狀態和媒體預檢。 |
 | PASS | 實際同時下載公開的 `stories260K.gguf` 和 `SmolLM2-135M-Instruct-Q4_K_M.gguf`，兩者皆核對固定版本 LFS SHA-256。SmolLM2 模型卡顯示 Apache-2.0，stories260K 的模型卡授權未取得。 |
+| PASS | 真實 Hugging Face 傳輸寫入 16,777,216 位元組後，強制終止隔離的下載程序。重開工作台後辨識中斷下載，從 16 MiB 接續並驗證完整 SmolLM2 檔案。 |
 | PASS | TypeScript、Vite build 與 `npm run test:layout`。Chromium 測試 1280×900、1024×768、800×600 和 650×720 的深色、淺色。測試資料包含長模型名、長錯誤、模擬的團隊執行中狀態。幾何檢查確認標題維持水平、選擇器在容器內、頁面無水平溢出並有鍵盤焦點。 |
 | PASS | Chromium 以實際本機 Worker 和 ComfyUI CPU 版驗證影片權重缺失、圖片工作執行中、Stable Diffusion 1.5 生成 384×384 PNG，以及在創作原頁載入圖片。代理人頁以先前實機保存的報告驗證事實區與模型回答區。 [實際畫面](UI_DESIGN.md#第三階段精修) |
 | PASS | 由桌面 Worker 管理的 ComfyUI CPU 版實測啟動、再次探測 API、程序異常退出、手動重啟與停止。 |
+| PASS | `6da7d2a` 通過 Windows Server 2022 x64 CI。Python、Worker 封裝、Chromium 版面回歸、Rust／Tauri 建置、靜默安裝、桌面與開始功能表捷徑、WebView2 啟動 Worker、關閉及卸載保留資料均通過。 [Windows CI](https://github.com/liu11-21/local-llm/actions/runs/42556268695) |
+| PASS | 已下載並核對開發安裝包的 ZIP SHA-256、`BUILD.json` 提交及 EXE SHA-256。EXE 校驗值為 `a180311af672f85b027d512753a10923cf29dc9c5bce7e5671672748b5de4eb2`。 [Windows x64 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42556268695/artifacts/13648135425) |
 | FAIL | 本機 Windows 仍以 WinError 4551 封鎖 llama.cpp。新版正確顯示 `ENGINE_POLICY_BLOCKED`。真實聊天與新代理人推理需在允許引擎的環境驗證。 |
 | FAIL | 首輪 Windows CI 將系統暫存路徑的別名視為不安全，四項下載測試因此失敗。修正將上層路徑正規化，並保留下載目錄本身的連結檢查；本機回歸通過。 [首輪 CI](https://github.com/liu11-21/local-llm/actions/runs/42555585807) |
 | FAIL | 第二輪 Windows CI 通過 Python 測試及打包 Worker IPC，Chromium 回歸等待 Vite 就緒時逾時。測試改由 Vite API 啟動並等待服務，取代讀取 CLI 終端輸出。 [第二輪 CI](https://github.com/liu11-21/local-llm/actions/runs/42555964797) |
@@ -18,6 +21,8 @@
 | NEEDS GPU | 影片、音樂、不同 GPU 後端及資源預估的實機驗收。 |
 | NEEDS CLOUD AUTH | 遠端桌機、雲端服務及 Colab Enterprise 的實際請求、作業和費用。 |
 | NOT RUN | 新 Agent 工具協議、Team 協作模式及後續批次；正式簽章、誤判申訴與正式 Release。 |
+
+要重跑本機回歸，在倉庫根目錄執行 `python -m unittest -v`。在 `desktop` 執行 `npm ci`、`npm run test:layout` 和 `npm run build`。版面測試會啟動隔離的本機工作台，使用已安裝的 Chrome；可用 `LOCALLLM_BROWSER` 指定瀏覽器執行檔。
 
 ## 第二階段基礎
 
