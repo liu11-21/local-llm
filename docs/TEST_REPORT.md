@@ -10,6 +10,8 @@
 | PASS | Agent 測試確認等待核准時其他本機工作可執行，且只有原請求 ID 可核准。拒絕與取消不讀取工具。偽造的 PowerShell 請求、額外路徑參數和不合法 JSON 均被拒絕。達上限會保留先前事實。 |
 | PASS | Team 測試驗證三種模式各自的上下文和依賴輸入、循環與缺少依賴拒絕、審查失敗保留初稿、共用運算槽、取消、設定讀寫及外部授權拒絕。 |
 | PASS | TypeScript／Vite 建置。Chromium 保留 1280×900、1024×768、800×600、650×720 的深淺版面測試，另經真實 Worker 及可控的本機 HTTP／SSE 端點驗證 Agent 計畫、逐次核准、兩種工具協定、時間軸、錯誤和取消，以及 Team 角色、依賴、審查、部分失敗和取消。 [實際介面截圖](UI_DESIGN.md#batch-2-工作流程) |
+| PASS | `3417b39` 通過 Windows Server 2022 x64 CI。Python、Worker 封裝、Chromium 版面及工作流程、Rust／Tauri 建置、桌面和開始功能表捷徑、WebView2 啟動與關閉 Worker、卸載保留使用者資料均通過。 [Windows CI](https://github.com/liu11-21/local-llm/actions/runs/42616269570) |
+| PASS | 已下載並核對開發安裝包 ZIP SHA-256、`BUILD.json` 提交與 EXE SHA-256。EXE 校驗值為 `013833d63e2ed4c9100055d0605f4b42570a0a08da8389f67b14dee4a41fca14`。 [Windows 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42616269570/artifacts/13673231196) |
 | NEEDS WINDOWS TEST | 這台 Windows 的真實 llama.cpp 啟動在推理前失敗，Worker 收到程序退出代碼 `3236495362`。原生工具能力、結構化輸出的實際品質及不同本機模型的協作效果需另行驗收。 |
 | NEEDS CLOUD AUTH | 外部 Team 端點的授權拒絕已有回歸測試。實際遠端 SSE、服務額度及資料傳送需在授權環境驗收。 |
 | NOT RUN | 付費請求、雲端 Agent、任意第三方工具、正式簽章和正式 Release。 |
