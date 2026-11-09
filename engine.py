@@ -1,4 +1,5 @@
 """Own a local llama-server process and consume its OpenAI-style SSE stream."""
+from contextlib import closing
 import http.client
 import json
 import os
@@ -27,7 +28,7 @@ class LocalEngine:
         with self.lock:
             return self.process is not None and self.process.poll() is None
 
-    def start(self, executable, model, cancel=None, plan=None, *, context=2048):
+    def start(self, executable, model, cancel=None, plan=None, *, context=2048, native_tools=False):
         cancel = cancel or Event()
         executable = Path(executable).resolve(strict=True)
         model = Path(model).resolve(strict=True)
@@ -53,7 +54,7 @@ class LocalEngine:
                 process = subprocess.Popen(
                     [str(executable), "--model", str(model), "--alias", "local-model",
                      "--host", "127.0.0.1", "--port", str(port), "--ctx-size", str(context),
-                     "--parallel", "1", *placement],
+                     "--parallel", "1", *(["--jinja"] if native_tools else []), *placement],
                     cwd=executable.parent, env=env, stdin=subprocess.DEVNULL,
                     stdout=log, stderr=subprocess.STDOUT,
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
@@ -142,7 +143,7 @@ class LocalEngine:
         finally:
             connection.close()
 
-    def prompt_tokens(self, messages):
+    def prompt_tokens(self, messages, *, tools=None):
         port, key = self.endpoint()
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
         try:
@@ -154,12 +155,20 @@ class LocalEngine:
                     if response.status != 200:
                         raise RuntimeError(f"本機模型無法檢查輸入長度（HTTP {response.status}）。")
                     return json.loads(body)
-            prompt = request("/apply-template", {"messages": messages})["prompt"]
+            prompt = request("/apply-template", {"messages": messages, **({"tools": tools} if tools else {})})["prompt"]
             return len(request("/tokenize", {"content": prompt, "add_special": True})["tokens"])
         finally:
             connection.close()
 
     def stream(self, messages, *, max_tokens=512, temperature=0.4, cancel=None):
+        with closing(self.completion_events(messages, max_tokens=max_tokens, temperature=temperature, cancel=cancel)) as events:
+            for event in events:
+                for choice in event.get("choices", []):
+                    token = choice.get("delta", {}).get("content")
+                    if isinstance(token, str) and token:
+                        yield token
+
+    def completion_events(self, messages, *, max_tokens=512, temperature=0.4, cancel=None, tools=None):
         port, key = self.endpoint()
         body = json.dumps({
             "model": "local-model",
@@ -167,6 +176,7 @@ class LocalEngine:
             "stream": True,
             "max_tokens": max_tokens,
             "temperature": temperature,
+            **({"tools": tools, "tool_choice": "auto", "parallel_tool_calls": False} if tools else {}),
         }, ensure_ascii=False).encode("utf-8")
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=180)
         finished = Event()
@@ -199,10 +209,7 @@ class LocalEngine:
                     event = json.loads(data)
                     if event.get("error"):
                         raise RuntimeError(str(event["error"]))
-                    for choice in event.get("choices", []):
-                        token = choice.get("delta", {}).get("content")
-                        if isinstance(token, str) and token:
-                            yield token
+                    yield event
             raise ConnectionError("模型串流提前結束。")
         finally:
             finished.set()

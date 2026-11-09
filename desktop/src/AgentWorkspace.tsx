@@ -2,12 +2,28 @@ import { useEffect, useState } from 'react'
 import { rpc, type Job, type Params, type Registry } from './api'
 import { SelectModels, gb } from './ui'
 
-type AgentPlan = { id: string; version: number; role: string; model: string; prompt: string; steps: string[] }
+type PlanEvent = {kind: string; at: string; tool?: string; message?: string; code?: string; step?: number; arguments?: Params}
+type AgentPlan = { id: string; version: number; role: string; model: string; prompt: string; steps: string[];
+  state: string; tools: string[]; mode?: string; task_id?: string; error?: string; answer?: string; review_calls?: boolean;
+  pending?: {id: string; tool: string; arguments: Params; decision?: boolean};
+  events: PlanEvent[]; evidence: {tool: string; output: unknown}[] }
 type ToolDefinition = {id: string; name: string; description: string; permission: string; trusted: boolean;
   input_schema: {required: string[]}}
 type AgentReport = [string, string, string, string, string, string, string]
 type ExecutionRecord = { steps: string[]; tools?: string[]; evidence?: Record<string, unknown> }
-const toolNames: Record<string, string> = {hardware:'本機硬體摘要', models:'已安裝模型清單'}
+const toolNames: Record<string, string> = {hardware:'本機硬體摘要', models:'已安裝模型清單', engines:'引擎健康狀態',
+  tasks:'工作台任務狀態', work:'作品生成參數'}
+const eventNames: Record<string, string> = {
+  draft:'建立草稿', revised:'修改版本', awaiting_approval:'等待計畫核准', approved:'已核准計畫',
+  running:'開始執行', paused:'已暫停', tool_requested:'工具請求', approval_wait:'等待工具核准',
+  tool_approved:'核准這次工具', tool_rejected:'拒絕這次工具', tool_result:'工具結果已保存', tool_failed:'工具失敗',
+  model_decision:'模型決策', model_format_error:'模型格式不符', model_answer:'模型已提交回答',
+  step:'執行步驟', completed:'完成', failed:'失敗', cancelled:'取消', expired:'已過期', interrupted:'重開後中斷',
+}
+const limits = [
+  ['steps','最多步驟',1,12,6], ['calls','最多工具調用',0,8,4], ['seconds','總時間（秒）',15,600,240],
+  ['tokens','輸出 Token 上限',64,4096,1536], ['retries','格式重試',0,2,1], ['tool_seconds','單次工具逾時（秒）',1,15,4],
+] as const
 const facts = [
   ['cpu_threads', 'CPU 執行緒'], ['ram_total', '記憶體總量'],
   ['ram_available', '可用記憶體'], ['disk_available', '可用磁碟空間'],
@@ -40,7 +56,7 @@ function Evidence({evidence}: {evidence?: Record<string, unknown>}) {
   </>
 }
 
-export function AgentWorkspace({ models, registry, engine, busy, job, run, report }: {
+export function AgentWorkspace({ models, registry, engine, busy, job, run, report, cancel }: {
   models: string[]
   registry?: Registry['models']
   engine: boolean
@@ -48,12 +64,18 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
   job?: Job
   run: (action: string, payload: Params) => Promise<Job['result']>
   report: (error: unknown) => void
+  cancel: (id: string) => void
 }) {
   const [role, setRole] = useState('general')
   const [model, setModel] = useState('')
   const [prompt, setPrompt] = useState('')
   const [tools, setTools] = useState<string[]>([])
+  const [mode, setMode] = useState('simple')
+  const [review, setReview] = useState(true)
+  const [bounds, setBounds] = useState<Record<string, number>>({})
   const [plan, setPlan] = useState<AgentPlan>()
+  const [history, setHistory] = useState<Pick<AgentPlan,'id'|'prompt'|'state'>[]>([])
+  const [deciding, setDeciding] = useState(false)
   const [planning, setPlanning] = useState(false)
   const [reports, setReports] = useState<AgentReport[]>([])
   const [definitions, setDefinitions] = useState<ToolDefinition[]>([])
@@ -62,29 +84,64 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
   useEffect(() => {
     void rpc<AgentReport[]>('agent-reports').then(setReports, report)
     void rpc<ToolDefinition[]>('agent-tools').then(setDefinitions, report)
+    void refreshHistory()
   }, [])
+
+  async function refreshHistory() {
+    try { setHistory(await rpc('agent-plans')) } catch (error) { report(error) }
+  }
+
+  const planId = plan?.id
+  useEffect(() => {
+    if (!busy || !planId || (job?.plan_id && job.plan_id !== planId)) return
+    let active = true
+    let timer: number | undefined
+    async function check() {
+      try {
+        const next = await rpc<AgentPlan>('agent-plan-get', {id:planId})
+        if (active) { setPlan(next); timer = window.setTimeout(check, 450) }
+      } catch (error) { if (active) report(error) }
+    }
+    void check()
+    return () => {active = false; window.clearTimeout(timer)}
+  }, [busy, planId, job?.plan_id])
 
   async function preview() {
     setPlanning(true)
-    try { setPlan(await rpc('agent-plan', { role, model: selectedModel, prompt, tools, previous:plan?.id, version:plan?.version })) }
+    const previous = plan?.state === 'awaiting_approval' ? plan : undefined
+    try {
+      setPlan(await rpc('agent-plan', {role, model:selectedModel, prompt, tools, mode, review_calls:review,
+        limits:bounds, previous:previous?.id, version:previous?.version}))
+      void refreshHistory()
+    }
     catch (error) { report(error) }
     finally { setPlanning(false) }
   }
 
   async function execute() {
     if (!plan) return
-    const result = await run('agent', { id: plan.id, version:plan.version, confirmed: true })
-    setPlan(undefined)
-    if (result) {
-      try { setReports(await rpc('agent-reports')) }
-      catch (error) { report(error) }
-    }
+    await run('agent', { id: plan.id, version:plan.version, confirmed: true })
+    try {
+      setPlan(await rpc('agent-plan-get', {id:plan.id}))
+      setReports(await rpc('agent-reports'))
+      void refreshHistory()
+    } catch (error) { report(error) }
+  }
+
+  async function decide(approved: boolean) {
+    if (!plan?.pending) return
+    setDeciding(true)
+    try {
+      await rpc('agent-decision', {id:plan.id, request:plan.pending.id, approved})
+      setPlan(await rpc('agent-plan-get', {id:plan.id}))
+    } catch (error) {report(error)}
+    finally {setDeciding(false)}
   }
 
   function invalidatePlan() {
-    if (!plan) return
+    if (!plan || plan.state !== 'awaiting_approval') return
     setPlan(undefined)
-    void rpc('agent-plan-revoke', {id:plan.id, version:plan.version}).catch(report)
+    void rpc('agent-plan-revoke', {id:plan.id, version:plan.version}).then(refreshHistory, report)
   }
 
   function toggleTool(tool: string) {
@@ -97,35 +154,80 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
     <section className="panel">
       <h2>建立代理人任務</h2>
       <p className="muted section-note">選擇角色和需要的資料。先檢閱計畫，再核准本次操作。</p>
+      <label>代理人模式<select value={mode} disabled={disabled} onChange={e => {
+        invalidatePlan()
+        setMode(e.target.value)
+        if (e.target.value === 'simple') setTools(current => current.filter(key =>
+          !definitions.find(tool => tool.id === key)?.input_schema.required.length))
+      }}><option value="simple">簡易模式</option><option value="structured">多步驟 · 結構化輸出</option>
+        <option value="native">多步驟 · 原生工具調用（實驗）</option></select></label>
       <label>角色<select disabled={disabled} value={role} onChange={e => { setRole(e.target.value); invalidatePlan() }}>
         <option value="general">一般助理</option><option value="research">研究整理</option>
         <option value="technical">技術分析</option>
       </select></label>
       <label>本機模型<SelectModels models={models} registry={registry} disabled={disabled || !models.length}
         value={selectedModel} change={value => { setModel(value); invalidatePlan() }}/></label>
+      {mode !== 'simple' && <p className="small section-note">目前選定模型的工具能力未驗證。可嘗試結構化輸出；若無法遵循格式，可切換簡易模式。</p>}
       <label>任務描述<textarea disabled={disabled} value={prompt} maxLength={2400}
         onChange={e => { setPrompt(e.target.value); invalidatePlan() }}/></label>
       <p className="section-note">本次允許的唯讀工具</p>
-      {definitions.filter(tool => tool.trusted && tool.permission === 'read-only' && !tool.input_schema.required.length)
-        .map(tool => <label className="check" key={tool.id}><input type="checkbox" disabled={disabled} checked={tools.includes(tool.id)}
+      {definitions.filter(tool => tool.trusted && tool.permission === 'read-only' && (mode !== 'simple' || !tool.input_schema.required.length))
+        .map(tool => <label className="check" key={tool.id} title={tool.description}><input type="checkbox" disabled={disabled} checked={tools.includes(tool.id)}
           onChange={() => toggleTool(tool.id)}/>{tool.name}</label>)}
+      {mode !== 'simple' && <details><summary>進階執行限制</summary>
+        <label className="check"><input type="checkbox" disabled={disabled} checked={review} onChange={e => {
+          invalidatePlan(); setReview(e.target.checked)
+        }}/>每次調用都要核准</label>
+        <div className="agent-facts">{limits.map(([key,label,min,max,fallback]) =>
+          <label key={key}>{label}<input type="number" min={min} max={max} disabled={disabled} value={bounds[key] ?? fallback}
+            onChange={e => {invalidatePlan(); setBounds(current => ({...current, [key]:Number(e.target.value)}))}}/></label>)}</div>
+      </details>}
       <button className="button section-note" disabled={disabled || !engine || !selectedModel || !prompt.trim()}
         onClick={preview}>{planning ? '準備中…' : '預覽執行計畫'}</button>
       {!engine && <p className="small muted">請先在運算環境安裝 llama.cpp。</p>}
-      {plan && <section className="estimate"><div><strong>待核准 · {plan.role}</strong>
+      {plan?.state === 'awaiting_approval' && <section className="estimate"><div><strong>待核准 · {plan.role}</strong>
         <p>{plan.model} · 版本 {plan.version}</p><ol>{plan.steps.map((step, index) => <li key={step}>{index + 1}. {step}</li>)}</ol>
+        <p>{plan.tools.length ? plan.tools.map(tool => toolNames[tool] || tool).join('、') : '不使用工具'} · {plan.review_calls ? '逐次核准' : '核准後可在清單內使用'}</p>
         <div className="row section-note"><button className="button primary" disabled={disabled} onClick={execute}>核准並執行</button>
-          <button className="button" disabled={disabled} onClick={invalidatePlan}>撤銷計畫</button></div>
+          <button className="button" disabled={disabled} onClick={invalidatePlan}>撤銷計畫</button>
+          <button className="button" disabled={disabled} onClick={() => setPlan(undefined)}>保留並另建</button></div>
       </div></section>}
     </section>
     <section className="panel">
       <h2>代理人報告</h2>
+      {plan && <section className="agent-record" aria-label="執行時間軸">
+        <h3>執行時間軸</h3><p className="pre">{plan.prompt}</p><p className="muted small">{plan.model} · {eventNames[plan.state] || plan.state}</p>
+        {plan.pending && plan.state === 'paused' && plan.pending.decision === undefined && <div className="approval-box">
+          <h3>核准這次工具調用</h3><p>{toolNames[plan.pending.tool] || plan.pending.tool} · 唯讀本機資料</p>
+          <pre className="pre">{JSON.stringify(plan.pending.arguments, null, 2)}</pre>
+          <div className="row"><button className="button primary" disabled={deciding} onClick={() => void decide(true)}>允許這一次</button>
+            <button className="button" disabled={deciding} onClick={() => void decide(false)}>拒絕這一次</button></div>
+        </div>}
+        {busy && plan.task_id && <button className="button section-note" onClick={() => cancel(plan.task_id!)}>取消代理人任務</button>}
+        <ol className="agent-events">{plan.events.map((event,index) => <li key={index}>
+          <time>{new Date(event.at).toLocaleTimeString()}</time> <b>{eventNames[event.kind] || event.kind}</b>
+          {event.step ? ' ' + event.step : ''}{event.tool && ' · ' + (toolNames[event.tool] || event.tool)}
+          {event.message && <p className="pre small">{event.message}</p>}
+        </li>)}</ol>
+        {plan.error && <p role="alert" className="creation-error pre">{plan.error}</p>}
+        {plan.evidence.length > 0 && <><h3>工具取得的事實</h3>
+          {plan.evidence.map((item,index) => <section key={index} className="agent-record">
+            <b>{index+1}. {toolNames[item.tool] || item.tool}</b>
+            <Evidence evidence={{[item.tool]:item.output}}/>
+          </section>)}</>}
+        {plan.answer && <><h3>最終回答</h3><p className="pre">{plan.answer}</p></>}
+      </section>}
       {busy && <section className="agent-record" aria-label="本次執行"><h3>本次執行</h3>
         <p role="status" className="muted">{job?.message || '正在提交…'}</p>
         {job?.steps?.length && <ol>{job.steps.map((step, index) => <li key={index}>{step}</li>)}</ol>}
         {job?.answer && <><h3>模型正在整理回答</h3><p className="pre">{job.answer}</p></>}
       </section>}
       {!reports.length && <p className="empty">完成任務後，報告與已執行步驟會儲存在這裡。</p>}
+      {history.length > 0 && <details><summary>計畫歷史</summary>
+        {history.map(item => <button className="work-link" key={item.id} disabled={busy || planning}
+          onClick={() => void rpc<AgentPlan>('agent-plan-get',{id:item.id}).then(setPlan,report)}>
+          <span>{item.prompt}<small>{eventNames[item.state] || item.state}</small></span></button>)}
+      </details>}
       {reports.map(([id, roleName, modelName, task, answer, record, created]) => {
         const {steps, evidence, tools} = executionRecord(record)
         const approved = tools ?? Object.keys(evidence ?? {})

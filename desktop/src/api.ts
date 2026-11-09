@@ -29,7 +29,7 @@ export type Info = {
 }
 export type Chat = [string, string]
 export type Message = { role: string; content: string }
-export type TaskState = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'interrupted'
+export type TaskState = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted'
 export type Task = {
   id: string; action: string; kind: string; title?: string; state: TaskState; message: string;
   created: string; started?: string | null; finished?: string | null; runtime?: string;
@@ -38,7 +38,7 @@ export type Task = {
 }
 export type Usage = { input: number; context: number; max_output: number; omitted_turns: number }
 export type Job = {
-  id: string; state: string; message: string; answer?: string; received?: number; total?: number; plan?: Plan;
+  id: string; state: string; message: string; answer?: string; received?: number; total?: number; plan?: Plan; plan_id?: string;
   members?: string[]; steps?: string[]; usage?: Usage;
   result?: { message?: string; answer?: string; folder?: string; name?: string; file?: string; plan?: Plan; usage?: Usage; drafts?: {name: string; text: string}[] };
 }

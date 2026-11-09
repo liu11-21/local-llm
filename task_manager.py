@@ -8,7 +8,7 @@ from sqlite3 import Error as DatabaseError
 from comfy_runtime import PROFILES
 from downloads import model_filename
 
-ACTIVE = {"queued", "running"}
+ACTIVE = {"queued", "running", "paused"}
 RETRYABLE = {"download", "engine-install", "comfy-install", "update-download"}
 CAPACITY = {"compute": 1, "network": 2, "remote": 2}
 RESOURCES = {"compute": ["local-compute"], "network": ["network", "disk"], "remote": ["network", "external-runtime"]}
@@ -49,6 +49,10 @@ class Task:
     key: str | None
     stop: Event = field(default_factory=Event)
     thread: Thread | None = None
+
+
+class PauseTask(Exception):
+    """Release the lane while the user decides whether to continue the same task."""
 
 
 class TaskManager:
@@ -102,7 +106,7 @@ class TaskManager:
                     break
                 if task.public["lane"] != lane or task.public["state"] != "queued":
                     continue
-                task.public.update(state="running", started=timestamp(), message="正在準備…")
+                task.public.update(state="running", started=task.public["started"] or timestamp(), message="正在準備…")
                 self._persist(task)
                 task.thread = Thread(target=self._run, args=(task,), daemon=True)
                 task.thread.start()
@@ -125,13 +129,15 @@ class TaskManager:
             if task.stop.is_set():
                 state = "interrupted" if self.closed else "cancelled"
                 message = detail if isinstance(failure, InterruptedError) else "已停止任務。"
+            elif isinstance(failure, PauseTask):
+                state, message = "paused", detail
             elif failure:
                 state, message = "failed", detail
             else:
                 state, message = "completed", (result or {}).get("message") or "已完成。"
-            task.public.update(state=state, finished=timestamp(), message=message, result=result,
+            task.public.update(state=state, finished=None if state == "paused" else timestamp(), message=message, result=result,
                                error=detail if state == "failed" else None)
-            if task.public["action"] not in RETRYABLE or state == "completed":
+            if state != "paused" and (task.public["action"] not in RETRYABLE or state == "completed"):
                 task.payload = {}
             self._persist(task)
             self._dispatch()
@@ -160,13 +166,35 @@ class TaskManager:
                 raise ValueError("找不到這筆工作。")
             if cancel and task.public["state"] in ACTIVE:
                 task.stop.set()
-                if task.public["state"] == "queued":
-                    task.public.update(state="cancelled", finished=timestamp(), message="已取消排隊。")
+                if task.public["state"] in {"queued", "paused"}:
+                    task.public.update(state="cancelled", finished=timestamp(), message="已取消任務。")
                     self._persist(task)
                     self._trim()
                 else:
                     task.public.update(message="正在取消…")
             return dict(task.public)
+
+    def resume(self, task_id, record_decision):
+        with self.lock:
+            task = self.tasks.get(task_id)
+            if self.closed or task is None or task.public["state"] != "paused":
+                raise ValueError("任務目前未在等待核准。")
+            record_decision()
+            task.public.update(state="queued", message="已記錄決策，等候可用資源…")
+            self.tasks[task_id] = self.tasks.pop(task_id)
+            self._persist(task)
+            self._dispatch()
+
+    def expire_pause(self, task_id):
+        with self.lock:
+            task = self.tasks.get(task_id)
+            if task is None or task.public["state"] != "paused":
+                return
+            message = "AGENT_TIME_LIMIT · 工具核准等待已逾時。"
+            task.public.update(state="failed", message=message, error=message, finished=timestamp())
+            task.payload = {}
+            self._persist(task)
+            self._trim()
 
     def retry(self, task_id):
         with self.lock:
@@ -186,6 +214,6 @@ class TaskManager:
             for task in self.tasks.values():
                 if task.public["state"] in ACTIVE:
                     task.stop.set()
-                    if task.public["state"] == "queued":
+                    if task.public["state"] in {"queued", "paused"}:
                         task.public.update(state="interrupted", finished=timestamp(), message="工作台已關閉。")
                         self._persist(task)

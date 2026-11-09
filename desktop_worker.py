@@ -17,9 +17,11 @@ import hmac
 import shutil
 import tempfile
 from threading import Thread
+from time import time
 import zipfile
 
 from agent_plans import AgentPlans, append_event
+from agent_runtime import AgentRuntime, Deadline, limits as agent_limits, local_decision
 from app_update import check_workspace_update, download_update
 from catalog import model_files, model_source, pinned_model, search_models
 from colab_runtime import ColabAdapter
@@ -103,12 +105,16 @@ class Desktop(Workspace):
         self.llama_health = EngineHealth(self.local.running, self.local.health_probe)
         self.comfy_health = EngineHealth(self.comfy.running, self.comfy.health_probe)
         self.active = None
+        self.active_native = False
         self.providers = Providers()
         self.database = self.data / "desktop.sqlite3"
         self.download_cache = self.models / ".localllm-downloads"
         self.hardware_cache = None
         self.agent_plans = AgentPlans(self.connect)
         self.agent_tools = agent_tools(self)
+        self.agent_runtime = AgentRuntime(self.agent_plans, self.agent_tools, self.prepare_agent,
+                                         lambda plan, state, cap, stop: local_decision(
+                                             self.local, self.agent_tools, plan, state, cap, stop))
         self.update_candidate = None
         self.update_state = {"state": "idle"}
         self.media_checks = {}
@@ -126,10 +132,10 @@ class Desktop(Workspace):
               CREATE TABLE IF NOT EXISTS creations(name TEXT PRIMARY KEY, details TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS model_sources(name TEXT PRIMARY KEY COLLATE NOCASE, details TEXT NOT NULL);
             """)
-            db.execute("UPDATE tasks SET state='interrupted', message='工作台已關閉。' WHERE state IN ('running','queued')")
+            db.execute("UPDATE tasks SET state='interrupted', message='工作台已關閉。' WHERE state IN ('running','queued','paused')")
             db.execute("""UPDATE task_metadata SET snapshot=json_set(snapshot, '$.state', 'interrupted',
                           '$.finished', ?, '$.message', '工作台已關閉。')
-                          WHERE json_extract(snapshot,'$.state') IN ('queued','running')""", (timestamp(),))
+                          WHERE json_extract(snapshot,'$.state') IN ('queued','running','paused')""", (timestamp(),))
             db.execute("CREATE INDEX IF NOT EXISTS messages_chat ON messages(chat)")
             self.agent_plans.initialize(db)
             if db.execute("PRAGMA user_version").fetchone()[0] < 3:
@@ -203,19 +209,22 @@ class Desktop(Workspace):
         name = field(data, "model", 180)
         mode = data.get("mode", "auto")
         context = data.get("context", 2048)
+        native = data.get("native_tools") is True
         if mode not in ("auto", "cpu") or context not in (2048, 4096, 8192):
             raise ValueError("請選擇有效的運算模式與上下文長度。")
         if self.comfy.running():
             raise ValueError("請先停止 ComfyUI，釋放記憶體後再載入文字模型。")
         path, executable = self.model(name), self.engine()
-        if self.active and self.active[:3] == (name, mode, context) and self.llama_health.usable():
+        if (self.active and self.active[:3] == (name, mode, context) and self.active_native == native
+                and self.llama_health.usable()):
             return self.active[-1]
         with self.llama_health.transition(True, cancel):
-            plan = self.load_model(path, executable, mode, context, cancel, update)
+            plan = self.load_model(path, executable, mode, context, cancel, update, native)
         self.active = (name, mode, context, plan)
+        self.active_native = native
         return plan
 
-    def load_model(self, path, executable, mode, context, cancel, update):
+    def load_model(self, path, executable, mode, context, cancel, update, native):
         self.local.stop()
         self.active = None
         update(message="正在估算系統記憶體與 GPU 分層…")
@@ -227,12 +236,12 @@ class Desktop(Workspace):
             raise ValueError("可用記憶體可能不足。請關閉其他程式、改用更小的模型，或手動選擇其他運算環境。")
         update(message="正在載入模型…", plan=asdict(plan))
         try:
-            self.local.start(executable, path, cancel, plan, context=context)
+            self.local.start(executable, path, cancel, plan, context=context, native_tools=native)
         except RuntimeError as error:
             if plan.layers and not cancel.is_set() and (ram is None or estimate_ram(path.stat().st_size) <= ram):
                 plan = allocate(path.stat().st_size, plan.total_layers, [], mmap_args=plan.mmap_args)
                 update(message="GPU 載入失敗，正在改用 CPU…", plan=asdict(plan))
-                self.local.start(executable, path, cancel, plan, context=context)
+                self.local.start(executable, path, cancel, plan, context=context, native_tools=native)
             else:
                 raise error
         return asdict(plan)
@@ -241,6 +250,20 @@ class Desktop(Workspace):
         with self.llama_health.transition(False):
             self.local.stop()
             self.active = None
+
+    def prepare_agent(self, plan, cancel, update):
+        try:
+            self.prepare({"model": plan["model"], "context": 4096, "native_tools": plan["mode"] == "native"}, cancel, update)
+        except Exception:
+            cancel.check()
+            raise
+
+    def agent_plan_status(self, plan_id):
+        plan = self.agent_plans.get(plan_id)
+        if plan["state"] == "paused" and plan.get("deadline", 0) <= time():
+            self.scheduler.expire_pause(plan["task_id"])
+            return self.agent_plans.get(plan_id)
+        return plan
 
     def engine_health(self):
         active = [task for task in self.scheduler.list() if task["state"] == "running"]
@@ -306,8 +329,13 @@ class Desktop(Workspace):
 
     def execute_agent(self, plan_id, cancel, update):
         plan = self.agent_plans.get(plan_id)
+        plan.setdefault("mode", "simple")
+        plan.setdefault("limits", agent_limits({}))
         if plan["state"] != "running" or not plan["approval"]:
             raise ValueError("代理人計畫未取得執行授權。")
+        if plan["mode"] != "simple":
+            return self.agent_runtime.run(plan_id, cancel, update)
+        deadline = Deadline(cancel, time() + plan["limits"]["seconds"])
         steps = []
 
         def record(kind, **details):
@@ -321,24 +349,21 @@ class Desktop(Workspace):
             record("step", message=step)
             update(steps=steps.copy(), message=step)
 
-        prepared = messages_for_plan(plan, self.agent_tools, cancel, report, record)
-        if prepared is None or cancel.is_set():
-            return None
+        prepared = messages_for_plan(plan, self.agent_tools, deadline, report, record)
+        deadline.check()
         messages, evidence = prepared
-        self.prepare({"model": plan["model"], "context": 4096}, cancel, update)
-        budget = 320
+        self.prepare_agent(plan, deadline, update)
+        budget = min(320, plan["limits"]["tokens"])
         if self.local.prompt_tokens(messages) + budget > 4096:
             raise ValueError("代理人任務超出模型上下文長度，請縮短描述或減少工具。")
         report(plan["steps"][-1])
         answer = ""
-        with closing(self.local.stream(messages, max_tokens=budget, temperature=0.2, cancel=cancel)) as stream:
+        with closing(self.local.stream(messages, max_tokens=budget, temperature=0.2, cancel=deadline)) as stream:
             for fragment in stream:
-                if cancel.is_set():
-                    return None
+                deadline.check()
                 answer += fragment
                 update(answer=answer)
-        if cancel.is_set():
-            return None
+        deadline.check()
         if not answer.strip():
             raise RuntimeError("本機模型未傳回回答。")
         with self.agent_plans.edit(plan_id) as latest:
@@ -496,7 +521,11 @@ class Desktop(Workspace):
             self.model(plan["model"])
             return self.agent_plans.create(plan, data.get("previous"), data.get("version"))
         if op == "agent-plan-get":
-            return self.agent_plans.get(data.get("id"))
+            return self.agent_plan_status(data.get("id"))
+        if op == "agent-decision":
+            plan = self.agent_plan_status(data.get("id"))
+            return self.scheduler.resume(plan["task_id"], lambda: self.agent_runtime.decision(
+                plan["id"], data.get("request"), data.get("approved")))
         if op == "agent-plans":
             return self.agent_plans.list()
         if op == "agent-plan-revoke":

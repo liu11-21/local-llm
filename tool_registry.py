@@ -91,7 +91,7 @@ class ToolRegistry:
     def manifests(self):
         return [{**asdict(tool), "error_codes": list(ERRORS)} for tool, _ in self.entries.values()]
 
-    def authorize(self, key, args, allowed, granted=True):
+    def definition(self, key, allowed):
         entry = self.entries.get(key)
         if entry is None:
             raise ToolError("TOOL_UNKNOWN")
@@ -99,6 +99,10 @@ class ToolRegistry:
         if (key not in allowed or not tool.trusted or tool.permission != "read-only"
                 or tool.network or tool.modifies_state):
             raise ToolError("TOOL_FORBIDDEN")
+        return tool, handler
+
+    def authorize(self, key, args, allowed, granted=True):
+        tool, handler = self.definition(key, allowed)
         if not conforms(tool.input_schema, args):
             raise ToolError("TOOL_PARAMETERS")
         if not granted:
@@ -169,4 +173,22 @@ def builtins(desktop):
                            array(obj(action=string(32), state=string(32)), 12)),
                       lambda _args, _stop: [{key: item[key] for key in ("action", "state")}
                                              for item in desktop.task_list()[:12]])
+    def work(args, _stop):
+        name = args["name"]
+        path = desktop.outputs / name
+        if path.is_symlink() or not path.is_file() or path.resolve().parent != desktop.outputs.resolve():
+            raise ValueError("找不到作品。")
+        with desktop.connect() as db:
+            row = db.execute("SELECT details FROM creations WHERE name=?", (name,)).fetchone()
+        if not row:
+            raise ValueError("作品沒有生成參數。")
+        import json
+        data = json.loads(row[0])
+        return {"name": name, "workflow": data["workflow"], "options": [
+            {"parameter": key, "value": value} for key, value in data["options"].items() if type(value) is int]}
+
+    registry.register(Tool("work", "作品生成參數", "以已知作品檔名查詢流程及數值參數", "1.0",
+                           obj(name=string(17, r"^[a-f0-9]{12}\.(png|webm|flac)$")),
+                           obj(name=string(17), workflow=string(40),
+                               options=array(obj(parameter=string(30), value={"type": "integer"}), 16))), work)
     return registry

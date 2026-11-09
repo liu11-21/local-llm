@@ -8,8 +8,8 @@ const labels: Record<string, string> = {
   'engine-start': '啟動文字引擎', 'engine-stop': '停止文字引擎', 'engine-install': '安裝 llama.cpp',
   'comfy-install': '安裝 ComfyUI', 'comfy-start': '啟動 ComfyUI', 'comfy-stop': '停止 ComfyUI', 'update-download': '下載工作台更新',
 }
-const states = { queued:'排隊中', running:'進行中', completed:'完成', failed:'失敗', cancelled:'已取消', interrupted:'已中斷' }
-export const activeTask = (task: Task) => task.state === 'queued' || task.state === 'running'
+const states = { queued:'排隊中', running:'進行中', paused:'等待核准', completed:'完成', failed:'失敗', cancelled:'已取消', interrupted:'已中斷' }
+export const activeTask = (task: Task) => task.state === 'queued' || task.state === 'running' || task.state === 'paused'
 export type Run = (action: string, data: Params, observe?: (job: Job) => void) => Promise<Job['result']>
 
 export function useTaskQueue(report: (error: unknown) => void, refreshed: () => Promise<void>) {
