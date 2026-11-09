@@ -12,7 +12,9 @@ const states: Record<string, string> = {
   CANCELLING: '取消中', CANCELLED: '已取消', PAUSED: '已暫停', EXPIRED: '已過期', PARTIALLY_SUCCEEDED: '部分完成',
 }
 
-export function ColabWorkspace({ policy, report }: { policy: string; report: (error: unknown) => void }) {
+export function ColabWorkspace({ policy, report, onConnectionChange }: {
+  policy: string; report: (error: unknown) => void; onConnectionChange: () => Promise<void>
+}) {
   const [session, setSession] = useState<Colab>()
   const [project, setProject] = useState('')
   const [region, setRegion] = useState('us-central1')
@@ -38,6 +40,7 @@ export function ColabWorkspace({ policy, report }: { policy: string; report: (er
       setSession(connected)
       setToken('')
       setJobs([])
+      await onConnectionChange()
     } catch (error) { report(error) }
     finally { setBusy(false) }
   }
@@ -79,6 +82,7 @@ export function ColabWorkspace({ policy, report }: { policy: string; report: (er
         <button className="button" disabled={busy} onClick={async () => {
           try {
             setSession(await rpc('colab-disconnect'))
+            await onConnectionChange()
             setJobs([]); setTemplate(''); setConfirmed(false); setAccepted(undefined)
           } catch (error) { report(error) }
         }}>中斷連線</button>

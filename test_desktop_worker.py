@@ -5,6 +5,7 @@ import subprocess
 import sys
 from tempfile import TemporaryDirectory
 from threading import Event
+from time import monotonic, sleep
 import unittest
 from unittest.mock import patch
 
@@ -87,6 +88,30 @@ class RuntimePolicyTests(unittest.TestCase):
 
 
 class ConversationTests(unittest.TestCase):
+    def test_media_readiness_uses_live_loader_inventory_and_reports_unavailable(self):
+        with TemporaryDirectory() as directory:
+            desktop = Desktop(Path(directory))
+            data = {"kind": "image", "port": 8188}
+
+            def result():
+                until = monotonic() + 3
+                while monotonic() < until:
+                    state = desktop.rpc("media-readiness", data)
+                    if state["state"] != "checking":
+                        return state
+                    sleep(.01)
+                self.fail("media readiness did not complete")
+
+            with (
+                patch.object(ComfyClient, "json", return_value={"system": {}}),
+                patch.object(ComfyClient, "missing_models", return_value=["needed.safetensors"]),
+            ):
+                self.assertEqual(desktop.rpc("media-readiness", data)["state"], "checking")
+                self.assertEqual(result()["missing"], ["needed.safetensors"])
+            with patch.object(ComfyClient, "json", side_effect=ConnectionError):
+                desktop.rpc("media-readiness", {**data, "refresh": True})
+                self.assertEqual(result()["state"], "unavailable")
+
     def test_regeneration_keeps_original_on_failure_and_updates_only_final_reply(self):
         with TemporaryDirectory() as directory:
             desktop = Desktop(Path(directory))

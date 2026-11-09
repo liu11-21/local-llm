@@ -2,6 +2,7 @@
 import argparse
 from contextlib import closing, contextmanager
 from dataclasses import asdict
+from http.client import HTTPException
 import json
 import os
 from pathlib import Path
@@ -29,7 +30,7 @@ from engine import LocalEngine
 from engine_health import EngineHealth
 from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
-from media import DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
+from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
 from registries import model_identity, recent_works, workspace_registry
 from runtime_provider import Providers, route
 from task_manager import TaskManager, timestamp
@@ -107,6 +108,7 @@ class Desktop(Workspace):
         self.agent_plan = None
         self.update_candidate = None
         self.update_state = {"state": "idle"}
+        self.media_checks = {}
         with self.connect() as db:
             db.executescript("""
               PRAGMA journal_mode=WAL;
@@ -242,6 +244,38 @@ class Desktop(Workspace):
         return {"llama": self.llama_health.snapshot(engine_path(self.data) is not None, llama_busy),
                 "comfyui": self.comfy_health.snapshot(comfy_installed, comfy_busy)}
 
+    def media_readiness(self, data):
+        kind = field(data, "kind", 12)
+        if kind not in MODELS:
+            raise ValueError("不支援的創作類型。")
+        port = self.comfy.port if self.comfy.running() else data.get("port")
+        if type(port) is not int or not 1024 <= port <= 65535:
+            raise ValueError("請輸入有效的 ComfyUI 連接埠。")
+        with self.lock:
+            existing = self.media_checks.get(kind)
+            if existing and existing["state"] == "checking":
+                return {"state": "checking", "port": port}
+            if existing and existing["port"] == port and data.get("refresh") is not True:
+                return existing
+            self.media_checks[kind] = {"state": "checking", "port": port}
+
+        def check():
+            state = {"port": port, "state": "unavailable"}
+            try:
+                client = ComfyClient(port, timeout=1.5)
+                stats = client.json("/system_stats")
+                if not isinstance(stats, dict) or not isinstance(stats.get("system"), dict):
+                    raise ValueError("無法識別的 ComfyUI API")
+                missing = client.missing_models(kind)
+                state.update(state="missing" if missing else "ready", missing=missing)
+            except (OSError, HTTPException, ValueError, RuntimeError, TypeError, AttributeError):
+                pass
+            with self.lock:
+                self.media_checks[kind] = state
+
+        Thread(target=check, daemon=True).start()
+        return {"state": "checking", "port": port}
+
     def start_update_check(self):
         with self.lock:
             if self.update_state["state"] == "checking":
@@ -294,7 +328,7 @@ class Desktop(Workspace):
         with self.connect() as db:
             db.execute("INSERT INTO agent_reports(id,role,model,prompt,answer,steps) VALUES(?,?,?,?,?,?)",
                        (plan["id"], plan["role"], plan["model"], plan["prompt"], answer,
-                        json.dumps({"steps": steps, "evidence": evidence}, ensure_ascii=False)))
+                        json.dumps({"steps": steps, "evidence": evidence, "tools": plan["tools"]}, ensure_ascii=False)))
         return {"answer": answer, "message": "代理人報告已儲存。"}
 
     def perform(self, action, data, cancel, update):
@@ -437,6 +471,8 @@ class Desktop(Workspace):
     def rpc(self, op, data):
         if op == "engine-health":
             return self.engine_health()
+        if op == "media-readiness":
+            return self.media_readiness(data)
         if op == "agent-plan":
             plan = create_plan(data)
             self.model(plan["model"])

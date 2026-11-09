@@ -79,7 +79,7 @@ class LocalEngine:
                 if process.poll() is not None:
                     self.log.seek(0, os.SEEK_END)
                     self.log.seek(max(0, self.log.tell() - 4096))
-                    detail = self.log.read().decode("utf-8", errors="replace").strip()
+                    detail = self.log.read().decode("utf-8", errors="replace").replace(key, "[已遮蔽金鑰]").strip()
                     raise RuntimeError(f"llama-server 結束（代碼 {process.returncode}）。\n{detail[-1800:]}")
             connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
             try:

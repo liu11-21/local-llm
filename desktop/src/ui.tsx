@@ -16,10 +16,10 @@ export function Estimate({ plan }: { plan: Plan }) {
   </div></div>
 }
 
-export function SelectModels({ models, value, change, registry, disabled }: {
-  models: string[]; value: string; change: (model: string) => void; registry?: Registry['models']; disabled?: boolean
+export function SelectModels({ models, value, change, registry, disabled, ariaLabel }: {
+  models: string[]; value: string; change: (model: string) => void; registry?: Registry['models']; disabled?: boolean; ariaLabel?: string
 }) {
-  return <select value={value} disabled={disabled} onChange={e => change(e.target.value)}>
+  return <select value={value} aria-label={ariaLabel} disabled={disabled} onChange={e => change(e.target.value)}>
     <option value="">選擇模型</option>
     {models.map(id => {
       const record = registry?.find(model => model.id === id)

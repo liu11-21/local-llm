@@ -50,6 +50,8 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run test:layout
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           cargo metadata --locked --format-version 1 --manifest-path src-tauri/Cargo.toml | Out-Null
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           npm run tauri -- build --target x86_64-pc-windows-msvc -- --locked

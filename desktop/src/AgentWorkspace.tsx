@@ -1,16 +1,41 @@
 import { useEffect, useState } from 'react'
 import { rpc, type Job, type Params, type Registry } from './api'
-import { SelectModels } from './ui'
+import { SelectModels, gb } from './ui'
 
 type AgentPlan = { id: string; role: string; model: string; prompt: string; steps: string[] }
 type AgentReport = [string, string, string, string, string, string, string]
-type ExecutionRecord = { steps: string[]; evidence?: Record<string, unknown> }
+type ExecutionRecord = { steps: string[]; tools?: string[]; evidence?: Record<string, unknown> }
+const toolNames: Record<string, string> = {hardware:'本機硬體摘要', models:'已安裝模型清單'}
+const facts = [
+  ['cpu_threads', 'CPU 執行緒'], ['ram_total', '記憶體總量'],
+  ['ram_available', '可用記憶體'], ['disk_available', '可用磁碟空間'],
+] as const
 
 function executionRecord(raw: string): ExecutionRecord {
   try {
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? { steps: parsed } : parsed
+    if (Array.isArray(parsed)) return {steps: parsed.filter(item => typeof item === 'string')}
+    if (parsed && typeof parsed === 'object') return { ...parsed,
+      steps: Array.isArray(parsed.steps) ? parsed.steps.filter((item: unknown) => typeof item === 'string') : [] }
+    return {steps:[]}
   } catch { return { steps: [] } }
+}
+
+function Evidence({evidence}: {evidence?: Record<string, unknown>}) {
+  const hardware = evidence?.hardware
+  const values = hardware && typeof hardware === 'object' ? hardware as Record<string, unknown> : undefined
+  const models = Array.isArray(evidence?.models) ? evidence.models.filter(item => typeof item === 'string') : undefined
+  if (!values && !models) return <p className="small muted">此報告沒有結構化工具資料。</p>
+  return <>
+    {values && <dl className="agent-facts">{facts.map(([key,label]) => {
+      const value = values[key]
+      return <div key={key}><dt>{label}</dt><dd>{typeof value === 'number' ?
+        key === 'cpu_threads' ? value.toLocaleString() : gb(value) : '未知'}</dd></div>
+    })}</dl>}
+    {models && (models.length ? <ul>{models.map(model => <li key={model}>{model}</li>)}</ul> :
+      <p className="small muted">工具未找到已安裝的模型。</p>)}
+    <details><summary>工具原始資料</summary><pre className="pre">{JSON.stringify(evidence, null, 2)}</pre></details>
+  </>
 }
 
 export function AgentWorkspace({ models, registry, engine, busy, job, run, report }: {
@@ -86,18 +111,30 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
     </section>
     <section className="panel">
       <h2>代理人報告</h2>
-      {busy && job?.steps?.map(step => <p className="muted" key={step}>{step}</p>)}
-      {busy && job?.answer && <p className="pre">{job.answer}</p>}
+      {busy && <section className="agent-record" aria-label="本次執行"><h3>本次執行</h3>
+        <p role="status" className="muted">{job?.message || '正在提交…'}</p>
+        {job?.steps?.length && <ol>{job.steps.map((step, index) => <li key={index}>{step}</li>)}</ol>}
+        {job?.answer && <><h3>模型正在整理回答</h3><p className="pre">{job.answer}</p></>}
+      </section>}
       {!reports.length && <p className="empty">完成任務後，報告與已執行步驟會儲存在這裡。</p>}
-      {reports.map(([id, roleName, modelName, task, answer, record, created]) => <details key={id}>
-        <summary>{task.slice(0, 60)}</summary>
-        <p className="muted">{roleName} · {modelName} · {created} UTC</p>
-        <ul>{executionRecord(record).steps.map(step => <li key={step}>{step}</li>)}</ul>
-        {executionRecord(record).evidence && <details><summary>工具原始資料</summary>
-          <pre className="pre">{JSON.stringify(executionRecord(record).evidence, null, 2)}</pre>
-        </details>}
-        <p className="pre">{answer}</p>
-      </details>)}
+      {reports.map(([id, roleName, modelName, task, answer, record, created]) => {
+        const {steps, evidence, tools} = executionRecord(record)
+        const approved = tools ?? Object.keys(evidence ?? {})
+        return <details className="agent-report" key={id}>
+          <summary>{task.slice(0, 60)}</summary>
+          <section className="agent-record"><h3>任務描述</h3><p className="pre">{task}</p>
+            <p className="small muted">{roleName} · {modelName} · {created} UTC</p>
+            <h3>核准工具</h3><p>{approved.length ? approved.map(tool => toolNames[tool] || tool).join('、') :
+              tools || evidence ? '未使用工具' : '舊報告未記錄'}</p>
+            <h3>執行步驟</h3><ol>{steps.map((step, index) => <li key={index}>{step}</li>)}</ol>
+          </section>
+          <section className="agent-record"><h3>工具取得的事實</h3><Evidence evidence={evidence}/></section>
+          <section className="agent-record"><h3>模型整理的最終回答</h3>
+            <p className="small muted">模型可能誤讀或遺漏數值。若回答與工具資料有出入，請以上方工具資料為準。</p>
+            <p className="pre">{answer}</p>
+          </section>
+        </details>
+      })}
     </section>
   </div>
 }

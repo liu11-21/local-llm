@@ -33,13 +33,18 @@ export function TeamWorkspace({info, policy, run, report}: {
   }
   return <>
           <Panel title="建立模型團隊" description="至少選擇兩個成員。本機依資源預估決定是否並行；使用外部端點前會先確認。">
-            {team.map((m,i)=><div className="list-row" key={i}><span>成員 {i+1} {i===lead ? '· 主模型' : ''}<small>{job?.members?.[i]}</small></span>
-              <select className="team-runtime" aria-label={`成員 ${i+1} 運算環境`} disabled={busy} value={teamRuntimes[i]} onChange={e=>{
+            {team.map((m,i)=><div className="team-member" key={i}>
+              <div className="team-member-title"><strong>成員 {i+1}</strong>{i===lead && <span className="tag">主模型</span>}</div>
+              <div className="team-member-actions">
+                {lead!==i && <button className="button" disabled={busy} onClick={()=>setLead(i)}>設為主模型</button>}
+                {team.length>2 && <button className="icon" aria-label={`移除成員 ${i+1}`} disabled={busy} onClick={()=>{setTeam(t=>t.filter((_,j)=>j!==i));setTeamRuntimes(t=>t.filter((_,j)=>j!==i));setLead(l=>l>=i?Math.max(0,l-1):l)}}><X size={16}/></button>}
+              </div>
+              <label>運算環境<select aria-label={`成員 ${i+1} 運算環境`} disabled={busy} value={teamRuntimes[i]} onChange={e=>{
                 const value=e.target.value;setTeamRuntimes(t=>t.map((old,j)=>j===i?value:old));setTeam(t=>t.map((old,j)=>j===i?'':old))
-              }}><option value="local">本機</option>{info?.providers.map(p=><option value={p.id} key={p.id}>{p.label}</option>)}</select>
-              <SelectModels models={teamRuntimes[i]==='local'?models:info?.providers.find(p=>p.id===teamRuntimes[i])?.models||[]} value={m} registry={teamRuntimes[i]==='local' ? info?.registry.models : undefined} disabled={busy} change={v=>setTeam(t=>t.map((old,j)=>j===i?v:old))}/>
-              <button className="button" disabled={busy || lead===i} onClick={()=>setLead(i)}>設為主模型</button>
-              <button className="icon" title="移除成員" disabled={busy || team.length<=2} onClick={()=>{setTeam(t=>t.filter((_,j)=>j!==i));setTeamRuntimes(t=>t.filter((_,j)=>j!==i));setLead(l=>l>=i?Math.max(0,l-1):l)}}><X size={16}/></button></div>)}
+              }}><option value="local">本機</option>{info?.providers.map(p=><option value={p.id} key={p.id}>{p.label}</option>)}</select></label>
+              <label>模型<SelectModels ariaLabel={`成員 ${i+1} 模型`} models={teamRuntimes[i]==='local'?models:info?.providers.find(p=>p.id===teamRuntimes[i])?.models||[]} value={m} registry={teamRuntimes[i]==='local' ? info?.registry.models : undefined} disabled={busy} change={v=>setTeam(t=>t.map((old,j)=>j===i?v:old))}/></label>
+              {job?.members?.[i] && <p className="team-member-status muted small" role="status">{job.members[i]}</p>}
+            </div>)}
             <div className="row section-note"><button className="button" disabled={busy || team.length>=6} onClick={()=>{setTeam(t=>[...t,'']);setTeamRuntimes(t=>[...t,'local'])}}><Plus size={16}/>成員</button><label className="check"><input type="checkbox" checked={serial} onChange={e=>setSerial(e.target.checked)}/>強制依序執行本機模型</label></div>
             <label>共同任務<textarea value={teamPrompt} onChange={e=>setTeamPrompt(e.target.value)} maxLength={12000} placeholder="描述團隊需要解決的問題…"/></label>
             <button className="button primary section-note" disabled={busy || !teamPrompt.trim() || team.some(v=>!v) || (teamRuntimes.includes('local') && !info?.engine)}

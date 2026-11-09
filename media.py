@@ -162,7 +162,7 @@ class ComfyClient:
         finally:
             connection.close()
 
-    def check_models(self, kind):
+    def missing_models(self, kind):
         missing = []
         for loader, argument, filename in MODELS[kind][2]:
             info = self.json("/object_info/" + loader).get(loader, {})
@@ -170,6 +170,10 @@ class ComfyClient:
             choices = values[0] if values and isinstance(values[0], list) else []
             if filename not in choices:
                 missing.append(filename)
+        return missing
+
+    def check_models(self, kind):
+        missing = self.missing_models(kind)
         if missing:
             raise ValueError("請先在 ComfyUI 安裝模型：" + "、".join(missing))
 
