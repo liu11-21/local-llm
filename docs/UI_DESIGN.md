@@ -16,7 +16,8 @@
 
 ## 第三階段精修
 
-- 團隊把成員標題與動作放在第一列，運算環境與模型在第二列。長名稱的選擇器可以縮放，窄視窗仍能保留成員標題的閱讀順序。 [深色 1280 px](ui-preview/phase3-team-dark.png) · [淺色 1024 px](ui-preview/phase3-team-light.png) · [淺色 650 px](ui-preview/phase3-team-narrow.png)
+- 團隊把成員標題與動作放在第一列，運算環境與模型在第二列。長名稱的選擇器可以縮放，窄視窗仍能保留成員標題的閱讀順序。 [深色 1280 px](ui-preview/phase3-team-dark.png) · [淺色 1024 px](ui-preview/phase3-team-light.png) · [深色 800 px](ui-preview/phase3-team-800.png) · [淺色 650 px](ui-preview/phase3-team-narrow.png)
 - 代理人將任務、角色、模型、核准工具與執行步驟整理成同一區。CPU 執行緒和記憶體等數值直接取自已保存的工具輸出，模型回答另設一區。截圖載入的是先前實機報告，保留了模型誤讀 CPU 數值的範例。 [代理人事實與回答](ui-preview/phase3-agent.png)
 - 創作頁生成前顯示連線和權重狀態，生成中顯示實際工作狀態，完成時直接預覽。使用「沿用上次設定」可讀回同類型最近作品的生成參數。 [缺少影片權重](ui-preview/phase3-creation-missing.png) · [實際生成中](ui-preview/phase3-creation-running.png) · [生成結果](ui-preview/phase3-creation-result.png)
 - 運算環境先選本機、另一台電腦、雲端 AI 或 Colab Notebook。只有選定來源才出現該類設定。外部服務保留資料傳送和可能費用說明。模型中心可檢視來源或從中斷的下載續傳。 [來源選擇](ui-preview/phase3-runtime.png) · [Colab 進階設定](ui-preview/phase3-runtime-colab.png) · [模型來源未知](ui-preview/phase3-models.png) · [已核對模型來源](ui-preview/phase3-models-verified.png)
+- 引擎健康診斷顯示實際錯誤碼和可採取的操作。 [Windows 原則封鎖時的引擎診斷](ui-preview/phase3-runtime-policy.png)

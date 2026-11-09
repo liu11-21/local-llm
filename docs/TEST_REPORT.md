@@ -13,6 +13,7 @@
 | PASS | 由桌面 Worker 管理的 ComfyUI CPU 版實測啟動、再次探測 API、程序異常退出、手動重啟與停止。 |
 | FAIL | 本機 Windows 仍以 WinError 4551 封鎖 llama.cpp。新版正確顯示 `ENGINE_POLICY_BLOCKED`。真實聊天與新代理人推理需在允許引擎的環境驗證。 |
 | FAIL | 首輪 Windows CI 將系統暫存路徑的別名視為不安全，四項下載測試因此失敗。修正將上層路徑正規化，並保留下載目錄本身的連結檢查；本機回歸通過。 [首輪 CI](https://github.com/liu11-21/local-llm/actions/runs/42555585807) |
+| FAIL | 第二輪 Windows CI 通過 Python 測試及打包 Worker IPC，Chromium 回歸等待 Vite 就緒時逾時。測試改由 Vite API 啟動並等待服務，取代讀取 CLI 終端輸出。 [第二輪 CI](https://github.com/liu11-21/local-llm/actions/runs/42555964797) |
 | NEEDS WINDOWS | 一般 Windows 10／11 的原生互動、下載中關閉原生安裝版，以及各防毒套件的行為。 |
 | NEEDS GPU | 影片、音樂、不同 GPU 後端及資源預估的實機驗收。 |
 | NEEDS CLOUD AUTH | 遠端桌機、雲端服務及 Colab Enterprise 的實際請求、作業和費用。 |
