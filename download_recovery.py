@@ -135,6 +135,9 @@ class Checkpoints:
 
 @contextmanager
 def download_lock(root, target):
+    # Windows may provide an 8.3 or redirected spelling for the user's temp or data folder.
+    # Resolve its parent while still rejecting links at the cache boundary and below.
+    root = root.parent.resolve() / root.name
     root.mkdir(parents=True, exist_ok=True)
     if not owned(root):
         raise ValueError("模型下載暫存目錄不安全。")
@@ -148,6 +151,7 @@ def download_lock(root, target):
 
 def recover_downloads(root, models, validate, *, clean=False):
     pending = []
+    root = root.parent.resolve() / root.name
     if not root.is_dir() or not owned(root):
         return pending
     for directory in root.iterdir():

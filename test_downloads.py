@@ -93,6 +93,14 @@ downloads.download_model(PINNED, models, 1, Event(), lambda *_: None,
                 with self.assertRaises(ValueError), download_lock(root, root / "model.gguf"):
                     self.fail("duplicate writer acquired lock")
 
+    def test_cache_boundary_accepts_alternate_spelling_of_its_parent(self):
+        with TemporaryDirectory() as folder:
+            base = Path(folder)
+            (base / "alias").mkdir()
+            cache = base / "alias" / ".." / "cache"
+            with download_lock(cache, base / "model.gguf") as checkpoints:
+                self.assertEqual(checkpoints.directory.parent, base.resolve() / "cache")
+
     def test_reopen_cleans_only_owned_nonresumable_staging(self):
         from desktop_worker import Desktop
         with TemporaryDirectory() as folder:
