@@ -164,14 +164,17 @@ class ConversationTests(unittest.TestCase):
             plan = desktop.rpc("agent-plan", {"role": "general", "model": "test.gguf",
                                               "prompt": "List models", "tools": ["models"]})
             plan["tools"].append("hardware")
-            with patch.object(desktop, "launch", return_value={"id": "test-job"}) as launch:
+            with patch.object(desktop.scheduler, "_dispatch"):
                 with self.assertRaises(ValueError):
                     desktop.rpc("run", {"action": "agent", "id": plan["id"]})
-                desktop.rpc("run", {"action": "agent", "id": plan["id"], "confirmed": True, "tools": ["hardware"]})
+                payload = {"action": "agent", "id": plan["id"], "version": plan["version"], "confirmed": True}
+                task = desktop.rpc("run", {**payload, "tools": ["hardware"]})
                 with self.assertRaises(ValueError):
-                    desktop.rpc("run", {"action": "agent", "id": plan["id"], "confirmed": True})
-            launch.assert_called_once()
-            self.assertEqual(launch.call_args.args[1]["tools"], ["models"])
+                    desktop.rpc("run", payload)
+                saved = desktop.rpc("agent-plan-get", {"id": plan["id"]})
+                self.assertEqual(saved["approval"]["tools"], ["models"])
+                self.assertEqual(saved["task_id"], task["id"])
+                desktop.rpc("cancel", task)
 
     def test_persists_completed_exchange_but_not_a_cancelled_exchange(self):
         with TemporaryDirectory() as directory:

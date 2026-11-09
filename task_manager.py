@@ -59,7 +59,7 @@ class TaskManager:
         self.tasks = {}
         self.closed = False
 
-    def submit(self, action, payload):
+    def submit(self, action, payload, *, plan_id=None, plan_version=None):
         lane, runtime, key, target = classify(action, payload)
         with self.lock:
             if self.closed:
@@ -75,6 +75,8 @@ class TaskManager:
                          "resources": RESOURCES[lane],
                          "state": "queued", "created": timestamp(), "message": "等候可用資源…",
                          "started": None, "finished": None, "error": None}, payload, key)
+            if plan_id is not None:
+                task.public.update(plan_id=plan_id, plan_version=plan_version)
             if self.save:
                 self.save(self._summary(task))
             self.tasks[task_id] = task

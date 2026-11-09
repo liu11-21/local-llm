@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { rpc, type Job, type Params, type Registry } from './api'
 import { SelectModels, gb } from './ui'
 
-type AgentPlan = { id: string; role: string; model: string; prompt: string; steps: string[] }
+type AgentPlan = { id: string; version: number; role: string; model: string; prompt: string; steps: string[] }
+type ToolDefinition = {id: string; name: string; description: string; permission: string; trusted: boolean;
+  input_schema: {required: string[]}}
 type AgentReport = [string, string, string, string, string, string, string]
 type ExecutionRecord = { steps: string[]; tools?: string[]; evidence?: Record<string, unknown> }
 const toolNames: Record<string, string> = {hardware:'本機硬體摘要', models:'已安裝模型清單'}
@@ -25,7 +27,7 @@ function Evidence({evidence}: {evidence?: Record<string, unknown>}) {
   const hardware = evidence?.hardware
   const values = hardware && typeof hardware === 'object' ? hardware as Record<string, unknown> : undefined
   const models = Array.isArray(evidence?.models) ? evidence.models.filter(item => typeof item === 'string') : undefined
-  if (!values && !models) return <p className="small muted">此報告沒有結構化工具資料。</p>
+  if (!evidence || !Object.keys(evidence).length) return <p className="small muted">此報告沒有結構化工具資料。</p>
   return <>
     {values && <dl className="agent-facts">{facts.map(([key,label]) => {
       const value = values[key]
@@ -54,23 +56,24 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
   const [plan, setPlan] = useState<AgentPlan>()
   const [planning, setPlanning] = useState(false)
   const [reports, setReports] = useState<AgentReport[]>([])
+  const [definitions, setDefinitions] = useState<ToolDefinition[]>([])
   const selectedModel = models.includes(model) ? model : models[0] || ''
 
   useEffect(() => {
     void rpc<AgentReport[]>('agent-reports').then(setReports, report)
+    void rpc<ToolDefinition[]>('agent-tools').then(setDefinitions, report)
   }, [])
 
   async function preview() {
     setPlanning(true)
-    setPlan(undefined)
-    try { setPlan(await rpc('agent-plan', { role, model: selectedModel, prompt, tools })) }
+    try { setPlan(await rpc('agent-plan', { role, model: selectedModel, prompt, tools, previous:plan?.id, version:plan?.version })) }
     catch (error) { report(error) }
     finally { setPlanning(false) }
   }
 
   async function execute() {
     if (!plan) return
-    const result = await run('agent', { id: plan.id, confirmed: true })
+    const result = await run('agent', { id: plan.id, version:plan.version, confirmed: true })
     setPlan(undefined)
     if (result) {
       try { setReports(await rpc('agent-reports')) }
@@ -78,8 +81,14 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
     }
   }
 
-  function toggleTool(tool: string) {
+  function invalidatePlan() {
+    if (!plan) return
     setPlan(undefined)
+    void rpc('agent-plan-revoke', {id:plan.id, version:plan.version}).catch(report)
+  }
+
+  function toggleTool(tool: string) {
+    invalidatePlan()
     setTools(previous => previous.includes(tool) ? previous.filter(value => value !== tool) : [...previous, tool])
   }
 
@@ -88,25 +97,25 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
     <section className="panel">
       <h2>建立代理人任務</h2>
       <p className="muted section-note">選擇角色和需要的資料。先檢閱計畫，再核准本次操作。</p>
-      <label>角色<select disabled={disabled} value={role} onChange={e => { setRole(e.target.value); setPlan(undefined) }}>
+      <label>角色<select disabled={disabled} value={role} onChange={e => { setRole(e.target.value); invalidatePlan() }}>
         <option value="general">一般助理</option><option value="research">研究整理</option>
         <option value="technical">技術分析</option>
       </select></label>
       <label>本機模型<SelectModels models={models} registry={registry} disabled={disabled || !models.length}
-        value={selectedModel} change={value => { setModel(value); setPlan(undefined) }}/></label>
+        value={selectedModel} change={value => { setModel(value); invalidatePlan() }}/></label>
       <label>任務描述<textarea disabled={disabled} value={prompt} maxLength={2400}
-        onChange={e => { setPrompt(e.target.value); setPlan(undefined) }}/></label>
+        onChange={e => { setPrompt(e.target.value); invalidatePlan() }}/></label>
       <p className="section-note">本次允許的唯讀工具</p>
-      <label className="check"><input type="checkbox" disabled={disabled} checked={tools.includes('hardware')}
-        onChange={() => toggleTool('hardware')}/>讀取本機硬體摘要</label>
-      <label className="check"><input type="checkbox" disabled={disabled} checked={tools.includes('models')}
-        onChange={() => toggleTool('models')}/>列出已安裝的模型檔名</label>
+      {definitions.filter(tool => tool.trusted && tool.permission === 'read-only' && !tool.input_schema.required.length)
+        .map(tool => <label className="check" key={tool.id}><input type="checkbox" disabled={disabled} checked={tools.includes(tool.id)}
+          onChange={() => toggleTool(tool.id)}/>{tool.name}</label>)}
       <button className="button section-note" disabled={disabled || !engine || !selectedModel || !prompt.trim()}
         onClick={preview}>{planning ? '準備中…' : '預覽執行計畫'}</button>
       {!engine && <p className="small muted">請先在運算環境安裝 llama.cpp。</p>}
       {plan && <section className="estimate"><div><strong>待核准 · {plan.role}</strong>
-        <p>{plan.model}</p><ol>{plan.steps.map((step, index) => <li key={step}>{index + 1}. {step}</li>)}</ol>
-        <button className="button primary section-note" disabled={busy} onClick={execute}>核准並執行</button>
+        <p>{plan.model} · 版本 {plan.version}</p><ol>{plan.steps.map((step, index) => <li key={step}>{index + 1}. {step}</li>)}</ol>
+        <div className="row section-note"><button className="button primary" disabled={disabled} onClick={execute}>核准並執行</button>
+          <button className="button" disabled={disabled} onClick={invalidatePlan}>撤銷計畫</button></div>
       </div></section>}
     </section>
     <section className="panel">

@@ -19,6 +19,7 @@ import tempfile
 from threading import Thread
 import zipfile
 
+from agent_plans import AgentPlans, append_event
 from app_update import check_workspace_update, download_update
 from catalog import model_files, model_source, pinned_model, search_models
 from colab_runtime import ColabAdapter
@@ -34,6 +35,7 @@ from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, work
 from registries import model_identity, recent_works, workspace_registry
 from runtime_provider import Providers, route
 from task_manager import TaskManager, timestamp
+from tool_registry import builtins as agent_tools
 from web_bridge import Workspace, engine_path, field
 
 ENGINE_VERSION = "b11810"
@@ -105,7 +107,8 @@ class Desktop(Workspace):
         self.database = self.data / "desktop.sqlite3"
         self.download_cache = self.models / ".localllm-downloads"
         self.hardware_cache = None
-        self.agent_plan = None
+        self.agent_plans = AgentPlans(self.connect)
+        self.agent_tools = agent_tools(self)
         self.update_candidate = None
         self.update_state = {"state": "idle"}
         self.media_checks = {}
@@ -128,8 +131,9 @@ class Desktop(Workspace):
                           '$.finished', ?, '$.message', '工作台已關閉。')
                           WHERE json_extract(snapshot,'$.state') IN ('queued','running')""", (timestamp(),))
             db.execute("CREATE INDEX IF NOT EXISTS messages_chat ON messages(chat)")
-            if db.execute("PRAGMA user_version").fetchone()[0] < 2:
-                db.execute("PRAGMA user_version=2")
+            self.agent_plans.initialize(db)
+            if db.execute("PRAGMA user_version").fetchone()[0] < 3:
+                db.execute("PRAGMA user_version=3")
         recover_downloads(self.download_cache, self.models, pinned_model, clean=True)
         self.scheduler = TaskManager(self.perform, self.save_task)
 
@@ -149,6 +153,8 @@ class Desktop(Workspace):
                        ON CONFLICT(id) DO UPDATE SET state=excluded.state,message=excluded.message""",
                        (record["id"], record["action"], record["state"], record["message"]))
             db.execute("INSERT OR REPLACE INTO task_metadata VALUES(?,?)", (record["id"], json.dumps(record)))
+            if record.get("plan_id"):
+                self.agent_plans.sync_task(db, record)
 
     def save_model_source(self, name, path, source):
         record = {**source, "identity": model_identity(path)}
@@ -298,14 +304,24 @@ class Desktop(Workspace):
 
         Thread(target=check, daemon=True).start()
 
-    def execute_agent(self, plan, cancel, update):
+    def execute_agent(self, plan_id, cancel, update):
+        plan = self.agent_plans.get(plan_id)
+        if plan["state"] != "running" or not plan["approval"]:
+            raise ValueError("代理人計畫未取得執行授權。")
         steps = []
+
+        def record(kind, **details):
+            with self.agent_plans.edit(plan_id) as latest:
+                if kind == "tool_result":
+                    latest["evidence"].append({"tool": details["tool"], "output": details["output"]})
+                append_event(latest, kind, **{key: value for key, value in details.items() if key != "output"})
 
         def report(step):
             steps.append(step)
+            record("step", message=step)
             update(steps=steps.copy(), message=step)
 
-        prepared = messages_for_plan(plan, self.models, cancel, report)
+        prepared = messages_for_plan(plan, self.agent_tools, cancel, report, record)
         if prepared is None or cancel.is_set():
             return None
         messages, evidence = prepared
@@ -325,6 +341,8 @@ class Desktop(Workspace):
             return None
         if not answer.strip():
             raise RuntimeError("本機模型未傳回回答。")
+        with self.agent_plans.edit(plan_id) as latest:
+            latest["answer"] = answer
         with self.connect() as db:
             db.execute("INSERT INTO agent_reports(id,role,model,prompt,answer,steps) VALUES(?,?,?,?,?,?)",
                        (plan["id"], plan["role"], plan["model"], plan["prompt"], answer,
@@ -347,7 +365,7 @@ class Desktop(Workspace):
             if not installed(install_directory(self.data / "comfyui", profile)):
                 raise ValueError("請先安裝這個 ComfyUI 便攜版。")
         if action == "agent":
-            return self.execute_agent(data, cancel, update)
+            return self.execute_agent(data["id"], cancel, update)
         if action == "update-download":
             candidate = self.update_candidate
             if not candidate or field(data, "tag", 50) != candidate.tag:
@@ -474,10 +492,17 @@ class Desktop(Workspace):
         if op == "media-readiness":
             return self.media_readiness(data)
         if op == "agent-plan":
-            plan = create_plan(data)
+            plan = create_plan(data, self.agent_tools)
             self.model(plan["model"])
-            self.agent_plan = plan
-            return {**plan, "tools": plan["tools"].copy(), "steps": plan["steps"].copy()}
+            return self.agent_plans.create(plan, data.get("previous"), data.get("version"))
+        if op == "agent-plan-get":
+            return self.agent_plans.get(data.get("id"))
+        if op == "agent-plans":
+            return self.agent_plans.list()
+        if op == "agent-plan-revoke":
+            return self.agent_plans.revoke(data.get("id"), data.get("version"))
+        if op == "agent-tools":
+            return self.agent_tools.manifests()
         if op == "agent-reports":
             with self.connect() as db:
                 return db.execute("SELECT id,role,model,prompt,answer,steps,created "
@@ -539,13 +564,11 @@ class Desktop(Workspace):
             if action not in ACTIONS:
                 raise ValueError("未支援的工作。")
             if action == "agent":
-                if data.get("confirmed") is not True or not self.agent_plan or self.agent_plan["id"] != data.get("id"):
+                if data.get("confirmed") is not True:
                     raise ValueError("請先預覽並確認代理人計畫。")
-                response = self.launch(action, self.agent_plan)
-                self.agent_plan = None
-            else:
-                response = self.launch(action, data)
-            return response
+                plan_id = self.agent_plans.get(data.get("id"))["id"]
+                return self.scheduler.submit(action, {"id": plan_id}, plan_id=plan_id, plan_version=data.get("version"))
+            return self.launch(action, data)
         if op in ("job", "cancel"):
             return self.scheduler.snapshot(field(data, "id", 32), cancel=op == "cancel")
         if op == "task-list":
