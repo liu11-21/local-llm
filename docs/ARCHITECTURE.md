@@ -8,6 +8,8 @@
 | 桌面宿主 | `desktop/src-tauri` · Tauri 2 / Rust | 單一工作台命令、大小限制、資源路徑和工作程序生命週期 |
 | Python 工作程序 | `desktop_worker.py` | JSON Lines、本機聊天、SQLite 和既有功能的轉接 |
 | 任務排程 | `task_manager.py` | 任務生命週期、獨立佇列、去重、取消及下載重試 |
+| 下載恢復 | `downloads.py`、`download_recovery.py`、`catalog.py` | 固定版本來源、跨程序檔案鎖、已完成區段的校驗點和發布前驗證 |
+| 引擎健康 | `engine_health.py`、`engine.py`、`comfy_runtime.py` | 啟停、程序退出與 loopback API 探測，提供錯誤碼及恢復方式 |
 | 能力登錄 | `registries.py`、`media.py` | 提供 Model、Engine、Runtime 及 Workflow 描述，供頁面選擇與表單渲染 |
 | 運算供應商 | `runtime_provider.py`、`colab_runtime.py` | 路由同意規則、HTTPS OpenAI-compatible、Colab Enterprise 的既有範本和 Notebook 作業 |
 | 現有能力 | `downloads.py` / `load_plan.py` / `engine.py` / `model_team.py` / `media.py` / `comfy_runtime.py` | 下載、資源估算、llama.cpp、團隊及媒體 |
@@ -23,4 +25,12 @@
 
 `%LOCALAPPDATA%\LocalLLM` 沿用模型、作品和 ComfyUI 資料。`desktop.sqlite3` 新增本機對話與任務索引；外部金鑰不進資料庫，關閉即清除。介面偏好存在本機 WebView。模型和媒體仍由檔案系統管理，沒有自動刪除或遷移。要備份請關閉工作台，再複製整個資料目錄。
 
-本輪在 SQLite 新增 `task_metadata`、`creations` 和對話訊息索引，保留舊表和欄位。要回滾開發分支，可用 `git revert` 產生回滾提交，或建置基準 `fa81a2c` 後用獨立資料目錄驗收。回滾前保留整個使用者資料夾，舊版仍可讀取原本的對話和作品檔。
+## 第三階段相容性與恢復
+
+- 桌面 GGUF 下載使用固定的 Hugging Face 提交網址。模型目錄下的 `.localllm-downloads` 依目的檔名隔離，作業系統鎖避免兩個 Worker 同時寫同名模型。程式先寫入校驗點再恢復。續傳時比對網址、大小及強 ETag 或上游 SHA-256，並重讀每個已完成區段。取消會移除可辨識的暫存，網路中斷會保留已完成區段。完整檔案通過 GGUF 標頭、大小及可取得的上游 SHA-256 後才發布。
+- 重開時清除工作台可辨識且無法續傳的暫存。先前版本未附歸屬資料的 `.model-*.part` 和其他未知檔案會保留。無法續傳的模型可從模型中心重新下載。中斷後的續傳由使用者選擇。
+- SQLite 第 2 版新增 `model_sources`。來源紀錄包含倉庫、revision、上游提供的模型卡授權、下載時間和實際 SHA-256。上游提供 LFS SHA-256 且比對成功時，介面標為下載時已驗證。紀錄綁定檔案指紋，辨識一般的檔案替換或修改。讀取清單時不重新雜湊整個模型。來源及校驗結果不代表模型安全或授權商用。 [Hugging Face 模型 API](https://huggingface.co/docs/huggingface_hub/package_reference/hf_api) · [模型卡欄位](https://huggingface.co/docs/hub/model-cards)
+- 啟動成功須通過實際 API 檢查。閒置的受管引擎約每五秒允許一次背景探測，避免健康檢查佔住 IPC。程序退出、API 無回應與手動停止各有狀態。現有 Vulkan 啟動失敗時至多回退一次 CPU。引擎錯誤細節留在任務中心，ComfyUI 保留啟動日誌。
+- 創作的權重預檢使用指定的本機 ComfyUI，查詢節點是否能選到需要的權重。開發預覽的圖片檔只從明確指定的隔離資料目錄提供。Tauri 使用既有的媒體檔案範圍。
+
+SQLite 遷移保留舊表與原本資料。回滾可在備份資料目錄後建置 `da4ee33`，舊版仍可讀取原有對話、模型與作品。新版下載校驗點和來源紀錄由第三階段版本管理。

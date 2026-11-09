@@ -1,5 +1,23 @@
 # 桌面工作台測試紀錄
 
+## 第三階段 Batch 1
+
+基準為 `da4ee33`，工作台版本維持 `0.6.2`。
+
+| 狀態 | 範圍與證據 |
+|---|---|
+| PASS | 33 項本機 Python 測試。使用可控制的 HTTP 回應，在 Windows 子程序中實際強制退出，驗證重開後保留已完成區段且不重抓、取消不發布、上游校驗不符、同名鎖、清理範圍、來源紀錄隨檔案變更而失效，以及引擎健康狀態和媒體預檢。 |
+| PASS | 實際同時下載公開的 `stories260K.gguf` 和 `SmolLM2-135M-Instruct-Q4_K_M.gguf`，兩者皆核對固定版本 LFS SHA-256。SmolLM2 模型卡顯示 Apache-2.0，stories260K 的模型卡授權未取得。 |
+| PASS | TypeScript、Vite build 與 `npm run test:layout`。Chromium 測試 1280×900、1024×768、800×600 和 650×720 的深色、淺色。測試資料包含長模型名、長錯誤、模擬的團隊執行中狀態。幾何檢查確認標題維持水平、選擇器在容器內、頁面無水平溢出並有鍵盤焦點。 |
+| PASS | Chromium 以實際本機 Worker 和 ComfyUI CPU 版驗證影片權重缺失、圖片工作執行中、Stable Diffusion 1.5 生成 384×384 PNG，以及在創作原頁載入圖片。代理人頁以先前實機保存的報告驗證事實區與模型回答區。 [實際畫面](UI_DESIGN.md#第三階段精修) |
+| PASS | 由桌面 Worker 管理的 ComfyUI CPU 版實測啟動、再次探測 API、程序異常退出、手動重啟與停止。 |
+| FAIL | 本機 Windows 仍以 WinError 4551 封鎖 llama.cpp。新版正確顯示 `ENGINE_POLICY_BLOCKED`。真實聊天與新代理人推理需在允許引擎的環境驗證。 |
+| FAIL | 首輪 Windows CI 將系統暫存路徑的別名視為不安全，四項下載測試因此失敗。修正將上層路徑正規化，並保留下載目錄本身的連結檢查；本機回歸通過。 [首輪 CI](https://github.com/liu11-21/local-llm/actions/runs/42555585807) |
+| NEEDS WINDOWS | 一般 Windows 10／11 的原生互動、下載中關閉原生安裝版，以及各防毒套件的行為。 |
+| NEEDS GPU | 影片、音樂、不同 GPU 後端及資源預估的實機驗收。 |
+| NEEDS CLOUD AUTH | 遠端桌機、雲端服務及 Colab Enterprise 的實際請求、作業和費用。 |
+| NOT RUN | 新 Agent 工具協議、Team 協作模式及後續批次；正式簽章、誤判申訴與正式 Release。 |
+
 ## 第二階段基礎
 
 基準為開發分支 `fa81a2c`。維持工作台版本 `0.6.2`。
