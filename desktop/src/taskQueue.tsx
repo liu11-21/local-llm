@@ -4,6 +4,7 @@ import { Empty, Panel } from './ui'
 
 const labels: Record<string, string> = {
   chat: '文字聊天', download: '模型下載', team: 'AI 團隊', agent: 'AI 代理人',
+  'team-workflow': 'AI 團隊角色流程',
   image: '圖片生成', video: '影片生成', music: '音樂生成', media: '創作',
   'engine-start': '啟動文字引擎', 'engine-stop': '停止文字引擎', 'engine-install': '安裝 llama.cpp',
   'comfy-install': '安裝 ComfyUI', 'comfy-start': '啟動 ComfyUI', 'comfy-stop': '停止 ComfyUI', 'update-download': '下載工作台更新',

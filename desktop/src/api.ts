@@ -39,6 +39,7 @@ export type Task = {
 export type Usage = { input: number; context: number; max_output: number; omitted_turns: number }
 export type Job = {
   id: string; state: string; message: string; answer?: string; received?: number; total?: number; plan?: Plan; plan_id?: string;
+  team_run_id?: string;
   members?: string[]; steps?: string[]; usage?: Usage;
   result?: { message?: string; answer?: string; folder?: string; name?: string; file?: string; plan?: Plan; usage?: Usage; drafts?: {name: string; text: string}[] };
 }

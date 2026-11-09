@@ -111,7 +111,7 @@ export function App() {
         {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError}/>}
         {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go} refresh={refresh}/>}
         {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run} report={report} notice={notice} refresh={refresh}/>}
-        <div hidden={page !== 'team'}><TeamWorkspace info={info} policy={policy} run={queue.run} report={report}/></div>
+        <div hidden={page !== 'team'}><TeamWorkspace info={info} policy={policy} run={queue.run} report={report} cancel={queue.cancel}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} health={health} preset={preset} works={works}
           tasks={queue.tasks} run={queue.run} go={go} openWork={openSavedWork}/>}
         {page === 'works' && <Works info={info} works={works} selected={selected} choose={setSelected}

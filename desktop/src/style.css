@@ -163,6 +163,17 @@ progress { display:block; width:100%; height:7px; margin-top:5px; accent-color:v
 .agent-events { max-height:240px; overflow:auto; margin:8px 0; }
 .agent-events li { margin:3px 0; overflow-wrap:anywhere; }
 .agent-events time { color:var(--muted); font-size:var(--small); }
+.team-classic { display:grid; gap:13px; }
+.team-flow { align-items:start; }
+.team-flow-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:8px; }
+.team-flow-fields label { margin:0; }
+.team-flow-fields select { min-width:0; }
+.team-flow-actions { flex-wrap:wrap; }
+.team-profile { padding:12px 0; border-bottom:1px solid var(--border); }
+.team-profile strong { white-space:normal; min-width:0; overflow-wrap:anywhere; }
+.team-graph { display:grid; gap:7px; margin:8px 0; }
+.team-graph li { background:var(--inset); border:1px solid var(--border); border-radius:8px; padding:8px; overflow-wrap:anywhere; }
+.team-node-heading { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 .creation { align-items:start; }
 .creation-sidebar { display:grid; gap:13px; min-width:0; }
 .creation-actions { flex-wrap:wrap; }

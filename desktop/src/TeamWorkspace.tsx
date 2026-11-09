@@ -3,10 +3,12 @@ import { Plus, X } from 'lucide-react'
 import type { Info, Job } from './api'
 import type { Run } from './taskQueue'
 import { Empty, Panel, SelectModels } from './ui'
+import { TeamWorkflow } from './TeamWorkflow'
 
-export function TeamWorkspace({info, policy, run, report}: {
-  info?: Info; policy: string; run: Run; report: (error: unknown) => void
+export function TeamWorkspace({info, policy, run, report, cancel}: {
+  info?: Info; policy: string; run: Run; report: (error: unknown) => void; cancel: (id: string) => void
 }) {
+  const [workflow, setWorkflow] = useState(false)
   const models = info?.models ?? []
   const [team, setTeam] = useState<string[]>(['', ''])
   const [teamRuntimes, setTeamRuntimes] = useState<string[]>(['local', 'local'])
@@ -32,6 +34,12 @@ export function TeamWorkspace({info, policy, run, report}: {
     } finally {setBusy(false)}
   }
   return <>
+          <div className="row team-flow-actions section-note">
+            <button className={workflow ? 'button' : 'button primary'} aria-pressed={!workflow} onClick={()=>setWorkflow(false)}>多模型整合</button>
+            <button className={workflow ? 'button primary' : 'button'} aria-pressed={workflow} onClick={()=>setWorkflow(true)}>角色與工作流程</button>
+          </div>
+          <TeamWorkflow visible={workflow} info={info} policy={policy} run={run} report={report} cancel={cancel}/>
+          <div hidden={workflow} className="team-classic">
           <Panel title="建立模型團隊" description="至少選擇兩個成員。本機依資源預估決定是否並行；使用外部端點前會先確認。">
             {team.map((m,i)=><div className="team-member" key={i}>
               <div className="team-member-title"><strong>成員 {i+1}</strong>{i===lead && <span className="tag">主模型</span>}</div>
@@ -51,5 +59,7 @@ export function TeamWorkspace({info, policy, run, report}: {
               onClick={runTeam}>執行團隊</button>
           </Panel>
           <Panel title="整合回答">{teamResult ? <><p className="pre">{teamResult.answer}</p><p className="small muted">{teamResult.folder}</p>{teamResult.drafts?.map((d,i)=><details key={i}><summary>{d.name}</summary><p className="pre">{d.text}</p></details>)}</> : <Empty>團隊執行完畢後會顯示主模型回答與成員草稿。</Empty>}</Panel>
+          {busy && job?.id && <button className="button" onClick={()=>cancel(job.id)}>取消團隊</button>}
+          </div>
         </>
 }
