@@ -93,6 +93,24 @@ downloads.download_model(PINNED, models, 1, Event(), lambda *_: None,
                 with self.assertRaises(ValueError), download_lock(root, root / "model.gguf"):
                     self.fail("duplicate writer acquired lock")
 
+    def test_reopen_cleans_only_owned_nonresumable_staging(self):
+        from desktop_worker import Desktop
+        with TemporaryDirectory() as folder:
+            data = Path(folder)
+            models = data / "models"
+            cache = models / ".localllm-downloads"
+            with download_lock(cache, models / "model.gguf") as checkpoints:
+                checkpoints.prepare(PINNED, 0, None, None)
+                checkpoints.staging.write_bytes(PAYLOAD[:50])
+                unrelated = checkpoints.directory / "personal.part"
+                unrelated.write_bytes(b"unrelated")
+            worker = Desktop(data)
+            self.addCleanup(worker.close)
+            self.assertFalse(checkpoints.staging.exists())
+            self.assertFalse(checkpoints.manifest.exists())
+            self.assertEqual(unrelated.read_bytes(), b"unrelated")
+            self.assertEqual(worker.rpc("info", {})["recoverable_downloads"], [])
+
     def test_verified_source_is_tied_to_the_downloaded_file(self):
         from catalog import model_source
         from desktop_worker import Desktop

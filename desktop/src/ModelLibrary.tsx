@@ -4,7 +4,7 @@ import { rpc, type Info, type Plan, type Task } from './api'
 import { activeTask, type Run } from './taskQueue'
 import { Empty, Estimate, Panel, gb } from './ui'
 
-const verification = {verified: '來源與 SHA-256 已核對', known: '已知來源 · 無上游校驗值', imported: '手動匯入', unknown: '來源未知'}
+const verification = {verified: '下載時已核對來源與 SHA-256', known: '已知來源 · 無上游校驗值', imported: '手動匯入', unknown: '來源未知'}
 
 export function ModelLibrary({ info, tasks, run, report, go, refresh }: {
   info?: Info; tasks: Task[]; run: Run; report: (error: unknown) => void; go: (page: 'runtime') => void; refresh: () => Promise<void>

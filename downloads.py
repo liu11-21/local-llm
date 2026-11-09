@@ -144,11 +144,11 @@ def _download(url, target, workers, cancel, report, opener, checkpoints, expecte
     count = min(workers, total) if ranged else 1
     if expected_size is not None and total and total != expected_size:
         raise ValueError("下載長度與模型倉庫公布的大小不符。")
-    resumed = checkpoints.prepare(url, total, etag, expected_sha) if checkpoints and total else None
+    resumed = checkpoints.prepare(url, total, etag, expected_sha) if checkpoints else None
     if resumed is None:
         checkpoints = None
     resumable = checkpoints and ranged and (etag or expected_sha)
-    if checkpoints and not resumable:
+    if checkpoints and not resumable and resumed:
         checkpoints.clear()
         resumed = checkpoints.prepare(url, total, etag, expected_sha)
     if resumable:

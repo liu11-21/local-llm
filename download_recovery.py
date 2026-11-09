@@ -67,7 +67,7 @@ class Checkpoints:
             if not isinstance(record, dict) or record.get("schema") != 1 or record.get("name", "").casefold() != self.name.casefold():
                 return None
             total, blocks = record.get("total"), record.get("blocks")
-            if type(total) is not int or total <= 0 or not isinstance(blocks, dict):
+            if type(total) is not int or total < 0 or not isinstance(blocks, dict):
                 return None
             if any(not re.fullmatch(r"0|[1-9]\d{0,10}", index) or int(index) * BLOCK >= total
                    or not isinstance(digest, str) or not SHA256.fullmatch(digest) for index, digest in blocks.items()):
@@ -94,7 +94,8 @@ class Checkpoints:
 
     def prepare(self, url, total, etag, expected_sha):
         previous = self.load()
-        if not owned(self.staging) or (self.staging.exists() and not self.staging.is_file()):
+        if not owned(self.staging) or (self.staging.exists() and
+                (not self.staging.is_file() or self.staging.stat().st_nlink != 1)):
             return None
         if previous is None and (self.staging.exists() or self.manifest.exists()):
             return None
@@ -169,8 +170,8 @@ def recover_downloads(root, models, validate, *, clean=False):
                 record = checkpoints.load()
                 if not record or record.get("url") != source["source"] or not owned(checkpoints.staging):
                     continue
-                if (not target.exists() and checkpoints.staging.is_file()
-                        and checkpoints.staging.stat().st_size == record["total"]
+                if (not target.exists() and not target.is_symlink() and checkpoints.staging.is_file()
+                        and (stat := checkpoints.staging.stat()).st_size == record["total"] and stat.st_nlink == 1
                         and (record.get("etag") or record.get("expected_sha")) and record["blocks"]):
                     pending.append({"name": target.name, "url": source["source"], "total": record["total"],
                                     "received": sum(min(BLOCK, record["total"] - int(index) * BLOCK)
