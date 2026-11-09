@@ -1,4 +1,5 @@
 from pathlib import Path
+from dataclasses import replace
 import json
 from tempfile import TemporaryDirectory
 from threading import Event
@@ -210,3 +211,28 @@ class AgentRuntimeTests(TestCase):
         self.assertEqual(messages[-1]["role"], "tool")
         self.assertEqual(messages[-1]["tool_call_id"], "call_1")
         self.assertEqual(self.desktop.agent_plans.get(key)["answer"], "Done")
+
+    def test_approval_expires_and_paused_plan_is_interrupted_on_reopen(self):
+        self.reply('{"type":"tool","tool":"models","arguments":{}}', '{"type":"tool","tool":"models","arguments":{}}')
+        key, task = self.start(review=True)
+        self.wait(task, "paused")
+        pending = self.desktop.agent_plans.get(key)["pending"]
+        with self.desktop.agent_plans.edit(key) as plan:
+            plan["deadline"] = 0
+        self.assertEqual(self.desktop.rpc("agent-plan-get", {"id": key})["state"], "failed")
+        with self.assertRaises(ValueError):
+            self.desktop.rpc("agent-decision", {"id": key, "request": pending["id"], "approved": True})
+        second, job = self.start(review=True)
+        self.wait(job, "paused")
+        reopened = Desktop(self.desktop.data)
+        self.addCleanup(reopened.close)
+        self.assertEqual(reopened.agent_plans.get(second)["state"], "interrupted")
+        self.assertIsNone(reopened.agent_plans.get(second)["pending"])
+
+    def test_changed_tool_contract_invalidates_saved_preview(self):
+        plan = self.desktop.rpc("agent-plan", {"role": "general", "model": "fixture.gguf",
+                                               "prompt": "Test", "tools": ["models"]})
+        tool, handler = self.desktop.agent_tools.entries["models"]
+        self.desktop.agent_tools.entries["models"] = replace(tool, version="2"), handler
+        with self.assertRaisesRegex(ValueError, "AGENT_TOOL_CHANGED"):
+            self.desktop.rpc("run", {"action": "agent", "id": plan["id"], "version": plan["version"], "confirmed": True})

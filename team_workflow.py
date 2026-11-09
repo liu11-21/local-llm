@@ -230,6 +230,9 @@ def run_team(store, ident, registry, ask, cancel, update):
     run = store.get(ident)
     spec = run["spec"]
     agents = {member["id"]: member for member in spec["members"]}
+    if any(member["runtime"] != "local" and member["runtime"] not in spec.get("external_grants", [])
+           for member in agents.values()):
+        raise ValueError("TEAM_EXTERNAL_NOT_GRANTED · 團隊外部運算未取得此次授權。")
     records = {item["id"]: item for item in run["nodes"]}
     deadline = Deadline(cancel, time() + spec["seconds"])
     for item in run["nodes"]:

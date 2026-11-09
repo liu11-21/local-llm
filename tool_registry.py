@@ -1,5 +1,7 @@
 """Trusted local tool definitions and their execution boundary."""
 from dataclasses import asdict, dataclass
+from hashlib import sha256
+import json
 from queue import Empty, Queue
 import re
 from threading import BoundedSemaphore, Event, Thread
@@ -90,6 +92,10 @@ class ToolRegistry:
 
     def manifests(self):
         return [{**asdict(tool), "error_codes": list(ERRORS)} for tool, _ in self.entries.values()]
+
+    def fingerprints(self, keys):
+        return {key: sha256(json.dumps(asdict(self.definition(key, keys)[0]), sort_keys=True).encode()).hexdigest()
+                for key in keys}
 
     def definition(self, key, allowed):
         entry = self.entries.get(key)
@@ -182,7 +188,6 @@ def builtins(desktop):
             row = db.execute("SELECT details FROM creations WHERE name=?", (name,)).fetchone()
         if not row:
             raise ValueError("作品沒有生成參數。")
-        import json
         data = json.loads(row[0])
         return {"name": name, "workflow": data["workflow"], "options": [
             {"parameter": key, "value": value} for key, value in data["options"].items() if type(value) is int]}

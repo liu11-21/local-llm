@@ -36,6 +36,7 @@ def create_plan(data, registry):
         "model": field(data, "model", 180),
         "prompt": field(data, "prompt", 2400),
         "tools": tools.copy(),
+        "tool_contracts": registry.fingerprints(tools),
         "mode": mode,
         "limits": execution_limits,
         "review_calls": mode != "simple" and data.get("review_calls") is True,

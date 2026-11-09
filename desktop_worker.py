@@ -197,7 +197,13 @@ class Desktop(Workspace):
         return {"name": path.name, "message": f"已下載 {path.name}"}
 
     def task_list(self):
-        live = {job["id"]: job for job in self.scheduler.list()}
+        jobs = self.scheduler.list()
+        paused = [job["plan_id"] for job in jobs if job["state"] == "paused" and job.get("plan_id")]
+        if paused:
+            for plan_id in paused:
+                self.agent_plan_status(plan_id)
+            jobs = self.scheduler.list()
+        live = {job["id"]: job for job in jobs}
         with self.connect() as db:
             saved = db.execute("""SELECT tasks.id,action,state,message,touched,snapshot FROM tasks
                                 LEFT JOIN task_metadata USING(id) ORDER BY tasks.rowid DESC LIMIT 60""").fetchall()
@@ -338,6 +344,7 @@ class Desktop(Workspace):
         plan.setdefault("limits", agent_limits({}))
         if plan["state"] != "running" or not plan["approval"]:
             raise ValueError("代理人計畫未取得執行授權。")
+        self.check_agent_contracts(plan)
         if plan["mode"] != "simple":
             return self.agent_runtime.run(plan_id, cancel, update)
         deadline = Deadline(cancel, time() + plan["limits"]["seconds"])
@@ -379,9 +386,15 @@ class Desktop(Workspace):
                         json.dumps({"steps": steps, "evidence": evidence, "tools": plan["tools"]}, ensure_ascii=False)))
         return {"answer": answer, "message": "代理人報告已儲存。"}
 
+    def check_agent_contracts(self, plan):
+        if plan.get("tool_contracts", {}) != self.agent_tools.fingerprints(plan["tools"]):
+            raise ValueError("AGENT_TOOL_CHANGED · 工具契約已變更，請重新預覽並核准。")
+
     def submit_team_workflow(self, data):
         spec = specification(data.get("team", {}), self.agent_tools)
         prompt = field(data, "prompt", 2400)
+        if self.comfy.running() and any(member["runtime"] == "local" for member in spec["members"]):
+            raise ValueError("請先停止本機 ComfyUI，釋放記憶體後再執行團隊流程。")
         external = set()
         for member in spec["members"]:
             chosen = route(data.get("policy", "auto"), member["runtime"], data.get("consent") is True)
@@ -679,7 +692,9 @@ class Desktop(Workspace):
             if action == "agent":
                 if data.get("confirmed") is not True:
                     raise ValueError("請先預覽並確認代理人計畫。")
-                plan_id = self.agent_plans.get(data.get("id"))["id"]
+                plan = self.agent_plans.get(data.get("id"))
+                self.check_agent_contracts(plan)
+                plan_id = plan["id"]
                 return self.scheduler.submit(action, {"id": plan_id}, plan_id=plan_id, plan_version=data.get("version"))
             if action == "team-workflow":
                 return self.submit_team_workflow(data)
