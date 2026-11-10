@@ -116,6 +116,7 @@ class Desktop(Workspace):
         self.database = self.data / "desktop.sqlite3"
         self.download_cache = self.models / ".localllm-downloads"
         self.hardware_cache = None
+        self.hardware_sample_at = 0
         self.agent_plans = AgentPlans(self.connect)
         self.team_store = TeamStore(self.connect)
         self.agent_tools = agent_tools(self)
@@ -154,7 +155,8 @@ class Desktop(Workspace):
                 db.execute("PRAGMA user_version=6")
         recover_downloads(self.download_cache, self.models, pinned_model, clean=True)
         self.scheduler = TaskManager(self.perform, self.save_task)
-        self.remote_host = Host(self.connect, self.scheduler, self.host_models, self.host_engine, self.host_resources)
+        self.remote_host = Host(self.connect, self.scheduler, self.host_models, self.host_engine, self.host_resources,
+                                self.host_model_ram)
         self.remote_clients = RemoteClients(self.connect)
 
     @contextmanager
@@ -358,9 +360,24 @@ class Desktop(Workspace):
         busy = any(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
         error = ("主機需要安裝 llama.cpp。" if not installed else "請先在主機停止 ComfyUI。"
                  if self.comfy.running() else "主機文字引擎異常。請在主機檢查引擎。"
-                 if state in ("failed", "unhealthy") else None)
+                 if state in ("failed", "unhealthy") else "請先在主機安裝文字模型。" if not self.host_models() else None)
         return {"installed": installed, "engine_state": state, "busy": busy, "accepting": error is None,
-                "error": error}
+                "model_loaded": self.local.running() and self.active is not None, "error": error}
+
+    def host_model_ram(self, models):
+        estimates = {}
+        for name in models:
+            try:
+                estimates[name] = estimate_ram(self.model(name).stat().st_size)
+            except (OSError, ValueError):
+                continue
+        return estimates
+
+    def reported_vram(self):
+        if self.hardware_cache is None or time() - self.hardware_sample_at > 30:
+            return None
+        dedicated = [free for _, free, shared in self.hardware_cache if not shared]
+        return max(dedicated, default=None)
 
     def host_resources(self):
         hardware = detect_hardware(self.models)
@@ -368,7 +385,8 @@ class Desktop(Workspace):
         active = sum(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
         return {"cpu_threads": observed(hardware.cpu_threads), "ram_total": observed(hardware.ram_total),
                 "ram_available": observed(hardware.ram_available), "active_jobs": observed(active),
-                "gpus": observed([device[0] for device in devices][:32] or None, "reported")}
+                "gpus": observed([device[0] for device in devices][:32] or None, "reported"),
+                "vram_available": observed(self.reported_vram(), "reported")}
 
     def host_chat(self, data, cancel, update):
         try:
@@ -636,7 +654,9 @@ class Desktop(Workspace):
             budget, temperature = data.get("max_tokens", 512), data.get("temperature", 0.4)
             if type(budget) is not int or not 64 <= budget <= 2048 or type(temperature) not in (int, float) or not 0 <= temperature <= 2:
                 raise ValueError("生成參數超出範圍。")
-            chosen = route(data.get("policy", "auto"), data.get("runtime", "local"), data.get("consent") is True)
+            runtime = data.get("runtime", "local")
+            known_pair = isinstance(runtime, str) and runtime in self.remote_clients.items
+            chosen = route(data.get("policy", "auto"), runtime, data.get("consent") is True, paired=known_pair)
             paired = self.remote_clients.items.get(chosen)
             if chosen != "local":
                 provider = paired or self.providers.get(chosen)
@@ -825,7 +845,9 @@ class Desktop(Workspace):
             if self.hardware_cache is None:
                 executable = engine_path(self.data)
                 self.hardware_cache = engine_devices(executable) if executable else []
+                self.hardware_sample_at = time()
             info.update(devices=self.hardware_cache, active=self.active if self.local.running() else None,
+                        dedicated_vram_available=self.reported_vram(),
                         media=MODELS, output_folder=str(self.outputs),
                         providers=self.providers.list() + [item.summary() for item in self.remote_clients.items.values()])
             info["comfy_profiles_installed"] = [name for name in PROFILES if installed(install_directory(self.data / "comfyui", name))]
@@ -860,7 +882,7 @@ class Desktop(Workspace):
                 if task not in TASK_FORMAT or not isinstance(policy, str) or policy not in POLICIES:
                     raise ValueError("請選擇有效的比較任務與運算偏好。")
                 estimate = next((item["ram"] for item in info["registry"]["models"] if item["id"] == model), None)
-                return [compare(item, task, model, ram=estimate if item["kind"] in ("local", "remote-host") else None,
+                return [compare(item, task, model, ram=estimate if item["kind"] == "local" else item["model_ram"].get(model),
                                 policy=policy) for item in capabilities]
             return [{"capability": item, "fresh": fresh(item)} for item in capabilities]
         if op == "model-imported":

@@ -8,6 +8,7 @@
 | `connected`, `health`, `error` | Connection, ability to accept work, and safe diagnostic |
 | `tasks`, `formats`, `engines`, `models` | Bounded arrays of declared identifiers |
 | `resources` | CPU threads, GPU names, RAM and VRAM bytes, and active jobs |
+| `model_ram` | Optional CPU-memory estimates in bytes, keyed by the model ID on that Host |
 | `features` | Stream, cancel, model load, unload, and download |
 | `network`, `destination`, `auth`, `cost` | Transfer boundary, authentication and price classification |
 | `source`, `checked_at` | Record provenance and Unix time in seconds |

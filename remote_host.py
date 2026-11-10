@@ -67,9 +67,10 @@ def inference_input(data):
 
 
 class Host:
-    def __init__(self, connect, scheduler, model_names, engine_status, resources):
+    def __init__(self, connect, scheduler, model_names, engine_status, resources, model_ram=lambda _: {}):
         self.connect, self.scheduler = connect, scheduler
         self.model_names, self.engine_status, self.resources = model_names, engine_status, resources
+        self.model_ram = model_ram
         self.lock = Lock()
         self.server = None
         self.state = "stopped"
@@ -87,7 +88,8 @@ class Host:
 
     def start(self, bind, port, label, cert, key):
         bind = private_ip(bind)
-        if type(port) is not int or not 1024 <= port <= 65535 or not 0 < len(label.strip()) <= 100:
+        if (type(port) is not int or not 1024 <= port <= 65535 or not 0 < len(label.strip()) <= 100
+                or any(ord(char) < 32 for char in label)):
             raise ValueError("請輸入主機名稱及有效的 HTTPS 連接埠。")
         with self.lock:
             if self.server or self.state in ("starting", "stopping"):
@@ -148,11 +150,13 @@ class Host:
             peers = [{"id": key, "label": label} for key, label in
                      db.execute("SELECT id,label FROM remote_host_grants ORDER BY rowid")]
             active = self.state == "ready"
-            result = {"state": self.state, "error": self.error, "peers": peers}
+            result = {"state": self.state, "error": self.error, "peers": peers, "listening": self.server is not None}
+            if self.server:
+                result.update(label=self.label, address=self.address, port=self.port)
             if active:
                 engines = self.engine_status()
-                result.update(label=self.label, address=self.address, port=self.port, engine=engines,
-                              models=self.model_names(), state="busy" if engines["busy"] else "ready")
+                result.update(engine=engines, models=self.model_names(),
+                              state="unhealthy" if not engines["accepting"] else "busy" if engines["busy"] else "ready")
             return result
 
     def issue(self):
@@ -166,7 +170,8 @@ class Host:
 
     def pair(self, data):
         code, label = data.get("code"), data.get("label")
-        if not isinstance(code, str) or not TOKEN.fullmatch(code) or not isinstance(label, str) or not label.strip() or len(label) > 80:
+        if (not isinstance(code, str) or not TOKEN.fullmatch(code) or not isinstance(label, str)
+                or not label.strip() or len(label) > 80 or any(ord(char) < 32 for char in label)):
             raise ProtocolError(403, "配對邀請無效或已失效。")
         with self.lock, self.connect() as db:
             if (self.state != "ready" or not self.code or monotonic() > self.code[1]
@@ -199,10 +204,12 @@ class Host:
 
     def capabilities(self):
         state = self.engine_status()
+        models = self.model_names()
         return capability(self.id, self.label, "remote-host", "Local LLM", version=str(PROTOCOL), connected=True,
                           health="unhealthy" if not state["accepting"] else "busy" if state["busy"] else "ready",
                           tasks=["chat"], formats=["GGUF"], engines=["llama.cpp"] if state["installed"] else [],
-                          models=self.model_names(), resources=self.resources(), network=True, destination=self.address,
+                          models=models, model_ram=self.model_ram(models), resources=self.resources(),
+                          network=True, destination=self.address,
                           auth="paired-token-tls", cost="no-api-fee", source="remote-host",
                           error=state["error"], features={"stream": True, "cancel": True, "load": False,
                                                          "unload": False, "download": False})

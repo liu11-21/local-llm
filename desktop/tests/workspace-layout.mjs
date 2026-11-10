@@ -128,6 +128,42 @@ try {
   page.once('dialog', dialog => dialog.accept())
   await button('配對主機').click()
   await page.getByRole('alert').getByText(/配對邀請無效/).waitFor()
+  const tls = await page.evaluate(async () => {
+    const response = await fetch('/__desktop_dev_rpc',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({op:'fixture-host-credentials',data:{}})})
+    return (await response.json()).value
+  })
+  const longHost = '家用遠端電腦'.repeat(12)
+  await page.getByLabel('主機名稱',{exact:true}).fill(longHost)
+  await page.getByLabel('本機私人 IPv4 位址').fill('127.0.0.1')
+  await page.getByLabel('HTTPS 連接埠').fill(String(tls.port))
+  await page.getByLabel('公開 PEM 憑證路徑').fill(tls.certificate)
+  await page.getByLabel('PEM 私鑰路徑').fill(tls.key)
+  page.once('dialog', dialog => dialog.accept())
+  await button('啟用運算主機').click()
+  await button('停止分享算力').waitFor()
+  await page.getByText(/文字引擎 尚未載入模型/).waitFor()
+  await noOverflow()
+  if (remoteShots) {
+    await page.evaluate(() => window.scrollTo(0,0))
+    await page.screenshot({path:join(remoteShots,'remote-host-active.png'),fullPage:true})
+  }
+  await button('建立一次性配對邀請').click()
+  const invitation = page.getByLabel('複製配對邀請',{exact:true})
+  await invitation.waitFor()
+  assert((await invitation.inputValue()).length > 100)
+  await button('停止分享算力').click()
+  await button('啟用運算主機').waitFor()
+  await page.locator('summary').filter({hasText:'比較運算環境'}).click()
+  await page.getByLabel('比較任務').selectOption('notebook')
+  await button('比較能力').click()
+  await page.getByText(/Colab Enterprise · 需要設定/).waitFor()
+  await noOverflow()
+  if (remoteShots) {
+    await page.setViewportSize({width:1280,height:900})
+    await page.evaluate(() => window.scrollTo(0,0))
+    await page.screenshot({path:join(remoteShots,'remote-compare.png'),fullPage:true})
+  }
   await button('Google Colab／Notebook').click()
   await page.getByRole('heading',{name:'Google Colab Enterprise'}).waitFor()
   await noOverflow()

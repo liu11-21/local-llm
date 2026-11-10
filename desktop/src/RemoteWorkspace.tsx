@@ -4,9 +4,9 @@ import { Empty, Panel, gb } from './ui'
 
 type Host = {
   state: 'stopped' | 'starting' | 'ready' | 'busy' | 'unhealthy' | 'stopping' | 'failed'
-  error?: string; label?: string; address?: string; port?: number; models?: string[]
+  error?: string; label?: string; address?: string; port?: number; models?: string[]; listening: boolean
   peers: {id:string; label:string}[]
-  engine?: {installed:boolean; accepting:boolean; busy:boolean; error?:string; engine_state:string}
+  engine?: {installed:boolean; accepting:boolean; busy:boolean; error?:string; engine_state:string; model_loaded:boolean}
 }
 const states = {stopped:'已停止', starting:'啟動中', ready:'分享中', busy:'忙碌', unhealthy:'異常',
   stopping:'停止中', failed:'啟動失敗'}
@@ -28,7 +28,7 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
   const [request, setRequest] = useState('')
   const [recovered, setRecovered] = useState<{state:string; answer?:string; message?:string}>()
   const peers = info?.providers.filter(item => item.kind === 'paired') ?? []
-  const running = !!host?.address
+  const running = host?.listening === true
 
   useEffect(() => {
     let mounted = true
@@ -126,10 +126,12 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
         <button className="button primary section-note" disabled={busy || !host}>啟用運算主機</button>
       </form>}
       {running && <div className="section-note">
-        <p className="pre">{host.label} · {host.address}:{host.port}</p>
-        <p className="small pre">{host.engine?.accepting ? '可接收文字任務' : host.engine?.error} · {host.models?.length ?? 0} 個模型</p>
+        <p className="pre">{host?.label} · {host?.address}:{host?.port}</p>
+        <p className="small pre">{host?.engine?.accepting ? '可接收文字任務' : host?.engine?.error} · {host?.models?.length ?? 0} 個模型</p>
+        <p className="small pre">文字引擎 {host?.engine?.model_loaded ? '已載入模型' : '尚未載入模型'} ·
+          本機可用 RAM {info?.hardware.ram_available != null ? gb(info.hardware.ram_available) : '未知'}</p>
         <div className="row creation-actions">
-          <button className="button primary" disabled={busy} onClick={()=>void change(async()=>{
+          <button className="button primary" disabled={busy || host?.state === 'failed'} onClick={()=>void change(async()=>{
             setInvite(await rpc('remote-host-invite',{confirmed:true}))
           })}>建立一次性配對邀請</button>
           <button className="button" disabled={busy} onClick={()=>void change(async()=>{

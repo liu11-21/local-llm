@@ -138,8 +138,12 @@ class HostProtocolTests(unittest.TestCase):
         self.worker.host_chat = infer
         client.rpc("remote-client-pair", {"invite": self.host.issue(), "label":"laptop", "confirmed":True})
         stored = client.remote_clients.get(self.host.id)
-        self.assertEqual(list(stored.stream("demo.gguf", [{"role":"user","content":"hello"}], 128, 0.4, Event())),
-                         ["測試回答"])
+        data = {"chat":uuid4().hex, "runtime":stored.id, "model":"demo.gguf", "prompt":"hello", "policy":"auto"}
+        with self.assertRaises(ValueError):
+            client.perform("chat", data, Event(), lambda **_: None)
+        answer = client.perform("chat", {**data, "consent":True}, Event(), lambda **_: None)
+        self.assertEqual(answer["answer"], "測試回答")
+        self.assertEqual(client.history(data["chat"], with_runtime=True)[-1]["runtime"], stored.id)
         with client.connect() as db:
             self.assertNotIn(stored.token.encode(), bytes(db.execute("SELECT protected FROM remote_client_secrets").fetchone()[0]))
         restored = RemoteClients(client.connect)

@@ -116,10 +116,14 @@ class RemoteClient:
                         429: "主機佇列已滿。請等候其他工作完成。",
                         503: "主機引擎目前不可用。請在主機檢查模型、資源與引擎。",
                     }
-                    raise ProtocolError(response.status, errors.get(response.status, "主機拒絕這次請求。"))
+                    message = errors.get(response.status, "主機拒絕這次請求。")
+                    if response.status in (401, 426):
+                        self.error = message
+                    raise ProtocolError(response.status, message)
                 yield response
         except ssl.SSLError:
-            raise ValueError("TLS 驗證失敗。請確認主機位址和憑證，並重新取得邀請。") from None
+            self.error = "TLS 驗證失敗。請確認主機位址和憑證，並重新取得邀請。"
+            raise ValueError(self.error) from None
         except (OSError, HTTPException):
             raise ConnectionError("無法連線到運算主機。請檢查私人網路和主機服務。") from None
         finally:
@@ -234,7 +238,9 @@ class RemoteClients:
             db.execute("CREATE TABLE IF NOT EXISTS remote_client_secrets(id TEXT PRIMARY KEY, protected BLOB NOT NULL)")
             for row in db.execute("SELECT id,host,port,label,certificate,protected FROM remote_client_hosts JOIN remote_client_secrets USING(id)"):
                 try:
-                    self.items[row[0]] = RemoteClient(*row[:5], protect(row[5], decrypt=True).decode("ascii"))
+                    token = protect(row[5], decrypt=True).decode("ascii")
+                    if TOKEN.fullmatch(token):
+                        self.items[row[0]] = RemoteClient(*row[:5], token)
                 except (ValueError, UnicodeError):
                     continue
 

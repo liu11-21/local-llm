@@ -88,8 +88,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
     if (!canSend || locked.current) return
     const text = regenerate ? messages.at(-2)?.content || '' : prompt.trim()
     if (!text || (regenerate && messages.at(-1)?.role !== 'assistant')) return
-    if (runtime !== 'local' && (!provider || policy !== 'manual')) {
-      report('請先在設定將運算政策切換為手動，再選擇可用的端點。')
+    if (runtime !== 'local' && (!provider || ['privacy','local'].includes(policy) || (provider.kind !== 'paired' && policy !== 'manual'))) {
+      report(provider?.kind === 'paired' ? '目前運算偏好限制資料留在本機。' : '請先在設定將運算政策切換為手動，再選擇可用的端點。')
       return
     }
     const consent = provider ? window.confirm('允許將提示詞及相關對話歷史傳送至 ' + provider.host + ':' + provider.port + '？' +

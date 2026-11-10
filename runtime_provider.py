@@ -12,14 +12,14 @@ from colab_runtime import ColabAdapter
 POLICIES = {"auto", "local", "performance", "cost", "privacy", "manual"}
 
 
-def route(policy, selected, consent=False):
+def route(policy, selected, consent=False, *, paired=False):
     if not isinstance(policy, str) or policy not in POLICIES or not isinstance(selected, str):
         raise ValueError("運算路由設定無效。")
     if selected == "local":
         return "local"
     if policy in ("local", "privacy"):
         raise ValueError("目前的運算政策只允許本機推理。")
-    if policy != "manual" or not consent:
+    if not consent or (policy != "manual" and not paired):
         raise ValueError("請手動選擇運算環境，並同意將本輪及相關歷史傳到該端點。")
     return selected
 

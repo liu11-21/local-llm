@@ -15,7 +15,7 @@ def observed(value=None, source="detected"):
 
 def capability(id, label, kind, provider, *, version=None, connected=None, health="unknown", tasks=(), formats=(),
                engines=(), models=(), resources=None, features=None, network=None, destination=None, auth=None,
-               cost="unknown", source="registry", error=None, checked_at=None):
+               cost="unknown", source="registry", error=None, checked_at=None, model_ram=None):
     return validate({
         "schema": VERSION, "id": id, "label": label, "kind": kind, "provider": provider, "version": version,
         "connected": connected, "health": health, "tasks": list(tasks), "formats": list(formats),
@@ -24,6 +24,7 @@ def capability(id, label, kind, provider, *, version=None, connected=None, healt
         "checked_at": int(time()) if checked_at is None else checked_at,
         "resources": {key: (resources or {}).get(key, observed()) for key in RESOURCES},
         "features": {key: (features or {}).get(key) for key in FEATURES},
+        "model_ram": model_ram or {},
     })
 
 
@@ -75,6 +76,11 @@ def validate(data):
         if (value is None) != (item["source"] == "unknown") or (value is not None and not valid):
             raise ValueError("Runtime 資源數值無效。")
         result["resources"][key] = observed(value, item["source"])
+    estimates = data.get("model_ram", {})
+    if (not isinstance(estimates, dict) or estimates.keys() - set(result["models"])
+            or any(type(value) is not int or not 0 < value <= 2**53 - 1 for value in estimates.values())):
+        raise ValueError("Runtime 模型記憶體估計資料無效。")
+    result["model_ram"] = estimates
     return result
 
 
@@ -96,6 +102,7 @@ def local_capability(info, health, active_jobs):
                           "cpu_threads": observed(hardware["cpu_threads"]), "ram_total": observed(hardware["ram_total"]),
                           "ram_available": observed(hardware["ram_available"]), "active_jobs": observed(active_jobs),
                           "gpus": observed([name for name, _, _ in devices][:32] or None),
+                          "vram_available": observed(info.get("dedicated_vram_available"), "reported"),
                       }, features={"stream": bool(info["engine"]), "cancel": True, "load": bool(info["engine"]),
                                    "unload": bool(info["engine"]), "download": True},
                       error="引擎目前無法回應。" if {text, media} & {"unhealthy", "failed"} else None)

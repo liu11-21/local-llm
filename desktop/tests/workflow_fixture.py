@@ -11,6 +11,7 @@ from time import sleep
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import desktop_worker
+from test_remote_host import free_port, make_certificate
 
 
 class ModelProtocol(BaseHTTPRequestHandler):
@@ -116,6 +117,9 @@ if __name__ == "__main__":
                 return {}
 
             def rpc(self, op, data):
+                if op == "fixture-host-credentials":
+                    certificate, key = make_certificate(self.data)
+                    return {"certificate": str(certificate), "key": str(key), "port": free_port()}
                 if op == "fixture-create-work":
                     self.add_sample_work()
                     return True
