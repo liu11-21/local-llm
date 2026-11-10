@@ -33,8 +33,9 @@ function Graph({nodes, members}: {nodes: Node[]; members: Member[]}) {
   </li>)}</ol>
 }
 
-export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
+export function TeamWorkflow({visible, info, policy, run, report, cancel, refreshRuntime}: {
   visible: boolean; info?: Info; policy: string; run: Run; report: (error: unknown) => void; cancel: (id: string) => void
+  refreshRuntime:(runtime:string)=>Promise<void>
 }) {
   const prepare = useTaskPreparation()
   const [definitions, setDefinitions] = useState<{templates:Team[]; roles:Role[]}>()
@@ -169,7 +170,7 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
             }}>移除</button>}</div>
           <div className="team-flow-fields">
             <label>運算環境<RuntimePicker info={info} task="team" ariaLabel={'角色 '+(index+1)+' 運算環境'}
-              value={member.runtime} disabled={busy} change={value=>editMember(member.id,{runtime:value,model:''})}/></label>
+              value={member.runtime} disabled={busy} refresh={refreshRuntime} change={value=>editMember(member.id,{runtime:value,model:''})}/></label>
             <label>模型<TaskModelPicker ariaLabel={'角色 '+(index+1)+' 模型'} info={info} runtime={member.runtime}
               model={member.model} disabled={busy} change={value=>editMember(member.id,{model:value})}/></label>
           </div>

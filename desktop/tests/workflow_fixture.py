@@ -144,6 +144,7 @@ if __name__ == "__main__":
                     provider = OpenAIProvider("7"*32, "cloud", "測試運算環境", "fixture.example", 443, "/v1",
                                               "fixture-not-a-secret", ["test-text"], True, int(time()))
                     provider.stream = lambda *_: (part for part in ("受控測試回答",))
+                    provider.discover = lambda: None
                     self.providers.items[provider.id] = provider
                     return provider.id
                 if op == "remote-host-networks":

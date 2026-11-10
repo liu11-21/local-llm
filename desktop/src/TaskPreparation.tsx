@@ -4,7 +4,8 @@ import { rpc } from './api'
 type Target = {runtime: string; model: string}
 type Transfer = {runtime: string; model: string; destination: string; cost: string}
 type Match = {reasons: string[]; risks: string[]; unknown: string[]}
-type Check = {blockers: string[]; transfers: Transfer[]; matches?: Match[]}
+type Check = {state:'ready'|'needs-setup'|'uncertain'|'incompatible';blockers: string[]; transfers: Transfer[]; matches?: Match[]}
+const readiness = {'ready':'已就緒','needs-setup':'需要準備','uncertain':'待確認','incompatible':'不相容'}
 type Prepare = (task: string, targets: Target[], policy: string, contents?: string) => Promise<'local'|'confirmed'|'cancelled'>
 const Preparation = createContext<Prepare>(async () => 'cancelled')
 
@@ -75,6 +76,7 @@ export function TaskFit({task, runtime, model, policy}: Target & {task: string; 
       finally {setWaiting(false)}
     }}>{waiting ? '檢查中…' : '檢查此組合'}</button>
     {(check || issue) && <div role="status" className="small pre">
+      {check && <b>{readiness[check.state]}</b>}
       {check?.blockers.map(item=><p key={item}>{item}</p>)}
       {match && [...match.reasons,...match.risks,...match.unknown].map(item=><p key={item}>{item}</p>)}
       {issue}

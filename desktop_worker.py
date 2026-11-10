@@ -365,7 +365,8 @@ class Desktop(Workspace):
             if len(targets) != 1 or field(targets[0], "runtime", 32) != "local":
                 raise ValueError("這個工作流程需要本機 ComfyUI。")
             state = self.media_readiness({**data, "kind":task})
-            return {"media":state, "blockers":[], "transfers":[]}
+            fit = {"ready":"ready", "missing":"needs-setup", "unavailable":"needs-setup"}.get(state["state"], "uncertain")
+            return {"media":state, "state":fit, "blockers":[], "transfers":[]}
         info = self.rpc("info", {})
         records = {record["id"]: record for record in self.runtime_capabilities(info)}
         providers = {provider["id"]: provider for provider in info["providers"]}
@@ -383,6 +384,8 @@ class Desktop(Workspace):
             if runtime == "local":
                 if not info["engine"]:
                     blockers.append("需要安裝本機文字引擎。")
+                elif self.engine_health()["llama"]["state"] == "unhealthy":
+                    blockers.append("本機文字引擎沒有回應。請到運算環境停止引擎後重試。")
                 if model not in info["models"]:
                     blockers.append("找不到所選的本機模型。請先下載或重新選擇。")
                 continue
@@ -400,7 +403,11 @@ class Desktop(Workspace):
                 blockers.append("遠端引擎目前無法接收工作。")
             transfers.append({"runtime":provider["label"], "model":model, "destination":record["destination"],
                               "cost":record["cost"], "needs_network":True})
-        return {"blockers":list(dict.fromkeys(blockers)), "transfers":transfers, "matches":matches}
+        statuses = {match["state"] for match in matches}
+        state = ("incompatible" if "incompatible" in statuses or len(matches) != len(targets)
+                 else "needs-setup" if blockers or "needs-setup" in statuses
+                 else "uncertain" if "uncertain" in statuses else "ready")
+        return {"state":state, "blockers":list(dict.fromkeys(blockers)), "transfers":transfers, "matches":matches}
 
     def host_models(self):
         return sorted(path.name for path in self.models.glob("*.gguf")
@@ -811,6 +818,13 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == "runtime-models-refresh":
+            runtime = field(data, "runtime", 32)
+            if runtime == "local":
+                return {"id":runtime,"models":self.rpc("info", {})["models"],"connected":True}
+            provider = self.remote_clients.items.get(runtime) or self.providers.get(runtime)
+            provider.discover()
+            return provider.summary()
         if op == "onboarding-plan":
             task = field(data, "task", 20)
             info = self.rpc("info", {})

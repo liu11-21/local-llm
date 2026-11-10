@@ -3,11 +3,20 @@ import { useState, type ReactNode } from 'react'
 import { TaskProgress, type Run } from './taskQueue'
 import { SelectModels } from './ui'
 
-export function RuntimePicker({info, task, value, change, disabled, ariaLabel = '運算環境'}: {
+export function RuntimePicker({info, task, value, change, refresh, disabled, ariaLabel = '運算環境'}: {
   info?: Info; task: string; value: string; change: (runtime: string) => void; disabled?: boolean; ariaLabel?: string
+  refresh?: (runtime:string) => Promise<void>
 }) {
   const options = info?.registry.runtimes.filter(runtime => runtime.id !== 'local' && runtime.tasks.includes(task)) ?? []
-  return <select aria-label={ariaLabel} value={value} disabled={disabled} onChange={event => change(event.target.value)}>
+  const [loading,setLoading] = useState(false)
+  return <select aria-label={ariaLabel} value={value} disabled={disabled || loading} aria-busy={loading} onChange={event => {
+    const runtime=event.target.value
+    change(runtime)
+    if (refresh) {
+      setLoading(true)
+      void refresh(runtime).finally(()=>setLoading(false))
+    }
+  }}>
     <option value="local">本機 CPU／GPU</option>
     {value !== 'local' && !options.some(runtime => runtime.id === value) && <option value={value}>端點需重新連線</option>}
     {options.map(runtime => <option key={runtime.id} value={runtime.id}>

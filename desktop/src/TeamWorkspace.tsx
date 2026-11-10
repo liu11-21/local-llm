@@ -7,8 +7,9 @@ import { RuntimePicker, TaskModelPicker } from './TaskSelection'
 import { useTaskPreparation } from './TaskPreparation'
 import { TeamWorkflow } from './TeamWorkflow'
 
-export function TeamWorkspace({info, policy, run, report, cancel}: {
+export function TeamWorkspace({info, policy, run, report, cancel, refreshRuntime}: {
   info?: Info; policy: string; run: Run; report: (error: unknown) => void; cancel: (id: string) => void
+  refreshRuntime:(runtime:string)=>Promise<void>
 }) {
   const [workflow, setWorkflow] = useState(false)
   const [team, setTeam] = useState<string[]>(['', ''])
@@ -36,7 +37,8 @@ export function TeamWorkspace({info, policy, run, report, cancel}: {
             <button className={workflow ? 'button' : 'button primary'} aria-pressed={!workflow} onClick={()=>setWorkflow(false)}>多模型整合</button>
             <button className={workflow ? 'button primary' : 'button'} aria-pressed={workflow} onClick={()=>setWorkflow(true)}>角色與工作流程</button>
           </div>
-          <TeamWorkflow visible={workflow} info={info} policy={policy} run={run} report={report} cancel={cancel}/>
+          <TeamWorkflow visible={workflow} info={info} policy={policy} run={run} report={report} cancel={cancel}
+            refreshRuntime={refreshRuntime}/>
           <div hidden={workflow} className="team-classic">
           <Panel title="建立模型團隊" description="至少選擇兩個成員。本機依資源預估決定是否並行；使用外部端點前會先確認。">
             {team.map((m,i)=><div className="team-member" key={i}>
@@ -46,7 +48,7 @@ export function TeamWorkspace({info, policy, run, report, cancel}: {
                 {team.length>2 && <button className="icon" aria-label={`移除成員 ${i+1}`} disabled={busy} onClick={()=>{setTeam(t=>t.filter((_,j)=>j!==i));setTeamRuntimes(t=>t.filter((_,j)=>j!==i));setLead(l=>l>=i?Math.max(0,l-1):l)}}><X size={16}/></button>}
               </div>
               <label>運算環境<RuntimePicker info={info} task="team" ariaLabel={`成員 ${i+1} 運算環境`} disabled={busy}
-                value={teamRuntimes[i]} change={value=>{
+                value={teamRuntimes[i]} refresh={refreshRuntime} change={value=>{
                   setTeamRuntimes(t=>t.map((old,j)=>j===i?value:old));setTeam(t=>t.map((old,j)=>j===i?'':old))
                 }}/></label>
               <label>模型<TaskModelPicker ariaLabel={`成員 ${i+1} 模型`} info={info} runtime={teamRuntimes[i]}

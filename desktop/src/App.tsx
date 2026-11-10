@@ -52,6 +52,11 @@ export function App() {
       setWorks(recent)
     } catch (error) { report(error) }
   }
+  async function refreshRuntime(runtime:string) {
+    try {await rpc('runtime-models-refresh',{runtime})}
+    catch (error) {report(error)}
+    finally {await refresh()}
+  }
   useEffect(() => { void refresh() }, [])
   useEffect(()=>{
     if (!info) return
@@ -145,13 +150,13 @@ export function App() {
         {page === 'home' && <Dashboard info={info} tasks={queue.tasks} works={works} go={go} openGuide={openGuide}
           openWork={work => {setSelected(work);go('works')}}/>}
         <div hidden={page !== 'chat'}><ChatWorkspace info={info} policy={policy} run={runTracked} cancel={queue.cancel}
-          report={report} notice={notice} go={go} preferredRuntime={preferredRuntime}/></div>
+          report={report} notice={notice} go={go} preferredRuntime={preferredRuntime} refreshRuntime={refreshRuntime}/></div>
         {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError}/>}
         {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go} refresh={refresh}/>}
         {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run}
           report={report} notice={notice} refresh={refresh} openChat={id=>{setPreferredRuntime({id});go('chat')}}/>}
         <div hidden={page !== 'team'}><TeamWorkspace info={info && {...info, providers:info.providers.filter(item=>item.kind!=='paired')}}
-          policy={policy} run={runTracked} report={report} cancel={queue.cancel}/></div>
+          policy={policy} run={runTracked} report={report} cancel={queue.cancel} refreshRuntime={refreshRuntime}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} health={health} preset={preset} works={works}
           tasks={queue.tasks} run={runTracked} cancel={queue.cancel} retry={queue.retry} go={go} openWork={openSavedWork}/>}
         {page === 'works' && <Works info={info} revision={works} selected={selected} choose={setSelected}

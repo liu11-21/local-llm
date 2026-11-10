@@ -32,10 +32,11 @@ function Reply({ content }: { content: string }) {
   }}>{content}</Markdown></div>
 }
 
-export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, preferredRuntime }: {
+export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, preferredRuntime, refreshRuntime }: {
   info?: Info; policy: string; run: Run; cancel: (id: string) => void; report: (error: unknown) => void
   notice: (message: string) => void; go: (page: 'library' | 'runtime') => void
   preferredRuntime?: {id:string;model?:string}
+  refreshRuntime: (runtime:string)=>Promise<void>
 }) {
   const [chats, setChats] = useState<Chat[]>([])
   const [chat, setChat] = useState(identifier)
@@ -149,7 +150,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         <div className="chat-controls">
           <label>模型<TaskModelPicker info={info} runtime={runtime} model={model} change={setModel} disabled={!!pending}/></label>
           <label>運算環境<RuntimePicker info={info} task="chat" value={runtime} disabled={!!pending}
-            change={value => {setRuntime(value);setModel('')}}/></label>
+            refresh={refreshRuntime} change={value => {setRuntime(value);setModel('')}}/></label>
         </div>
         <TaskFit key={`${runtime}:${model}:${policy}`} task="chat" runtime={runtime} model={model} policy={policy}/>
         {runtime === 'local' && <TextSetup info={info} run={run} cancel={cancel} openModels={()=>go('library')}/>}
