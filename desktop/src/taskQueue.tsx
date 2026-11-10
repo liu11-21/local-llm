@@ -3,6 +3,7 @@ import { rpc, type Job, type Params, type Task } from './api'
 import { Empty, Panel } from './ui'
 
 const labels: Record<string, string> = {
+  'remote-host-chat': '遠端裝置文字推理',
   chat: '文字聊天', download: '模型下載', team: 'AI 團隊', agent: 'AI 代理人',
   'team-workflow': 'AI 團隊角色流程',
   image: '圖片生成', video: '影片生成', music: '音樂生成', media: '創作',

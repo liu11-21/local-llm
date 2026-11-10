@@ -35,9 +35,10 @@ from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
 from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
+from remote_host import ANSWER_LIMIT, Host
 from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import Providers, route
-from runtime_contract import colab_capability, external_capability, fresh, local_capability
+from runtime_contract import colab_capability, external_capability, fresh, local_capability, observed
 from task_manager import TaskManager, timestamp
 from team_workflow import ROLES as TEAM_ROLES, TeamStore, run_team as run_team_workflow, specification, templates
 from tool_registry import builtins as agent_tools
@@ -143,10 +144,12 @@ class Desktop(Workspace):
             db.execute("CREATE INDEX IF NOT EXISTS messages_chat ON messages(chat)")
             self.agent_plans.initialize(db)
             self.team_store.initialize(db)
+            Host.initialize(db)
             if db.execute("PRAGMA user_version").fetchone()[0] < 4:
                 db.execute("PRAGMA user_version=4")
         recover_downloads(self.download_cache, self.models, pinned_model, clean=True)
         self.scheduler = TaskManager(self.perform, self.save_task)
+        self.remote_host = Host(self.connect, self.scheduler, self.host_models, self.host_engine, self.host_resources)
 
     @contextmanager
     def connect(self):
@@ -315,7 +318,8 @@ class Desktop(Workspace):
 
     def engine_health(self):
         active = [task for task in self.scheduler.list() if task["state"] == "running"]
-        llama_busy = any(task["action"] in ("chat", "agent", "team-workflow") and task["runtime"] == "local" for task in active)
+        llama_busy = any(task["action"] in ("chat", "agent", "team-workflow", "remote-host-chat")
+                         and task["runtime"] == "local" for task in active)
         comfy_busy = any(task["action"] == "media" for task in active)
         comfy_installed = any(installed(install_directory(self.data / "comfyui", profile)) for profile in PROFILES)
         return {"llama": self.llama_health.snapshot(engine_path(self.data) is not None, llama_busy),
@@ -326,6 +330,59 @@ class Desktop(Workspace):
         return [local_capability(info, self.engine_health(), active),
                 *(external_capability(item) for item in info["providers"]),
                 colab_capability(info["colab_ready"])]
+
+    def host_models(self):
+        return sorted(path.name for path in self.models.glob("*.gguf")
+                      if path.is_file() and not path.is_symlink() and len(path.name) <= 180
+                      and all(ord(char) >= 32 for char in path.name))[:250]
+
+    def host_engine(self):
+        installed = engine_path(self.data) is not None
+        state = self.engine_health()["llama"]["state"]
+        busy = any(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
+        error = ("主機需要安裝 llama.cpp。" if not installed else "請先在主機停止 ComfyUI。"
+                 if self.comfy.running() else "主機文字引擎異常。請在主機檢查引擎。"
+                 if state in ("failed", "unhealthy") else None)
+        return {"installed": installed, "engine_state": state, "busy": busy, "accepting": error is None,
+                "error": error}
+
+    def host_resources(self):
+        hardware = detect_hardware(self.models)
+        devices = self.hardware_cache or []
+        active = sum(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
+        return {"cpu_threads": observed(hardware.cpu_threads), "ram_total": observed(hardware.ram_total),
+                "ram_available": observed(hardware.ram_available), "active_jobs": observed(active),
+                "gpus": observed([device[0] for device in devices][:32] or None, "reported")}
+
+    def host_chat(self, data, cancel, update):
+        try:
+            self.prepare({"model": data["model"], "context": 4096}, cancel, update)
+            messages, budget = data["messages"], data["max_tokens"]
+            while self.local.prompt_tokens(messages) + budget > self.active[2]:
+                if len(messages) <= 2:
+                    raise ValueError("CONTEXT")
+                messages = messages[2:]
+            answer = ""
+            update(answer="", message="主機正在生成回答…")
+            with closing(self.local.stream(messages, max_tokens=budget, temperature=data["temperature"], cancel=cancel)) as stream:
+                for fragment in stream:
+                    if cancel.is_set():
+                        return None
+                    answer += fragment
+                    if len(answer) > ANSWER_LIMIT:
+                        raise ValueError("ANSWER_LIMIT")
+                    update(answer=answer)
+            if not cancel.is_set() and not answer.strip():
+                raise ValueError("EMPTY")
+            return None
+        except Exception as error:
+            if cancel.is_set():
+                return None
+            message = {"CONTEXT": "遠端上下文不足。請縮短提示詞或回答上限。",
+                       "ANSWER_LIMIT": "遠端回答超出長度限制。",
+                       "EMPTY": "主機未傳回回答。"}.get(str(error),
+                       "主機無法完成推理。請在主機檢查模型、記憶體及引擎。")
+            raise RuntimeError(message) from None
 
     def media_readiness(self, data):
         kind = field(data, "kind", 12)
@@ -502,6 +559,8 @@ class Desktop(Workspace):
         return text if member["runtime"] == "local" else text.replace(model.token, "[已遮蔽金鑰]")
 
     def perform(self, action, data, cancel, update):
+        if action == "remote-host-chat":
+            return self.host_chat(data, cancel, update)
         if action == "download":
             return self.download(data, cancel, update)
         if action == "media-install":
@@ -651,6 +710,23 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == "remote-host-status":
+            return self.remote_host.status()
+        if op == "remote-host-start":
+            if data.get("confirmed") is not True:
+                raise ValueError("請確認要在私人網路分享這台電腦的運算能力。")
+            return self.remote_host.start(field(data, "address", 45), data.get("port"), field(data, "label", 100),
+                                          field(data, "certificate", 1000), field(data, "key_file", 1000))
+        if op == "remote-host-stop":
+            self.remote_host.stop()
+            return self.remote_host.status()
+        if op == "remote-host-invite":
+            if data.get("confirmed") is not True:
+                raise ValueError("請確認要建立配對邀請。")
+            return self.remote_host.issue()
+        if op == "remote-host-revoke":
+            self.remote_host.revoke(identifier(data.get("id")))
+            return self.remote_host.status()
         if op == "engine-health":
             return self.engine_health()
         if op == "media-readiness":
@@ -814,6 +890,7 @@ class Desktop(Workspace):
         raise ValueError("未支援的操作。")
 
     def close(self):
+        self.remote_host.stop()
         self.scheduler.close()
         self.agent_tools.close()
         self.local.stop()
