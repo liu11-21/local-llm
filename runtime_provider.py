@@ -4,6 +4,7 @@ import http.client
 import json
 import socket
 from threading import Event, Thread
+from time import time
 from urllib.parse import urlsplit
 from uuid import uuid4
 from colab_runtime import ColabAdapter
@@ -50,10 +51,11 @@ class OpenAIProvider:
     token: str = field(repr=False)
     models: list = field(default_factory=list)
     connected: bool = False
+    checked_at: int = 0
 
     def summary(self):
         return {"id": self.id, "kind": self.kind, "label": self.label, "host": self.host, "port": self.port,
-                "models": self.models, "connected": self.connected, "tasks": ["chat"]}
+                "models": self.models, "connected": self.connected, "tasks": ["chat"], "checked_at": self.checked_at}
 
     def team_entry(self, model):
         if model not in self.models:
@@ -74,6 +76,7 @@ class OpenAIProvider:
             return connection, response
         except Exception:
             self.connected = False
+            self.checked_at = int(time())
             connection.close()
             raise
 
@@ -87,6 +90,11 @@ class OpenAIProvider:
                            and isinstance(item.get("id"), str) and 0 < len(item["id"]) <= 200][:250]
             if not self.models:
                 raise ValueError("這個端點沒有可選模型。")
+            self.checked_at = int(time())
+        except Exception:
+            self.connected = False
+            self.checked_at = int(time())
+            raise
         finally:
             response.close()
             connection.close()

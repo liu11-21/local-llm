@@ -37,6 +37,7 @@ from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, work
 from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
 from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import Providers, route
+from runtime_contract import colab_capability, external_capability, fresh, local_capability
 from task_manager import TaskManager, timestamp
 from team_workflow import ROLES as TEAM_ROLES, TeamStore, run_team as run_team_workflow, specification, templates
 from tool_registry import builtins as agent_tools
@@ -319,6 +320,12 @@ class Desktop(Workspace):
         comfy_installed = any(installed(install_directory(self.data / "comfyui", profile)) for profile in PROFILES)
         return {"llama": self.llama_health.snapshot(engine_path(self.data) is not None, llama_busy),
                 "comfyui": self.comfy_health.snapshot(comfy_installed, comfy_busy)}
+
+    def runtime_capabilities(self, info):
+        active = sum(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
+        return [local_capability(info, self.engine_health(), active),
+                *(external_capability(item) for item in info["providers"]),
+                colab_capability(info["colab_ready"])]
 
     def media_readiness(self, data):
         kind = field(data, "kind", 12)
@@ -712,6 +719,11 @@ class Desktop(Workspace):
             info["recoverable_downloads"] = recover_downloads(self.download_cache, self.models, pinned_model)
             info["recent_model"] = recent[0] if recent else None
             return info
+        if op in ("runtime-capabilities", "runtime-capability-refresh"):
+            if op == "runtime-capability-refresh":
+                provider = self.providers.get(field(data, "id", 32))
+                provider.discover()
+            return [{"capability": item, "fresh": fresh(item)} for item in self.runtime_capabilities(self.rpc("info", {}))]
         if op == "model-imported":
             path = self.model(field(data, "model", 180))
             check_gguf(path)
