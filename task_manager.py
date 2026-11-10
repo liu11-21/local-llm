@@ -138,8 +138,10 @@ class TaskManager:
         def progress(**values):
             with self.lock:
                 if task.public["state"] == "running" and not task.stop.is_set():
+                    new_remote_request = ("remote_request" in values and
+                                          task.public.get("remote_request") != values["remote_request"])
                     task.public.update(values)
-                    if task.on_snapshot and monotonic() - task.saved_at >= 1:
+                    if new_remote_request or task.on_snapshot and monotonic() - task.saved_at >= 1:
                         self._persist(task)
 
         result = None

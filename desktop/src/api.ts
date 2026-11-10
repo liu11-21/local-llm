@@ -49,6 +49,7 @@ export type Chat = [string, string]
 export type Message = { role: string; content: string; runtime?: string; model?: string; provider?: string }
 export type TaskState = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted'
 export type Task = {
+  remote_request?: string;
   id: string; action: string; kind: string; title?: string; state: TaskState; message: string;
   created: string; started?: string | null; finished?: string | null; runtime?: string;
   lane?: string; error?: string | null; received?: number | null; total?: number | null; retryable?: boolean;

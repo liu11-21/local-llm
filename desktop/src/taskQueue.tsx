@@ -86,6 +86,7 @@ export function TaskCenter({ tasks, cancel, retry, compact, loadError }: {
       <span><b>{labels[task.kind] || labels[task.action] || task.action}{task.title && ` · ${task.title}`}</b>
         <small>{task.message}</small>
         {!compact && task.history_warning && <small>{task.history_warning}</small>}
+        {!compact && task.remote_request && <small className="pre">遠端任務 ID {task.remote_request}</small>}
         {!compact && <small>{new Date(task.created).toLocaleString()} · {task.runtime === 'local' || !task.runtime ? '本機' : '外部運算'}</small>}
         {activeTask(task) && <TaskProgress received={task.received} total={task.total}/>}
       </span>

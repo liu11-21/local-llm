@@ -83,3 +83,26 @@ class RemoteJobsTests(unittest.TestCase):
         until = monotonic()+4
         while any(task["state"] in ("running","queued") for task in self.worker.scheduler.list()) and monotonic()<until:
             sleep(0.02)
+
+    def test_client_request_identifier_is_durable_before_network_completion(self):
+        recorded, done = Event(), Event()
+        self.addCleanup(done.set)
+        remote_request = uuid4().hex
+
+        def execute(_action,_data,_cancel,update):
+            update(remote_request=remote_request)
+            recorded.set()
+            done.wait(3)
+            return {}
+
+        scheduler = self.worker.scheduler
+        scheduler.execute = execute
+        task = scheduler.submit("media",{"kind":"image","runtime":"a"*32})
+        self.assertTrue(recorded.wait(2))
+        with self.worker.connect() as db:
+            saved = db.execute("SELECT snapshot FROM task_metadata WHERE id=?",(task["id"],)).fetchone()[0]
+        self.assertIn(remote_request,saved)
+        done.set()
+        until = monotonic()+3
+        while scheduler.snapshot(task["id"])["state"]=="running" and monotonic()<until:
+            sleep(.02)
