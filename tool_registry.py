@@ -4,7 +4,7 @@ from hashlib import sha256
 import json
 from queue import Empty, Queue
 import re
-from threading import BoundedSemaphore, Event, Thread
+from threading import BoundedSemaphore, Event, Lock, Thread, current_thread
 from time import monotonic
 from typing import Callable
 
@@ -18,8 +18,8 @@ ERRORS = {
     "TOOL_REJECTED": "使用者拒絕這次工具調用。",
     "TOOL_PARAMETERS": "工具參數不符合 Schema。",
     "TOOL_OUTPUT": "工具輸出不符合 Schema。",
-    "TOOL_TIMEOUT": "工具執行逾時。",
-    "TOOL_CANCELLED": "工具執行已取消。",
+    "TOOL_TIMEOUT": "已停止等待逾時工具，底層唯讀操作可能仍在結束中。",
+    "TOOL_CANCELLED": "已取消等待，底層唯讀操作可能仍在結束中。",
     "TOOL_UNAVAILABLE": "工具資料目前無法取得。",
 }
 
@@ -81,6 +81,19 @@ class ToolRegistry:
     def __init__(self):
         self.entries = {}
         self.slots = BoundedSemaphore(2)
+        self.lock = Lock()
+        self.active = {}
+        self.closed = False
+
+    def close(self, grace=.3):
+        with self.lock:
+            self.closed = True
+            active = list(self.active.items())
+            for _, stopped in active:
+                stopped.set()
+        end = monotonic() + grace
+        for thread, _ in active:
+            thread.join(max(0, end - monotonic()))
 
     def register(self, tool: Tool, handler: Callable):
         if tool.id in self.entries:
@@ -131,17 +144,26 @@ class ToolRegistry:
             except Exception:
                 completed.put((False, None))
             finally:
-                self.slots.release()
+                with self.lock:
+                    self.active.pop(current_thread(), None)
+                    self.slots.release()
 
-        try:
-            Thread(target=work, daemon=True).start()
-        except BaseException:
-            self.slots.release()
-            raise
+        thread = Thread(target=work, daemon=True)
+        with self.lock:
+            if self.closed:
+                self.slots.release()
+                raise ToolError("TOOL_CANCELLED")
+            self.active[thread] = stopped
+            try:
+                thread.start()
+            except BaseException:
+                self.active.pop(thread)
+                self.slots.release()
+                raise
         end = monotonic() + (tool.timeout if timeout is None else min(tool.timeout, timeout))
         try:
             while True:
-                if cancel.is_set():
+                if cancel.is_set() or stopped.is_set():
                     raise ToolError("TOOL_CANCELLED")
                 remaining = end - monotonic()
                 if remaining <= 0:
@@ -151,7 +173,7 @@ class ToolRegistry:
                     break
                 except Empty:
                     pass
-            if cancel.is_set():
+            if cancel.is_set() or stopped.is_set():
                 raise ToolError("TOOL_CANCELLED")
             if not ok:
                 raise ToolError("TOOL_UNAVAILABLE")

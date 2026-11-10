@@ -59,8 +59,15 @@ def profile(data, registry):
             or len(set(tools)) != len(tools)):
         raise ValueError("團隊工具允許清單無效。")
     for tool in tools:
-        registry.authorize(tool, {}, tools)
+        registry.definition(tool, tools)
+    arguments = data.get("tool_arguments", {})
+    if not isinstance(arguments, dict) or arguments.keys() - set(tools):
+        raise ValueError("工具參數必須對應已勾選的工具。")
+    arguments = {tool: arguments.get(tool, {}) for tool in tools}
+    for tool, args in arguments.items():
+        registry.authorize(tool, args, tools)
     return {"id": key(data.get("id")), "role": role, "tools": tools.copy(),
+            "tool_arguments": arguments,
             "name": field(data, "name", 60), "system": field(data, "system", 1200, optional=True) or ROLES[role][1],
             "goal": field(data, "goal", 1200, optional=True), "model": field(data, "model", 200, optional=True),
             "runtime": field(data, "runtime", 32), "tokens": number(data, "tokens", 384, 64, 1024),
@@ -146,6 +153,20 @@ def specification(data, registry):
             "nodes": validated_graph(raw, members, final), "seconds": number(data, "seconds", 360, 30, 900)}
 
 
+def outcome(run):
+    nodes = run["nodes"]
+    warnings = [item["id"] for item in nodes if item["state"] in {"failed", "skipped"} or
+                any("error" in fact for fact in item.get("evidence", []))]
+    partial = [item["id"] for item in nodes if item.get("partial_dependencies") or
+               (item.get("partial") and item["state"] == "completed" and any(
+                   other["id"] in item["deps"] and other["state"] != "completed" for other in nodes))]
+    unchecked = [item["id"] for item in nodes if run["spec"]["mode"] == "review"
+                 and item["id"] in {"review", "revision"} and item["state"] != "completed"]
+    return {"status": "unavailable" if not run["answer"] else
+            "completed_with_warnings" if warnings or partial or unchecked else "complete",
+            "warnings": warnings, "partial_nodes": partial, "unchecked": unchecked}
+
+
 class TeamStore:
     def __init__(self, connect):
         self.connect = connect
@@ -206,13 +227,15 @@ class TeamStore:
 
     def get(self, ident):
         with self.connect() as db:
-            return self.read(db, ident)
+            run = self.read(db, ident)
+        return {**run, "outcome": outcome(run)}
 
     def list(self):
         with self.connect() as db:
             values = [json.loads(raw) for (raw,) in db.execute("SELECT record FROM team_runs ORDER BY created DESC LIMIT 20")]
         return [{key: item[key] for key in ("id", "state", "created", "task_id")} |
-                {"name": item["spec"]["name"], "mode": item["spec"]["mode"]} for item in values]
+                {"name": item["spec"]["name"], "mode": item["spec"]["mode"],
+                 "outcome": outcome(item)["status"]} for item in values]
 
     def sync_task(self, db, task):
         run = self.read(db, task["team_run_id"])
@@ -242,18 +265,21 @@ def run_team(store, ident, registry, ask, cancel, update):
         if deps and (not available or (not item["partial"] and len(available) != len(deps))):
             item.update(state="skipped", error="必要的前置節點未完成。", finished=timestamp())
         else:
-            item.update(state="running", started=timestamp())
+            item.update(state="running", started=timestamp(),
+                        partial_dependencies=[dep["id"] for dep in deps if dep["state"] != "completed"])
             with store.edit(ident) as latest:
                 latest["nodes"] = list(records.values())
             update(message=f"{item['label']} · {agents[item['agent']]['name']} 執行中")
             member = agents[item["agent"]]
             for tool in member["tools"]:
                 deadline.check()
+                args = member.get("tool_arguments", {}).get(tool, {})
+                audit = {"tool": tool, "arguments": args, "approved": spec.get("tools_approved") is True}
                 try:
-                    output = registry.execute(tool, {}, member["tools"], deadline)
-                    item["evidence"].append({"tool": tool, "output": output})
+                    output = registry.execute(tool, args, member["tools"], deadline, granted=audit["approved"])
+                    item["evidence"].append({**audit, "output": output})
                 except ToolError as error:
-                    item["evidence"].append({"tool": tool, "error": error.code})
+                    item["evidence"].append({**audit, "error": error.code})
                 with store.edit(ident) as latest:
                     latest["nodes"] = list(records.values())
             try:
@@ -274,4 +300,6 @@ def run_team(store, ident, registry, ask, cancel, update):
         raise ValueError("TEAM_FINAL · 最終節點未完成，已保存可用的部分結果。")
     with store.edit(ident) as latest:
         latest["answer"] = final["text"]
-    return {"answer": final["text"], "team_run_id": ident, "message": "團隊流程已保存。"}
+    quality = outcome(store.get(ident))
+    return {"answer": final["text"], "team_run_id": ident, "message":
+            "已保存部分交付，請查看警告。" if quality["status"] == "completed_with_warnings" else "團隊流程已保存。"}

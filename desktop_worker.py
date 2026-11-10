@@ -407,6 +407,7 @@ class Desktop(Workspace):
                 external.add(chosen)
         if any(member["tools"] for member in spec["members"]) and data.get("confirm_tools") is not True:
             raise ValueError("請先核准團隊成員選定的本機唯讀工具。")
+        spec["tools_approved"] = data.get("confirm_tools") is True
         spec["external_grants"] = sorted(external)
         run_id = self.team_store.create_run(spec, prompt)
         try:
@@ -750,6 +751,7 @@ class Desktop(Workspace):
 
     def close(self):
         self.scheduler.close()
+        self.agent_tools.close()
         self.local.stop()
         self.comfy.stop()
 

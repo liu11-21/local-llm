@@ -4,15 +4,17 @@ import type { Run } from './taskQueue'
 import { Empty, Panel, SelectModels } from './ui'
 
 type Member = {id: string; name: string; role: string; system: string; goal: string;
-  model: string; runtime: string; tools: string[]; tokens: number; steps: number}
+  model: string; runtime: string; tools: string[]; tool_arguments?: {[key: string]: {[parameter: string]: string}}; tokens: number; steps: number}
 type Node = {id: string; agent: string; label: string; task: string; deps: string[]; partial: boolean;
   state?: string; text?: string; error?: string; evidence?: unknown[]; finished?: string}
 type Team = {id?: string; name: string; mode: string; lead: string; expected: string; members: Member[];
   final?: string; nodes?: Node[]; seconds?: number}
 type Role = {id: string; name: string; system: string}
-type Tool = {id: string; name: string; trusted: boolean; permission: string; input_schema: {required: string[]}}
-type Summary = {id: string; name: string; mode: string; state: string}
-type Record = {id: string; spec: Team; state: string; nodes: Node[]; answer?: string; error?: string}
+type Tool = {id: string; name: string; trusted: boolean; permission: string; input_schema: {
+  required: string[]; properties: {[key: string]: {type: string; maxLength?: number}}}}
+type Summary = {id: string; name: string; mode: string; state: string; outcome?: string}
+type Record = {id: string; spec: Team; state: string; nodes: Node[]; answer?: string; error?: string;
+  outcome?: {status: string; warnings: string[]; partial_nodes: string[]; unchecked: string[]}}
 const modes = {parallel:'獨立研究', delegated:'分工流程', review:'交叉審查', custom:'自訂 DAG'} as const
 const states: {[key: string]: string} = {draft:'準備中', queued:'等待執行', running:'執行中', completed:'完成',
   failed:'失敗', cancelled:'已取消', interrupted:'重開後中斷', skipped:'已略過'}
@@ -124,8 +126,11 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
     const hosts = [...new Set(external.map(provider => provider!.host + ':' + provider!.port))]
     const consent = hosts.length > 0 && window.confirm('允許將任務與相關節點草稿傳送至 ' + hosts.join('、') + '？可能產生費用。')
     if (hosts.length && !consent) return
-    const selectedTools = [...new Set(team.members.flatMap(member => member.tools))]
-    const confirmTools = selectedTools.length > 0 && window.confirm('允許本次團隊流程讀取已勾選的本機唯讀工具？')
+    const selectedTools = preview.members.flatMap(member => member.tools.map(tool =>
+      member.name + ' · ' + (tools.find(item => item.id===tool)?.name || tool) + ' ' +
+      JSON.stringify(member.tool_arguments?.[tool] ?? {})))
+    const confirmTools = selectedTools.length > 0 && window.confirm(
+      '允許本次團隊流程讀取以下本機唯讀工具？\n' + selectedTools.join('\n'))
     if (selectedTools.length && !confirmTools) return
     setBusy(true); setRecord(undefined); setJob(undefined)
     let id: string | undefined
@@ -191,10 +196,20 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
             <label>System Prompt<textarea maxLength={1200} value={member.system} disabled={busy} onChange={e=>editMember(member.id,{system:e.target.value})}/></label>
             <label>角色目標<textarea maxLength={1200} value={member.goal} disabled={busy} onChange={e=>editMember(member.id,{goal:e.target.value})}/></label>
             <p className="small section-note">本機唯讀工具由成員明確選擇。使用外部端點時，請先取消本機工具。</p>
-            {tools.filter(tool=>tool.trusted && tool.permission==='read-only' && !tool.input_schema.required.length)
-              .map(tool=><label className="check" key={tool.id}><input type="checkbox" checked={member.tools.includes(tool.id)}
-                disabled={busy} onChange={e=>editMember(member.id,{tools:e.target.checked ? [...member.tools,tool.id] :
-                  member.tools.filter(id=>id!==tool.id)})}/>{tool.name}</label>)}
+            {tools.filter(tool=>tool.trusted && tool.permission==='read-only' &&
+              tool.input_schema.required.every(key=>tool.input_schema.properties[key]?.type==='string')).map(tool=>
+              <div key={tool.id}><label className="check"><input type="checkbox" checked={member.tools.includes(tool.id)}
+                disabled={busy} onChange={e=>{
+                  const args = {...member.tool_arguments}
+                  if (!e.target.checked) delete args[tool.id]
+                  editMember(member.id,{tools:e.target.checked ? [...member.tools,tool.id] :
+                    member.tools.filter(id=>id!==tool.id),tool_arguments:args})
+                }}/>{tool.name}</label>
+                {member.tools.includes(tool.id) && tool.input_schema.required.map(key=><label key={key}>
+                  {tool.id==='work' && key==='name' ? '作品檔名（含副檔名）' : key}
+                  <input value={member.tool_arguments?.[tool.id]?.[key] ?? ''} maxLength={tool.input_schema.properties[key].maxLength}
+                    onChange={e=>editMember(member.id,{tool_arguments:{...member.tool_arguments,
+                      [tool.id]:{...member.tool_arguments?.[tool.id],[key]:e.target.value}}})}/></label>)}</div>)}
           </details>
         </section>)}
         <button className="button section-note" disabled={busy || team.members.length>=6} onClick={()=>{
@@ -227,15 +242,23 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
       {preview?.nodes && !record && <><h3>已驗證的工作流程</h3><Graph nodes={preview.nodes} members={preview.members}/></>}
       {busy && <div className="section-note"><p role="status">{job?.message || '正在提交…'}</p>
         {job?.id && <button className="button" onClick={()=>cancel(job.id)}>取消角色流程</button>}</div>}
-      {record && <section className="agent-record"><h3>{record.spec.name} · {states[record.state] || record.state}</h3>
+      {record && <section className="agent-record"><h3>{record.spec.name} · {record.state==='completed' && record.outcome?.status==='completed_with_warnings' ?
+        '部分交付' : states[record.state] || record.state}</h3>
         {record.error && <p role="alert" className="pre creation-error">{record.error}</p>}
+        {record.outcome?.status==='completed_with_warnings' && <div className="empty" role="status">
+          <strong>交付有缺漏，建議修正後重跑。</strong>
+          <p>失敗、略過或工具出錯的節點　{record.outcome.warnings.join('、') || '—'}</p>
+          <p>使用部分依賴　{record.outcome.partial_nodes.join('、') || '—'}</p>
+          {!!record.outcome.unchecked.length && <p>未完成品質檢查　{record.outcome.unchecked.join('、')}</p>}
+        </div>}
         {record.answer && <><h3>最終整合結果</h3><p className="pre">{record.answer}</p></>}
         <Graph nodes={record.nodes} members={record.spec.members}/>
       </section>}
       {!record && !preview && <Empty>預覽節點依賴，或從歷史查看已保存的草稿與審查。</Empty>}
       {!!history.length && <details><summary>團隊執行歷史</summary>{history.map(item=><button className="work-link" key={item.id} disabled={busy}
         onClick={()=>void rpc<Record>('team-run-get',{id:item.id}).then(setRecord,report)}>
-        <span>{item.name}<small>{states[item.state] || item.state}</small></span></button>)}</details>}
+        <span>{item.name}<small>{item.state==='completed' && item.outcome==='completed_with_warnings' ?
+          '部分交付' : states[item.state] || item.state}</small></span></button>)}</details>}
     </Panel>
   </div>
 }

@@ -80,6 +80,35 @@ class TeamWorkflowTests(TestCase):
         self.assertEqual([item["state"] for item in result["nodes"]], ["completed", "failed", "skipped", "completed"])
         self.assertIn("Review unavailable", result["nodes"][1]["error"])
         self.assertEqual(result["nodes"][0]["text"], "Usable partial result")
+        self.assertEqual(result["outcome"], {"status": "completed_with_warnings", "warnings": ["review", "revision"],
+                         "partial_nodes": ["final"], "unchecked": ["review", "revision"]})
+
+    def test_required_dependency_prevents_final_delivery(self):
+        team = self.form("code")
+        team.update(mode="custom", final="final", nodes=[
+            node("review", "m2", "Review", "Check"), node("final", "m1", "Final", "Summarize", ["review"])])
+        self.desktop.local.stream = Mock(side_effect=RuntimeError("Review unavailable"))
+        result = self.wait(self.start(team), "failed")
+        self.assertEqual(result["nodes"][-1]["state"], "skipped")
+        self.assertEqual(result["outcome"]["status"], "unavailable")
+
+    def test_fixed_tool_arguments_and_approval_are_audited(self):
+        team = self.form("code")
+        member = team["members"][0]
+        member.update(tools=["work"], tool_arguments={"work": {"name": "../other.png"}})
+        with self.assertRaisesRegex(ValueError, "TOOL_PARAMETERS"):
+            self.start(team, confirm_tools=True)
+        name = "abcdef012345.png"
+        member["tool_arguments"]["work"]["name"] = name
+        self.desktop.outputs.mkdir()
+        (self.desktop.outputs / name).touch()
+        with self.desktop.connect() as db:
+            db.execute("INSERT INTO creations VALUES(?,?)", (name, json.dumps({"workflow": "sd15", "options": {"seed": 42}})))
+        self.desktop.local.stream = lambda *_a, **_k: (part for part in ["Done"])
+        result = self.wait(self.start(team, confirm_tools=True), "completed")
+        self.assertEqual(result["nodes"][0]["evidence"][0], {
+            "tool": "work", "arguments": {"name": name}, "approved": True,
+            "output": {"name": name, "workflow": "sd15", "options": [{"parameter": "seed", "value": 42}]}})
 
     def test_invalid_dags_and_budget_do_not_schedule(self):
         team = self.form("code")

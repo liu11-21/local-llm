@@ -97,6 +97,7 @@ export async function exerciseWorkflows(page, navigate, noOverflow) {
   await page.getByLabel('團隊共同任務').fill('FAIL · 審查節點錯誤')
   await button('執行角色流程').click()
   await page.getByText(/controlled reviewer failure/).waitFor()
+  await page.getByText('交付有缺漏，建議修正後重跑。',{exact:true}).waitFor()
   await heading('最終整合結果').waitFor()
   await page.setViewportSize({width:650,height:720})
   await noOverflow()

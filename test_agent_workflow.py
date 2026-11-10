@@ -62,6 +62,28 @@ class ToolRegistryTests(TestCase):
             self.registry.execute("slow", {}, ["slow"], cancel)
 
 
+    def test_stalled_tools_keep_slots_until_they_exit(self):
+        finish = Event()
+        self.addCleanup(finish.set)
+
+        def handler(_args, _stop):
+            finish.wait(2)
+            return {}
+
+        self.registry.register(Tool("stuck", "Stuck", "Fixture", "1", obj(), obj(), timeout=.02), handler)
+        for _ in range(2):
+            with self.assertRaisesRegex(ToolError, "TOOL_TIMEOUT"):
+                self.registry.execute("stuck", {}, ["stuck"], Event())
+        self.assertEqual(len(self.registry.active), 2)
+        with self.assertRaisesRegex(ToolError, "TOOL_UNAVAILABLE"):
+            self.registry.execute("stuck", {}, ["stuck"], Event())
+        self.registry.close(grace=0)
+        self.assertTrue(all(stop.is_set() for stop in self.registry.active.values()))
+        finish.set()
+        self.registry.close()
+        self.assertEqual(self.registry.active, {})
+
+
 class AgentPlanTests(TestCase):
     def test_versions_independent_approval_and_restart(self):
         with TemporaryDirectory() as directory:
