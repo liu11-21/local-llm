@@ -11,6 +11,43 @@ Host 只提供文字聊天。兩台電腦需能透過 LAN 或受信任的私人 
 
 若團隊已有私有 CA，請使用針對這台主機 IPv4 發出的伺服器憑證。自行管理的單台 Host 也可使用由管理者產生的單一自簽 TLS 憑證，並透過一次性邀請將公用憑證帶到筆電。私鑰應放在只有 Host 帳戶可存取的資料夾。更換憑證後請重配對。 [Python TLS 驗證](https://docs.python.org/3/library/ssl.html)
 
+<details>
+<summary>在桌機以 PowerShell 7 建立專用憑證</summary>
+
+以下程式會在目前 Windows 帳戶的本機資料夾產生 PEM，保留既有檔案。把印出的兩條路徑填進 Host 的 TLS 設定。
+
+```powershell
+$address = [Net.IPAddress]::Parse((Read-Host '輸入桌機的私人 IPv4 位址'))
+$folder = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'LocalLLM\remote-tls'
+$certFile = Join-Path $folder 'host-cert.pem'
+$keyFile = Join-Path $folder 'host-key.pem'
+if ((Test-Path -LiteralPath $certFile) -or (Test-Path -LiteralPath $keyFile)) {
+    throw '已有 PEM 檔案。請使用既有憑證，或選用新的資料夾。'
+}
+$null = New-Item -ItemType Directory -Path $folder -Force
+$rsa = [Security.Cryptography.RSA]::Create(3072)
+try {
+    $request = [Security.Cryptography.X509Certificates.CertificateRequest]::new(
+        'CN=Local LLM Private Host', $rsa, [Security.Cryptography.HashAlgorithmName]::SHA256,
+        [Security.Cryptography.RSASignaturePadding]::Pkcs1)
+    $san = [Security.Cryptography.X509Certificates.SubjectAlternativeNameBuilder]::new()
+    $san.AddIpAddress($address)
+    $request.CertificateExtensions.Add($san.Build())
+    $request.CertificateExtensions.Add(
+        [Security.Cryptography.X509Certificates.X509BasicConstraintsExtension]::new($false, $false, 0, $true))
+    $now = [DateTimeOffset]::UtcNow
+    $cert = $request.CreateSelfSigned($now.AddMinutes(-10), $now.AddDays(180))
+    try {
+        [IO.File]::WriteAllText($certFile, $cert.ExportCertificatePem())
+        [IO.File]::WriteAllText($keyFile, $rsa.ExportPkcs8PrivateKeyPem())
+    } finally { $cert.Dispose() }
+} finally { $rsa.Dispose() }
+$certFile
+$keyFile
+```
+
+</details>
+
 ## 在筆電連線
 
 貼上完整邀請並確認來源。配對後先確認模型清單，再點「開始聊天」。每次向主機送出提示詞和相關對話時，工作台都會顯示目的地並請求同意。選擇隱私優先或僅本機會阻擋傳送。重新開啟工作台後，按「重新連線」可使用保存的配對。裝置失去信任時，請在 Host 的「已配對裝置」撤銷。
