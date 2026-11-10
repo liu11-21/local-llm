@@ -100,7 +100,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
       const result = await run('chat', { chat, prompt:text, model, runtime, policy, consent, context, mode,
         max_tokens:budget, temperature, regenerate }, setJob)
       if (result?.answer) {
-        setMessages(await rpc<Message[]>('history', {chat,with_runtime:true}))
+        const rows = await rpc<Message[]>('history', {chat,with_runtime:true})
+        setPending(undefined); setJob(undefined); setMessages(rows)
         setUsage(result.usage)
         await refreshChats()
       } else if (!regenerate) setPrompt(text)
