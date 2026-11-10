@@ -96,7 +96,7 @@ export function Works({ info, revision, selected, choose, reuse }: {
   return <div className="dashboard"><Panel title="作品庫">
     <label>搜尋作品<input type="search" maxLength={180} value={query} placeholder="提示詞、模型或檔名"
       onChange={e => {setQuery(e.target.value);setOffset(0)}}/></label>
-    <div className="parameters section-note">
+    <div className="parameters work-filters section-note">
       <label>類型<select aria-label="類型" value={kind} onChange={e => {setKind(e.target.value);setOffset(0)}}>
         <option value="">全部類型</option>{Object.entries(titles).map(([value, title]) => <option value={value} key={value}>{title}</option>)}
       </select></label>
@@ -286,7 +286,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
           if (response?.file) setResult(response.file.split('/').at(-1))
         } finally {setPending(false)}
       }}>
-        <label>提示詞<textarea maxLength={12000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="描述想生成的作品…"/></label>
+        <label>提示詞<textarea aria-label="提示詞" maxLength={12000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="描述想生成的作品…"/></label>
         {kind === 'music' && <label>歌詞（選填）<textarea maxLength={12000} value={lyrics} onChange={e => setLyrics(e.target.value)}/></label>}
         <div className="parameters">{workflow?.parameters.filter(param => param.basic).map(parameter)}</div>
         <details><summary>進階生成參數</summary><div className="parameters">

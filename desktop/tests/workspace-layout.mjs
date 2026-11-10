@@ -146,6 +146,7 @@ try {
   await page.setViewportSize({width:1280,height:900})
   await shot('works')
   await button('重新使用設定').click()
+  await page.getByRole('heading',{name:'建立圖片',exact:true}).waitFor()
   assert.equal(await page.getByLabel('提示詞',{exact:true}).inputValue(),'雪中的雪松')
   assert.equal(await page.getByLabel('寬度',{exact:true}).inputValue(),'256')
   await page.getByText('進階生成參數',{exact:true}).click()
