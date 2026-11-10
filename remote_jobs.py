@@ -16,12 +16,15 @@ class RemoteJobs:
                    state TEXT NOT NULL, created TEXT NOT NULL, updated TEXT NOT NULL, finished TEXT,
                    message TEXT NOT NULL, progress INTEGER, total INTEGER, answer TEXT, artifact TEXT,
                    PRIMARY KEY(owner, request))""")
+        if db.execute("PRAGMA user_version").fetchone()[0] < 8:
+            db.execute("PRAGMA user_version=8")
+
+    @staticmethod
+    def recover(db):
         now = timestamp()
         db.execute("""UPDATE remote_jobs SET state='interrupted',updated=?,finished=?,
                    message='運算主機已重啟，未完成的任務已中斷。'
                    WHERE state IN ('queued','running','paused')""", (now,now))
-        if db.execute("PRAGMA user_version").fetchone()[0] < 8:
-            db.execute("PRAGMA user_version=8")
 
     def writer(self, owner, request, signature, kind, model, workflow=None):
         def write(value):

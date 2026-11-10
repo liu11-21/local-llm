@@ -1,5 +1,6 @@
 """Opt-in HTTPS inference service. Host management is available only over desktop IPC."""
 import base64
+from contextlib import ExitStack
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import IPv4Address, IPv4Network
@@ -13,6 +14,7 @@ from threading import BoundedSemaphore, Lock, Thread, Timer
 from time import monotonic, sleep
 from uuid import uuid4
 
+from download_recovery import exclusive
 from runtime_contract import capability
 from remote_jobs import RemoteJobs
 from remote_media import CHUNK, image_input
@@ -85,6 +87,7 @@ class Host:
         self.records = RemoteJobs(connect)
         self.media, self.media_output = media, media_output
         self.transfers = BoundedSemaphore(2)
+        self.ownership = ExitStack()
 
     @staticmethod
     def initialize(db):
@@ -120,15 +123,20 @@ class Host:
                 context.load_cert_chain(cert, key, password=lambda: password)
                 with self.connect() as db:
                     self.id = db.execute("SELECT id FROM remote_host_identity").fetchone()[0]
-                server = HostServer((bind, port), context, self)
-                try:
-                    if configure:
+                with ExitStack() as startup:
+                    if self.media_output:
+                        startup.enter_context(exclusive(self.media_output.parent/".remote-host.lock"))
+                    server = HostServer((bind, port), context, self)
+                    try:
                         with self.connect() as db:
-                            configure(db)
-                except Exception:
-                    server.server_close()
-                    raise
-                self.server = server
+                            self.records.recover(db)
+                            if configure:
+                                configure(db)
+                    except Exception:
+                        server.server_close()
+                        raise
+                    self.ownership = startup.pop_all()
+                    self.server = server
             except (OSError, ValueError, DatabaseError):
                 self.state, self.error = "failed", "無法啟用 Host。請檢查私人位址、連接埠、PEM 憑證及私鑰。"
                 raise ValueError(self.error) from None
@@ -152,7 +160,11 @@ class Host:
                 return
             server, self.code = self.server, None
             self.state = "stopping"
-            self.records.interrupt()
+            try:
+                self.records.interrupt()
+            except DatabaseError:
+                # Still close the service. The next owner will recover in-progress records.
+                pass
             for task, timer in self.jobs.values():
                 timer.cancel()
                 self.cancel(task)
@@ -162,6 +174,7 @@ class Host:
         with self.lock:
             self.server = None
             self.state, self.error = "stopped", None
+            self.ownership.close()
 
     def status(self):
         with self.lock, self.connect() as db:

@@ -73,7 +73,11 @@ class RemoteJobsTests(unittest.TestCase):
         with self.assertRaises(ProtocolError) as issue:
             host.submit(self.owner,self.payload())
         self.assertEqual(issue.exception.status,429)
-        reopened = self.open().remote_host
+        worker = self.open()
+        reopened = worker.remote_host
+        self.assertEqual(reopened.job(self.owner,args["request"])["state"],"running")
+        with worker.connect() as db:
+            reopened.records.recover(db)
         self.assertEqual(reopened.job(self.owner,args["request"])["state"],"interrupted")
         finish.set()
         until = monotonic()+4
