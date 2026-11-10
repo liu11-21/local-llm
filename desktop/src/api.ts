@@ -6,6 +6,7 @@ export type RuntimeCapability = {
   schema: number; id: string; label: string; kind: string; health: string; connected: boolean | null; error?: string;
   checked_at: number; cost: string; tasks: string[]; formats: string[]; models: string[];
   resources: Record<string, {value: number | string[] | null; source: string}>;
+  media?: {image?: {state:'checking'|'ready'|'missing'|'unavailable'; installed:boolean; workflows:string[]; missing:string[]; missing_nodes:string[]}}
 }
 export type Provider = { id: string; kind: string; label: string; host: string; port: number; models: string[]; connected: boolean;
   capability?: RuntimeCapability }
@@ -25,7 +26,7 @@ export type MediaInstallPlan = { model: MediaModel; target: string; profile: str
 export type WorkDimensions = { width?: number; height?: number; duration?: number }
 export type Work = { name: string; kind: MediaKind; created: string; bytes: number; model?: string; workflow?: string; prompt?: string;
   lyrics?: string; options?: Params; schema?: number; runtime?: string; status?: string; dimensions?: WorkDimensions;
-  source?: {engine: string; job: string; original: string} }
+  source?: {engine: string; job: string; original: string; host?:string; host_label?:string} }
 export type Registry = {
   models: { id: string; label: string; bytes: number; quantization: string | null; format: string; publisher?: string; ram: number;
     verification: 'verified' | 'known' | 'imported' | 'unknown'; repository?: string; version?: string; source?: string;

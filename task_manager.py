@@ -46,6 +46,9 @@ def classify(action, data):
         chat = data.get("chat")
         return ("compute" if runtime == "local" else "remote", runtime,
                 f"chat:{chat}" if isinstance(chat, str) else None, "")
+    if action in ("media","remote-fetch-work") and isinstance(data.get("runtime"),str) and data["runtime"]!="local":
+        runtime = data["runtime"]
+        return "remote",runtime,f"remote-media:{runtime}",data.get("kind","image")
     return "compute", "local", None, data.get("kind", "") if action == "media" else ""
 
 

@@ -158,7 +158,8 @@ export function App() {
         <div hidden={page !== 'team'}><TeamWorkspace info={info && {...info, providers:info.providers.filter(item=>item.kind!=='paired')}}
           policy={policy} run={runTracked} report={report} cancel={queue.cancel} refreshRuntime={refreshRuntime}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} health={health} preset={preset} works={works}
-          tasks={queue.tasks} run={runTracked} cancel={queue.cancel} retry={queue.retry} go={go} openWork={openSavedWork}/>}
+          tasks={queue.tasks} run={runTracked} cancel={queue.cancel} retry={queue.retry} go={go} openWork={openSavedWork}
+          policy={policy} refreshRuntime={refreshRuntime} report={report}/>}
         {page === 'works' && <Works info={info} revision={works} selected={selected} choose={setSelected}
           reuse={work => {setPreset(work);go(work.kind)}}/>}
         <div hidden={page !== 'agent'}><AgentWorkspace info={info} setupRun={queue.run} openModels={()=>go('library')}

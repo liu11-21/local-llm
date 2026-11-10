@@ -185,7 +185,8 @@ class ComfyClient:
             return False
         return isinstance(result, dict) and result.get("cancelled") is True
 
-    def generate(self, kind, prompt, lyrics, output_dir, cancel, report, *, workflow_id=None, options=None, on_source=None):
+    def generate(self, kind, prompt, lyrics, output_dir, cancel, report, *, workflow_id=None, options=None, on_source=None,
+                 limit=RESULT_LIMIT):
         graph = workflow(kind, prompt, lyrics, workflow_id=workflow_id, options=options)
         self.check_models(kind)
         if cancel.is_set():
@@ -220,14 +221,14 @@ class ComfyClient:
                         continue
                     name = item.get("filename")
                     if isinstance(name, str) and name.lower().endswith(suffix):
-                        path = self.save_output(name, item.get("subfolder", ""), suffix, magic, output_dir, cancel)
+                        path = self.save_output(name, item.get("subfolder", ""), suffix, magic, output_dir, cancel, limit=limit)
                         if on_source:
                             on_source({"engine": "ComfyUI", "job": prompt_id[:160], "original": name[:300]})
                         return path
             raise RuntimeError("ComfyUI 完成任務，但找不到可儲存的輸出。")
         raise TimeoutError("等待 ComfyUI 生成逾時，請在 ComfyUI 查看任務狀態。")
 
-    def save_output(self, name, folder, suffix, magic, output_dir, cancel):
+    def save_output(self, name, folder, suffix, magic, output_dir, cancel, *, limit=RESULT_LIMIT):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         target = output_dir / (uuid4().hex[:12] + suffix)
@@ -247,8 +248,8 @@ class ComfyClient:
                     while block := response.read(256 * 1024):
                         if cancel.is_set():
                             raise InterruptedError("已停止儲存媒體。")
-                        if stream.tell() + len(block) > RESULT_LIMIT:
-                            raise ValueError("生成檔案超過 512 MiB。")
+                        if stream.tell() + len(block) > limit:
+                            raise ValueError(f"生成檔案超過 {limit // 1024**2} MiB。")
                         stream.write(block)
                     if stream.tell() <= len(magic) or (expected is not None and stream.tell() != expected):
                         raise ValueError("ComfyUI 傳回的媒體不完整，請重新生成。")

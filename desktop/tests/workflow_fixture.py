@@ -1,6 +1,8 @@
 """Development test worker with a controlled loopback llama.cpp protocol fixture."""
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from base64 import b64decode
+from contextlib import contextmanager
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
@@ -9,11 +11,14 @@ import sys
 from threading import Thread
 from time import sleep
 from time import time
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import desktop_worker
 from runtime_provider import OpenAIProvider
+from runtime_contract import capability
 from test_remote_host import free_port, make_certificate
+from test_remote_media import Response
 
 
 class ModelProtocol(BaseHTTPRequestHandler):
@@ -136,6 +141,35 @@ if __name__ == "__main__":
                 return super().perform(action,data,cancel,update)
 
             def rpc(self, op, data):
+                if op == "fixture-remote-image":
+                    id = "5"*32
+                    image = {"installed":True,"state":"ready","workflows":["sd15"],"formats":["png"]}
+                    record = capability(id,"受控圖片主機","remote-host","Local LLM",connected=True,health="ready",
+                                        tasks=["chat","image"],formats=["GGUF","safetensors"],media={"image":image},
+                                        destination="127.0.0.1",cost="no-api-fee")
+                    png = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jh2sAAAAASUVORK5CYII=")
+                    digest = sha256(png).hexdigest()
+                    submitted = {}
+
+                    def accept(method, path, data):
+                        assert method=="POST" and path=="/v1/jobs"
+                        submitted[data["request"]] = data
+                        return {"id":data["request"]}
+
+                    def job(request):
+                        return {"state":"completed","artifact":{"id":"a12345678901.png","kind":"image","workflow":"sd15",
+                                "bytes":len(png),"sha256":digest,"options":{**submitted[request]["options"],"seed":417}}}
+
+                    @contextmanager
+                    def transfer(_method,_path,headers):
+                        yield Response(png,200,{"ETag":f'"{digest}"',"Content-Length":str(len(png))})
+
+                    self.remote_clients.items[id] = SimpleNamespace(
+                        id=id,host="127.0.0.1",port=9443,label=record["label"],capability=lambda:record,
+                        discover=lambda:None,job=job,json=accept,request=transfer,
+                        summary=lambda:{"id":id,"label":record["label"],"kind":"paired","host":"127.0.0.1","port":9443,
+                                        "models":[],"tasks":record["tasks"],"capability":record,"connected":True})
+                    return id
                 if op == "fixture-first-use":
                     self.first_use = {"engine":False,"model":None,"retry":False}
                     self.local.stream = lambda *_, **__: (part for part in ("首次對話已保存。",))

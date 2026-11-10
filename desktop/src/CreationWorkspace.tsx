@@ -6,6 +6,7 @@ import { rpc, type EngineHealth, type Info, type MediaInstallPlan, type MediaKin
 import { activeTask, TaskProgress, type Run } from './taskQueue'
 import { Empty, Panel, gb } from './ui'
 import { RuntimePicker } from './TaskSelection'
+import { useTaskPreparation } from './TaskPreparation'
 
 const titles = { image: '圖片', video: '影片', music: '音樂' }
 const icons = { image: Image, video: Film, music: Music2 }
@@ -41,7 +42,8 @@ function WorkDetails({work, info, reuse}: {work: Work; info?: Info; reuse: (work
   const supported = new Set(workflow?.parameters.map(parameter => parameter.key))
   const settings = Object.fromEntries(Object.entries(work.options ?? {}).filter(([key]) => supported.has(key)))
   const fields = [
-    ['模型', work.model], ['工作流程', workflow?.label ?? work.workflow], ['運算環境', work.runtime === 'local-comfyui' ? '本機 ComfyUI' : undefined],
+    ['模型', work.model], ['工作流程', workflow?.label ?? work.workflow], ['運算環境', work.runtime === 'local-comfyui' ?
+      '本機 ComfyUI' : work.runtime === 'remote-comfyui' ? work.source?.host_label || '遠端 ComfyUI' : undefined],
     ['建立時間', new Date(work.created).toLocaleString()], ['檔案大小', work.bytes < 1024 ** 2 ?
       (work.bytes / 1024).toFixed(1) + ' KiB' : (work.bytes / 1024 ** 2).toFixed(1) + ' MiB'],
     ['輸出尺寸', width && height ? `${width} × ${height}` : undefined],
@@ -222,12 +224,16 @@ function MediaSetup({kind, info, port, ready, tasks, run, cancel, retry, refresh
   </details>
 }
 
-export function CreationWorkspace({ kind, info, health, preset, works, tasks, run, cancel, retry, go, openWork }: {
+export function CreationWorkspace({ kind, info, health, preset, works, tasks, run, cancel, retry, go, openWork,
+  policy, refreshRuntime, report }: {
   kind: MediaKind; info?: Info; health?: EngineHealth; preset?: Work; works: Work[]; tasks: Task[];
   run: Run; go: (page: 'runtime' | 'works') => void
   cancel: (id: string) => void; retry: (id: string) => Promise<void>
   openWork: (name: string) => void
+  policy:string;refreshRuntime:(runtime:string)=>Promise<void>;report:(error:unknown)=>void
 }) {
+  const prepare = useTaskPreparation()
+  const [runtime,setRuntime] = useState('local')
   const [id, setId] = useState('')
   const [prompt, setPrompt] = useState('')
   const [lyrics, setLyrics] = useState('')
@@ -237,7 +243,13 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
   const [result, setResult] = useState<string>()
   const [readiness, setReadiness] = useState<Readiness>()
   const [recheck, setRecheck] = useState(0)
-  const workflows = info?.registry.workflows.filter(item => item.kind === kind) || []
+  const provider = info?.providers.find(item=>item.id===runtime)
+  const remote = runtime!=='local'
+  const imageCapability = provider?.capability?.media?.image
+  const workflows = info?.registry.workflows.filter(item => item.kind === kind &&
+    (!remote || imageCapability?.workflows.includes(item.id))) || []
+  const suggested = kind==='image' && !remote && !['local','privacy'].includes(policy) &&
+    info?.providers.find(item=>item.kind==='paired' && item.connected && item.capability?.media?.image?.state==='ready')
   const workflow = workflows.find(item => item.id === id) ?? workflows[0]
   const latest = works.find(work => work.kind === kind)
   const task = tasks.find(task => task.action === 'media' && task.kind === kind)
@@ -257,6 +269,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
     if (preset?.kind === kind) apply(preset)
   }, [preset, kind, info?.registry.workflows.length])
   useEffect(() => {
+    if (remote) return
     let mounted = true
     let timer = 0
     async function check(refresh: boolean) {
@@ -272,9 +285,10 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
     setReadiness(undefined)
     timer = window.setTimeout(() => void check(true), 250)
     return () => {mounted = false; window.clearTimeout(timer)}
-  }, [kind, servicePort, serviceState, recheck, workflow?.id])
+  }, [kind, servicePort, serviceState, recheck, workflow?.id, remote])
   const busy = pending || active
-  const ready = readiness?.state === 'ready'
+  const currentReadiness = remote ? provider?.connected ? imageCapability : undefined : readiness
+  const ready = currentReadiness?.state === 'ready'
   const parameter = (param: WorkflowParameter) => <label key={param.key}>{param.label}<input
     type={param.type === 'integer' ? 'number' : 'text'} min={param.min} max={param.max} step={param.step}
     maxLength={param.type === 'text' ? param.max : undefined}
@@ -288,16 +302,20 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
           onChange={e => {setId(e.target.value);setOverrides({})}}>
           {workflows.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select></label>
-        <label>運算環境<RuntimePicker info={info} task={kind} value="local" disabled change={()=>{}}/></label>
+        <label>運算環境<RuntimePicker info={info} task={kind} value={runtime} disabled={!!busy || kind!=='image'}
+          change={value=>{setRuntime(value);setId('')}} refresh={refreshRuntime}/></label>
       </div>
       <form onSubmit={async event => {
         event.preventDefault()
         if (!workflow || busy || !ready || !prompt.trim()) return
         setPending(true); setResult(undefined)
         try {
-          const response = await run('media', {kind, prompt, lyrics, port, workflow:workflow.id, options:overrides})
+          const decision = remote ? await prepare(kind,[{runtime,model:workflow.id}],policy,'圖片提示詞與生成參數') : 'local'
+          if (decision==='cancelled') return
+          const response = await run('media', {kind, prompt, lyrics, port, runtime, policy, consent:decision==='confirmed',
+            workflow:workflow.id, options:overrides})
           if (response?.file) setResult(response.file.split('/').at(-1))
-        } finally {setPending(false)}
+        } catch(error) {report(error)} finally {setPending(false)}
       }}>
         <label>提示詞<textarea aria-label="提示詞" maxLength={12000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="描述想生成的作品…"/></label>
         {kind === 'music' && <label>歌詞（選填）<textarea maxLength={12000} value={lyrics} onChange={e => setLyrics(e.target.value)}/></label>}
@@ -305,11 +323,11 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
         <details><summary>進階生成參數</summary><div className="parameters">
           {workflow?.parameters.filter(param => !param.basic).map(parameter)}
         </div></details>
-        <details><summary>連線與必要模型</summary>
+        {!remote && <details><summary>連線與必要模型</summary>
           {!(serviceState && ['ready','busy','starting','unhealthy'].includes(serviceState)) &&
             <label>本機 ComfyUI 連接埠<input type="number" min={1024} max={65535} value={port} onChange={e => setPort(+e.target.value)}/></label>}
           <ul>{workflow?.models.map(model => <li key={model}>{model}</li>)}</ul>
-        </details>
+        </details>}
         <div className="row section-note creation-actions">
           <button className="button primary" disabled={!workflow || busy || !ready || !prompt.trim()}>{busy ? '已提交 · 見任務中心' : '生成' + titles[kind]}</button>
           {latest?.workflow && <button className="button" type="button" disabled={busy} onClick={() => apply(latest)}>沿用上次設定</button>}
@@ -318,19 +336,23 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
     </Panel>
     <div className="creation-sidebar">
       <Panel title="流程準備">
-        <p className="section-note" role="status">{!readiness || readiness.state === 'checking' ? '正在檢查本機 ComfyUI 與權重…' :
-          readiness.state === 'unavailable' ? '本機 ComfyUI 目前無法連線。請先啟動服務或檢查連接埠。' :
-          readiness.state === 'missing' ? 'ComfyUI 已連線，但缺少必要權重或節點。' : 'ComfyUI 已連線，能辨識必要權重與節點。'}</p>
-        {readiness?.missing?.map(name => <p className="small pre" key={name}>{name}</p>)}
-        {!!readiness?.missing_nodes?.length && <p className="small pre">缺少節點 {readiness.missing_nodes.join('、')}。請更新或啟動受管理的 ComfyUI。</p>}
+        <p className="section-note" role="status">{remote && !provider?.connected ? '遠端主機尚未連線。' :
+          !currentReadiness || currentReadiness.state === 'checking' ? '正在檢查 ComfyUI 與權重…' :
+          currentReadiness.state === 'unavailable' ? 'ComfyUI 目前無法連線。請先在運算電腦啟動服務。' :
+          currentReadiness.state === 'missing' ? 'ComfyUI 已連線，但缺少必要權重或節點。' : 'ComfyUI 已連線，能辨識必要權重與節點。'}</p>
+        {currentReadiness?.missing?.map(name => <p className="small pre" key={name}>{name}</p>)}
+        {!!currentReadiness?.missing_nodes?.length && <p className="small pre">缺少節點 {currentReadiness.missing_nodes.join('、')}。請更新或啟動受管理的 ComfyUI。</p>}
+        {suggested && !ready && <button className="button" onClick={()=>{setRuntime(suggested.id);void refreshRuntime(suggested.id)}}>
+          使用已就緒的 {suggested.label}</button>}
         <div className="row section-note creation-actions">
           <button className="button" onClick={() => go('runtime')}>管理 ComfyUI</button>
-          <button className="button" onClick={() => setRecheck(n => n+1)}>重新檢查</button>
+          <button className="button" onClick={() => remote ? void refreshRuntime(runtime) : setRecheck(n => n+1)}>重新檢查</button>
         </div>
-        <MediaSetup kind={kind} info={info} port={servicePort} ready={ready} tasks={tasks} run={run} cancel={cancel} retry={retry}
-          refresh={() => setRecheck(n => n+1)}/>
+        {!remote && <MediaSetup kind={kind} info={info} port={servicePort} ready={ready} tasks={tasks} run={run} cancel={cancel} retry={retry}
+          refresh={() => setRecheck(n => n+1)}/>}
         {active && <p className="pre" role="status">{task.message}</p>}
         {active && <button className="button section-note" onClick={() => cancel(task.id)}>停止生成</button>}
+        {active && remote && <TaskProgress received={task.received} total={task.total} label="作品下載進度"/>}
         {task?.state === 'failed' && <div className="pre creation-error" role="alert">
           <p>{task.message}</p>
           <p className="small">{/out of memory|memoryerror|cuda.*memory|顯存不足/i.test(task.message) ?

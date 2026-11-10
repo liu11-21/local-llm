@@ -15,7 +15,7 @@ def observed(value=None, source="detected"):
 
 def capability(id, label, kind, provider, *, version=None, connected=None, health="unknown", tasks=(), formats=(),
                engines=(), models=(), resources=None, features=None, network=None, destination=None, auth=None,
-               cost="unknown", source="registry", error=None, checked_at=None, model_ram=None):
+               cost="unknown", source="registry", error=None, checked_at=None, model_ram=None, media=None):
     return validate({
         "schema": VERSION, "id": id, "label": label, "kind": kind, "provider": provider, "version": version,
         "connected": connected, "health": health, "tasks": list(tasks), "formats": list(formats),
@@ -25,6 +25,7 @@ def capability(id, label, kind, provider, *, version=None, connected=None, healt
         "resources": {key: (resources or {}).get(key, observed()) for key in RESOURCES},
         "features": {key: (features or {}).get(key) for key in FEATURES},
         "model_ram": model_ram or {},
+        "media": media or {},
     })
 
 
@@ -81,6 +82,22 @@ def validate(data):
             or any(type(value) is not int or not 0 < value <= 2**53 - 1 for value in estimates.values())):
         raise ValueError("Runtime 模型記憶體估計資料無效。")
     result["model_ram"] = estimates
+    media = data.get("media", {})
+    if not isinstance(media, dict):
+        raise ValueError("遠端創作能力格式無效。")
+    item = media.get("image")
+    result["media"] = {}
+    if item is not None:
+        if (not isinstance(item, dict) or item.get("state") not in ("ready","missing","unavailable","checking")
+                or type(item.get("installed")) is not bool):
+            raise ValueError("遠端圖片能力格式無效。")
+        entry = {"state":item["state"], "installed":item["installed"]}
+        for key in ("workflows","missing","missing_nodes","models","formats"):
+            values = item.get(key, [])
+            if not isinstance(values, list) or len(values) > 40 or not all(string(value) for value in values):
+                raise ValueError("遠端圖片工作流程格式無效。")
+            entry[key] = values
+        result["media"]["image"] = entry
     return result
 
 

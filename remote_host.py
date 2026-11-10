@@ -15,6 +15,8 @@ from uuid import uuid4
 
 from runtime_contract import capability
 from remote_jobs import RemoteJobs
+from remote_media import CHUNK, image_input
+from registries import work_file
 from task_manager import ACTIVE
 
 PROTOCOL = 1
@@ -22,7 +24,7 @@ BODY_LIMIT = 192 * 1024
 ANSWER_LIMIT = 64 * 1024
 PRIVATE = tuple(IPv4Network(network) for network in
                 ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "127.0.0.0/8"))
-JOB_PATH = re.compile(r"/v1/jobs/([a-f0-9]{32})(?:/(events|cancel))?")
+JOB_PATH = re.compile(r"/v1/jobs/([a-f0-9]{32})(?:/(events|cancel|artifact))?")
 TOKEN = re.compile(r"[A-Za-z0-9_-]{43}")
 
 
@@ -69,7 +71,8 @@ def inference_input(data):
 
 
 class Host:
-    def __init__(self, connect, scheduler, model_names, engine_status, resources, model_ram=lambda _: {}):
+    def __init__(self, connect, scheduler, model_names, engine_status, resources, model_ram=lambda _: {},
+                 media=lambda: {}, media_output=None):
         self.connect, self.scheduler = connect, scheduler
         self.model_names, self.engine_status, self.resources = model_names, engine_status, resources
         self.model_ram = model_ram
@@ -80,6 +83,8 @@ class Host:
         self.code = None
         self.jobs = {}
         self.records = RemoteJobs(connect)
+        self.media, self.media_output = media, media_output
+        self.transfers = BoundedSemaphore(2)
 
     @staticmethod
     def initialize(db):
@@ -169,7 +174,7 @@ class Host:
                               fingerprint=sha256(ssl.PEM_cert_to_DER_cert(self.certificate)).hexdigest().upper())
             if active:
                 engines = self.engine_status()
-                result.update(engine=engines, models=self.model_names(),
+                result.update(engine=engines, models=self.model_names(), media=self.media(),
                               state="unhealthy" if not engines["accepting"] else "busy" if engines["busy"] else "ready")
             return result
 
@@ -220,10 +225,14 @@ class Host:
     def capabilities(self):
         state = self.engine_status()
         models = self.model_names()
+        image = self.media()
+        supported = bool(image.get("workflows"))
         return capability(self.id, self.label, "remote-host", "Local LLM", version=str(PROTOCOL), connected=True,
                           health="unhealthy" if not state["accepting"] else "busy" if state["busy"] else "ready",
-                          tasks=["chat"], formats=["GGUF"], engines=["llama.cpp"] if state["installed"] else [],
+                          tasks=["chat","image"] if supported else ["chat"], formats=["GGUF","safetensors"] if supported else ["GGUF"],
+                          engines=(["llama.cpp"] if state["installed"] else []) + (["ComfyUI"] if image.get("installed") else []),
                           models=models, model_ram=self.model_ram(models), resources=self.resources(),
+                          media={"image":image} if image else {},
                           network=True, destination=self.address,
                           auth="paired-token-tls", cost="no-api-fee", source="remote-host",
                           error=state["error"], features={"stream": True, "cancel": True, "load": False,
@@ -233,7 +242,15 @@ class Host:
         request = data.get("request")
         if not isinstance(request, str) or not re.fullmatch(r"[a-f0-9]{32}", request):
             raise ProtocolError(400, "缺少有效的任務識別碼。")
-        payload = inference_input(data)
+        kind = data.get("kind","chat")
+        if kind not in ("chat","image"):
+            raise ProtocolError(400,"不支援的遠端任務。")
+        try:
+            payload = image_input(data) if kind=="image" else inference_input(data)
+        except ProtocolError:
+            raise
+        except ValueError as error:
+            raise ProtocolError(400,str(error)) from None
         signature = sha256(json.dumps(payload, sort_keys=True).encode()).digest()
         with self.lock, self.connect() as db:
             if self.state != "ready" or not db.execute("SELECT 1 FROM remote_host_grants WHERE id=?", (peer,)).fetchone():
@@ -243,10 +260,15 @@ class Host:
                 if signature != previous["signature"]:
                     raise ProtocolError(409, "任務識別碼已被其他輸入使用。")
                 return {"id": request}
-            if not self.engine_status()["accepting"]:
-                raise ProtocolError(503, "主機引擎目前不可用。請在主機檢查引擎和資源。")
-            if payload["model"] not in self.model_names():
-                raise ProtocolError(404, "主機沒有這個模型。請重新整理模型清單。")
+            if kind == "chat":
+                if not self.engine_status()["accepting"]:
+                    raise ProtocolError(503, "主機引擎目前不可用。請在主機檢查引擎和資源。")
+                if payload["model"] not in self.model_names():
+                    raise ProtocolError(404, "主機沒有這個模型。請重新整理模型清單。")
+            else:
+                image = self.media()
+                if image.get("state") != "ready" or payload["workflow"] not in image.get("workflows",[]):
+                    raise ProtocolError(503,"主機的 ComfyUI、節點或權重尚未就緒。")
             for key, (task,timer) in list(self.jobs.items()):
                 if not self.job_active(task):
                     timer.cancel()
@@ -254,11 +276,13 @@ class Host:
             if len(self.jobs) >= 4 or sum(key[0] == peer for key in self.jobs) >= 2:
                 raise ProtocolError(429, "主機佇列已滿，請稍後重試。")
             try:
-                writer = self.records.writer(peer, request, signature, "chat", payload["model"])
-                task = self.scheduler.submit("remote-host-chat", payload, on_snapshot=writer)["id"]
+                writer = self.records.writer(peer, request, signature, kind,
+                                             payload.get("model","Stable Diffusion 1.5"),payload.get("workflow"))
+                task = self.scheduler.submit("remote-host-chat" if kind=="chat" else "remote-host-media",
+                                             payload, on_snapshot=writer)["id"]
             except ValueError:
                 raise ProtocolError(429, "主機暫時無法接收新任務。") from None
-            timer = Timer(240, self.cancel, (task,))
+            timer = Timer(840 if kind=="image" else 240, self.cancel, (task,))
             timer.daemon = True
             self.jobs[(peer, request)] = (task, timer)
             timer.start()
@@ -288,10 +312,25 @@ class Host:
                     except ValueError:
                         snapshot = {}
                     saved.update({key:snapshot[key] for key in ("state","answer","message","received","total") if key in snapshot})
+                    if saved["state"]=="completed" and "artifact" not in saved:
+                        saved = self.records.get(db,peer,request) or saved
                 if saved["state"] not in ACTIVE:
                     entry[1].cancel()
                     del self.jobs[(peer,request)]
-            return {key:value for key,value in saved.items() if key not in ("task","signature","artifact")}
+            return {key:value for key,value in saved.items() if key not in ("task","signature")}
+
+    def artifact(self, peer, request):
+        saved = self.job(peer,request)
+        info = saved.get("artifact")
+        if saved["state"]!="completed" or not info or not self.media_output:
+            raise ProtocolError(404,"尚無可下載的作品。")
+        try:
+            path = work_file(self.media_output,info["id"])
+            if path.stat().st_size != info["bytes"]:
+                raise ValueError()
+        except (OSError,ValueError):
+            raise ProtocolError(404,"找不到完整的遠端作品。") from None
+        return path,info
 
 
 class HostServer(ThreadingHTTPServer):
@@ -385,6 +424,8 @@ class Handler(BaseHTTPRequestHandler):
                 request, action = match.groups()
                 if self.command == "GET" and action == "events":
                     self.events(host, peer, request)
+                elif self.command == "GET" and action == "artifact":
+                    self.send_artifact(host,peer,request)
                 elif (self.command, action) in (("GET", None), ("POST", "cancel")):
                     self.reply(host.job(peer, request, cancel=action == "cancel"))
                 else:
@@ -395,6 +436,40 @@ class Handler(BaseHTTPRequestHandler):
             self.reply({"error": str(error)}, error.status)
         except (ValueError, OSError):
             self.reply({"error": "主機服務暫時無法完成請求。"}, 503)
+
+    def send_artifact(self, host, peer, request):
+        if not host.transfers.acquire(blocking=False):
+            raise ProtocolError(429,"主機作品傳輸忙碌。")
+        try:
+            path,info = host.artifact(peer,request)
+            header = self.headers.get("Range")
+            match = re.fullmatch(r"bytes=([0-9]{1,9})-",header or "")
+            offset = int(match.group(1)) if match else 0
+            if header is not None and (not match or offset>=info["bytes"]):
+                raise ProtocolError(416,"續傳範圍無效。")
+            with path.open("rb") as stream:
+                stream.seek(offset)
+                self.send_response(206 if header else 200)
+                self.send_header("Content-Type","image/png")
+                self.send_header("Cache-Control","no-store")
+                self.send_header("ETag",f'"{info["sha256"]}"')
+                remaining = info["bytes"]-offset
+                self.send_header("Content-Length",str(remaining))
+                self.send_header("Accept-Ranges","bytes")
+                if header:
+                    self.send_header("Content-Range",f"bytes {offset}-{info['bytes']-1}/{info['bytes']}")
+                self.end_headers()
+                try:
+                    while remaining:
+                        block = stream.read(min(CHUNK,remaining))
+                        if not block:
+                            return
+                        self.wfile.write(block)
+                        remaining -= len(block)
+                except OSError:
+                    return
+        finally:
+            host.transfers.release()
 
     def events(self, host, peer, request):
         state = host.job(peer, request)

@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react'
 import { rpc, type Info } from './api'
 import { Empty, Panel, gb } from './ui'
+import type { Run } from './taskQueue'
 
 type Host = {
   state: 'stopped' | 'starting' | 'ready' | 'busy' | 'unhealthy' | 'stopping' | 'failed'
   error?: string; label?: string; address?: string; port?: number; models?: string[]; listening: boolean
   peers: {id:string; label:string}[]
   fingerprint?: string
+  media?: {state:string;workflows?:string[]}
   engine?: {installed:boolean; accepting:boolean; busy:boolean; error?:string; engine_state:string; model_loaded:boolean}
 }
 type Networks = {addresses: string[]; address?: string; fingerprint?: string; expires?: number; has_peers: boolean}
 const states = {stopped:'已停止', starting:'啟動中', ready:'分享中', busy:'忙碌', unhealthy:'異常',
   stopping:'停止中', failed:'啟動失敗'}
 
-export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:()=>Promise<void>; openChat:(id:string)=>void}) {
+export function RemoteWorkspace({info, refresh, openChat, run}: {
+  info?:Info; refresh:()=>Promise<void>; openChat:(id:string)=>void; run:Run
+}) {
   const [host, setHost] = useState<Host>()
   const [issue, setIssue] = useState('')
   const [note, setNote] = useState('')
@@ -31,7 +35,8 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
   const [rotate,setRotate] = useState(false)
   const [recoveryHost, setRecoveryHost] = useState('')
   const [request, setRequest] = useState('')
-  const [recovered, setRecovered] = useState<{state:string; answer?:string; message?:string}>()
+  const [recovered, setRecovered] = useState<{state:string; answer?:string; message?:string; runtime:string; request:string;
+    artifact?:{bytes:number}; saved_local?:boolean}>()
   const peers = info?.providers.filter(item => item.kind === 'paired') ?? []
   const running = host?.listening === true
   const selectedNetwork = network || (networks?.address && networks.addresses.includes(networks.address) ?
@@ -83,7 +88,8 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
         const cap = peer.capability
         return <article key={peer.id} className="section-note remote-peer">
           <strong className="pre">{peer.label}</strong>
-          <p className="small pre">{peer.host}:{peer.port} · {peer.connected ? '已連線' : '尚未連線'} · 文字聊天 · {peer.models.length} 個模型</p>
+          <p className="small pre">{peer.host}:{peer.port} · {peer.connected ? '已連線' : '尚未連線'} · 文字聊天 · {peer.models.length} 個文字模型</p>
+          {cap?.media?.image?.workflows.length ? <p className="small">遠端圖片 · {cap.media.image.state==='ready' ? '已就緒' : '需要準備 ComfyUI'}</p> : null}
           <p className="small pre">RAM 可用 {cap?.resources.ram_available?.value != null ? gb(Number(cap.resources.ram_available.value)) : '未知'} ·
             GPU {Array.isArray(cap?.resources.gpus?.value) ? cap.resources.gpus.value.join('、') : '未知'} · 無 API 計費</p>
           {cap?.error && <p className="small pre creation-error">{cap.error}</p>}
@@ -108,7 +114,11 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
         <form onSubmit={event => {
           event.preventDefault()
           setRecovered(undefined)
-          void change(async () => setRecovered(await rpc('remote-client-job',{id:recoveryHost || peers[0].id, request})))
+          const runtime = recoveryHost || peers[0].id
+          void change(async () => {
+            const result = await rpc<Omit<NonNullable<typeof recovered>,'runtime'|'request'>>('remote-client-job',{id:runtime,request})
+            setRecovered({...result,runtime,request})
+          })
         }}>
           <label>主機<select value={recoveryHost || peers[0].id} onChange={e=>setRecoveryHost(e.target.value)}>
             {peers.map(peer=><option key={peer.id} value={peer.id}>{peer.label}</option>)}
@@ -116,7 +126,13 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
           <label>遠端任務識別碼<input required maxLength={32} value={request} onChange={e=>setRequest(e.target.value)}/></label>
           <button className="button section-note" disabled={busy}>查詢任務</button>
         </form>
-        {recovered && <div role="status" className="pre"><p>{recovered.state} · {recovered.message}</p><p>{recovered.answer}</p></div>}
+        {recovered && <div role="status" className="pre"><p>{recovered.state} · {recovered.message}</p><p>{recovered.answer}</p>
+          {recovered.artifact && <p>遠端圖片 · {recovered.saved_local ? '已保存到本機' : '尚未下載'} · {gb(recovered.artifact.bytes)}</p>}
+          {recovered.artifact && !recovered.saved_local && <button className="button" disabled={busy} onClick={()=>void change(async()=>{
+            const result = await run('remote-fetch-work',{runtime:recovered.runtime,request:recovered.request})
+            if (result?.file) setRecovered({...recovered,saved_local:true})
+          })}>下載或續傳到作品庫</button>}
+        </div>}
       </details>}
     </Panel>
     <Panel title="將此電腦設為運算主機" description="允許已配對裝置在私人網路使用這台電腦的文字模型。">
@@ -168,6 +184,8 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
         <p className="small pre">{host?.engine?.accepting ? '可接收文字任務' : host?.engine?.error} · {host?.models?.length ?? 0} 個模型</p>
         <p className="small pre">文字引擎 {host?.engine?.model_loaded ? '已載入模型' : '尚未載入模型'} ·
           本機可用 RAM {info?.hardware.ram_available != null ? gb(info.hardware.ram_available) : '未知'}</p>
+        {host?.media?.workflows?.length ? <p className="small">圖片工作流程 · {host.media.state==='ready' ?
+          '已就緒' : '等待 ComfyUI、權重與節點'}</p> : null}
         {host?.fingerprint && <details><summary>核對主機指紋</summary><p className="small pre">SHA-256 {host.fingerprint}</p></details>}
         <div className="row creation-actions">
           <button className="button primary" disabled={busy || host?.state === 'failed'} onClick={()=>void change(async()=>{

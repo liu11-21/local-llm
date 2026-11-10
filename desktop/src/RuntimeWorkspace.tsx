@@ -69,7 +69,7 @@ export function RuntimeWorkspace({info, health, policy, tasks, run, report, noti
             <div className="row"><label className="grow">便攜版<select value={profile} onChange={e=>setProfile(e.target.value)}>{info?.profiles.map(p=><option key={p}>{p}</option>)}</select></label><label>連接埠<input type="number" value={port} min={1024} max={65535} onChange={e=>setPort(Number(e.target.value))}/></label></div>
             <div className="row section-note"><button className="button primary" disabled={comfyBusy || !profile || comfyActive} onClick={()=>comfyInstalled ? run('comfy-start',{profile,port}) : run('comfy-install',{profile})}>{comfyInstalled ? '啟動 ComfyUI' : '背景安裝'}</button><button className="button" disabled={comfyBusy || !comfyActive} onClick={()=>run('comfy-stop',{})}>停止服務</button></div>
           </Panel></div>}
-          {mode==='remote' && <RemoteWorkspace info={info} refresh={refresh} openChat={openChat}/>}
+          {mode==='remote' && <RemoteWorkspace info={info} refresh={refresh} openChat={openChat} run={run}/>}
           {(mode==='remote' || mode==='cloud') && <details open={mode==='cloud' || undefined}><summary>{mode==='remote' ? '進階：外部 HTTPS 端點' : '設定雲端 API'}</summary><Panel title={mode==='remote' ? '既有 HTTPS 端點' : '雲端 AI 的連線設定'}
             description="需要支援 OpenAI-compatible 的 HTTPS 端點。連線測試讀取模型清單。金鑰只保留在本次工作階段。">
             <form className="endpoint-form runtime-endpoint" onSubmit={connect}>

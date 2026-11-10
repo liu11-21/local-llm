@@ -50,7 +50,7 @@ try {
       const response = await route.fetch()
       const json = await response.json()
       assert(json.ok, json.error)
-      return reply({...json.value, engine:true})
+      return reply(json.value)
     }
     if (op === 'run' && data.action === 'team') {started = true; return reply({id:'layout-team'})}
     if (op === 'run' && data.action === 'chat') chatSubmissions++
@@ -301,6 +301,25 @@ try {
   await page.getByRole('dialog',{name:'第一項任務已完成'}).getByRole('button',{name:'完成',exact:true}).click()
   await page.getByText('首次對話已保存。',{exact:true}).waitFor()
   console.log('PASS first use resumes after reload, retries interrupted setup, and saves the first chat')
+  const imageHost = await page.evaluate(async () => {
+    const response = await fetch('/__desktop_dev_rpc',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({op:'fixture-remote-image',data:{}})})
+    return (await response.json()).value
+  })
+  await page.reload()
+  await page.getByText('本機工作台已連線').waitFor()
+  await navigate('圖片生成')
+  await page.locator('.creation').getByLabel('運算環境',{exact:true}).selectOption(imageHost)
+  await page.getByLabel('提示詞',{exact:true}).fill('受控遠端圖片')
+  await page.locator('.creation').getByRole('button',{name:'生成圖片',exact:true}).click()
+  await page.getByRole('dialog',{name:'確認資料傳送'}).getByText(/受控圖片主機/).waitFor()
+  if(firstUseShots) await page.screenshot({path:join(firstUseShots,'remote-image-consent.png')})
+  await page.getByRole('dialog',{name:'確認資料傳送'}).getByRole('button',{name:'同意並送出'}).click()
+  await page.getByRole('heading',{name:'本次作品'}).waitFor()
+  await button('查看作品與參數').click()
+  await page.getByText('受控圖片主機',{exact:true}).waitFor()
+  if(firstUseShots) await page.screenshot({path:join(firstUseShots,'remote-image-library.png')})
+  console.log('PASS remote image consent, verified transfer, and works-library provenance')
   assert.deepEqual(exceptions, [])
 } finally {
   if (browser) await browser.close()

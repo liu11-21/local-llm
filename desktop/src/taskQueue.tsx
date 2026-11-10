@@ -4,6 +4,7 @@ import { Empty, Panel } from './ui'
 
 const labels: Record<string, string> = {
   'remote-host-chat': '遠端裝置文字推理',
+  'remote-host-media': '遠端裝置圖片生成', 'remote-fetch-work': '下載遠端作品',
   chat: '文字聊天', download: '模型下載', team: 'AI 團隊', agent: 'AI 代理人',
   'team-workflow': 'AI 團隊角色流程',
   image: '圖片生成', video: '影片生成', music: '音樂生成', media: '創作',

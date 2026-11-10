@@ -65,7 +65,7 @@ def workspace_registry(info, models, engine_version, sources):
     runtimes = [{"id":"local", "label":"本機 CPU／GPU", "kind":"local", "ready":True, "models":info["models"],
                  "tasks":["chat","agent","team",*DEFAULT_WORKFLOWS]}]
     runtimes.extend({"id":p["id"], "label":p["label"], "kind":p["kind"], "ready":p["connected"],
-                     "models":p["models"], "tasks":["chat"] if p["kind"] == "paired" else ["chat","team"]}
+                     "models":p["models"], "tasks":p["tasks"] if p["kind"] == "paired" else ["chat","team"]}
                     for p in info["providers"])
     runtimes.append({"id":"colab", "label":"Colab Enterprise", "kind":"notebook", "ready":info["colab_ready"],
                      "models":[], "tasks":["notebook"]})

@@ -23,7 +23,10 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
     if network and (record["connected"] is not True or not fresh(record, now)):
         connect = True
         unknown.append("需要重新連線或更新能力資料。")
-    if record["health"] in ("unhealthy", "offline"):
+    image = record.get("media",{}).get("image") if task=="image" and not local else None
+    if image and image["state"]!="ready":
+        risks.append("遠端 ComfyUI 或圖片權重尚未就緒。")
+    if not image and record["health"] in ("unhealthy", "offline"):
         risks.append("運算環境目前無法穩定接收工作。")
     elif record["health"] == "busy":
         risks.append("運算環境正在工作，可能需要排隊。")
@@ -43,7 +46,13 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
         if format and record["formats"] and format not in record["formats"]:
             incompatible = True
             reasons.append(f"此環境未宣告支援 {format}。")
-        if local and format == "safetensors":
+        if image:
+            if model in image["workflows"]:
+                reasons.append("遠端主機已列出此圖片流程。")
+            elif not connect:
+                incompatible = True
+                reasons.append("遠端主機沒有此圖片流程。")
+        elif local and format == "safetensors":
             unknown.append("創作權重是否可用，請以 ComfyUI 的預檢為準。")
         elif model not in record["models"]:
             if connect:

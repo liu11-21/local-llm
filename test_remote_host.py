@@ -151,3 +151,37 @@ class HostProtocolTests(unittest.TestCase):
         self.assertTrue(restored.get(stored.id).discover()["connected"])
         self.assertTrue(restored.remove(stored.id)["revoked"])
         self.assertEqual(self.host.status()["peers"], [])
+
+    @unittest.skipUnless(os.name == "nt", "DPAPI requires Windows")
+    def test_image_crosses_verified_tls_and_is_saved_to_owner_library(self):
+        from base64 import b64decode
+        folder = TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        client = Desktop(Path(folder.name))
+        self.addCleanup(client.close)
+        self.host.media = lambda:{"installed":True,"state":"ready","workflows":["sd15"],"formats":["png"]}
+        self.worker.comfy.running = lambda:True
+        self.worker.comfy.port = 8188
+        png = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jh2sAAAAASUVORK5CYII=")
+
+        def generate(_self, _kind, _prompt, _lyrics, output, _stop, _report, **_):
+            output.mkdir(exist_ok=True)
+            path = output / "a12345678901.png"
+            path.write_bytes(png)
+            return path
+
+        paired = client.rpc("remote-client-pair",{"invite":self.host.issue(),"label":"Laptop","confirmed":True})
+        self.assertIn("image",paired["tasks"])
+        args = {"runtime":paired["id"],"kind":"image","workflow":"sd15","prompt":"mountains","options":{"seed":417},"policy":"auto"}
+        check = client.rpc("task-preflight",{"task":"image","targets":[{"runtime":paired["id"],"model":"sd15"}]})
+        self.assertEqual(check["state"],"ready")
+        with self.assertRaises(ValueError):
+            client.perform("media",args,Event(),lambda **_:None)
+        with patch("desktop_worker.ComfyClient.generate", generate):
+            result = client.perform("media",{**args,"consent":True},Event(),lambda **_:None)
+        name = result["file"].split("/")[-1]
+        self.assertEqual((client.outputs/name).read_bytes(),png)
+        work = client.rpc("works-library",{})["items"][0]
+        self.assertEqual((work["options"]["seed"],work["source"]["host"]),(417,paired["id"]))
+        another = self.pair()
+        self.assertEqual(self.request("GET","/v1/jobs/"+work["source"]["job"]+"/artifact",token=another["token"])[0],404)

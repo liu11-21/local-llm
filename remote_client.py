@@ -91,8 +91,8 @@ class RemoteClient:
             raise ValueError("主機公開憑證無效。請重新取得配對邀請。") from None
 
     @contextmanager
-    def request(self, method, path, body=None):
-        headers = {"X-LocalLLM-Protocol": str(PROTOCOL), "Content-Type": "application/json"}
+    def request(self, method, path, body=None, *, headers=None):
+        headers = {"X-LocalLLM-Protocol": str(PROTOCOL), "Content-Type": "application/json", **(headers or {})}
         if self.token:
             headers["Authorization"] = "Bearer " + self.token
         if body is not None:
@@ -106,7 +106,7 @@ class RemoteClient:
                 raise ssl.SSLCertVerificationError("unexpected certificate")
             connection.request(method, path, body, headers)
             with connection.getresponse() as response:
-                if response.status not in (200, 202):
+                if response.status not in (200, 202, 206):
                     errors = {
                         401: "配對已撤銷或失效。請在主機重新配對。",
                         403: "配對邀請無效或已使用。請在主機取得新邀請。",
@@ -161,7 +161,7 @@ class RemoteClient:
     def summary(self):
         record = self.capability()
         return {"id": self.id, "kind": "paired", "label": self.label, "host": self.host, "port": self.port,
-                "models": record["models"], "connected": record["connected"], "tasks": ["chat"],
+                "models": record["models"], "connected": record["connected"], "tasks": record["tasks"],
                 "checked_at": record["checked_at"], "capability": record}
 
     def job(self, request):
