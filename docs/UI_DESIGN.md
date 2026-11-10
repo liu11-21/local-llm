@@ -1,5 +1,22 @@
 # 桌面 UI 設計
 
+## Batch 4A–4C 工作台與任務準備
+
+| 區域 | 原流程 | Batch 4 |
+|---|---|---|
+| 首頁 | 統計卡及快速連結分區 | 六種任務有直接入口，同畫面看到本機資源、最近任務與作品 |
+| 首次聊天 | 在模型中心下載，再到運算環境安裝引擎，最後回聊天 | 進入聊天後可在原頁下載推薦模型與安裝引擎，減少兩次跨頁準備 |
+| 文字與創作 | 各自維護運算選擇 | 聊天、代理人、團隊、創作共用選擇器。只顯示該功能現有的運算能力 |
+| 外部傳送 | 各頁自行組合確認文字 | 共用確認視窗列出目的地、模型與費用。Esc 返回編輯 |
+| Host 分享 | 填位址、埠、憑證路徑、私鑰路徑，再建立邀請 | 選擇私人網路後確認分享，即配置憑證並顯示邀請。四個手動欄位移入進階區 |
+
+視覺改用近黑和中性灰表面，強調色集中在焦點、運作狀態和主要動作。側欄可收合，窄視窗保留展開導覽。短暫淡入與按鈕回饋遵守 reduced motion。CPU 和 RAM 取自實際 Windows 系統，GPU 使用率和 VRAM 用量顯示未知。
+
+- [深色首頁](ui-preview/batch4-home-dark.png) · [淺色 650 px 首頁](ui-preview/batch4-home-light-narrow.png)
+- [分享算力](ui-preview/batch4-remote-sharing.png) · [外部傳送確認](ui-preview/batch4-transfer-review.png)
+
+畫面來自連到 Python Worker 的 Chromium 測試。遠端畫面中的回環位址與外部確認中的目的地是測試資料。
+
 ## Batch 3D–3E 私人遠端運算
 
 - 「連接另一台電腦」分為筆電配對與本機 Host 管理。首次啟用 Host 展開進階 TLS 欄位。Host 在線與引擎是否已載入模型各自顯示。 [深色 1280 px](ui-preview/remote-1280-dark.png) · [淺色 650 px](ui-preview/remote-650-light.png) · [Host 已啟用與長名稱](ui-preview/remote-host-active.png)

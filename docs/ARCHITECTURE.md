@@ -1,5 +1,12 @@
 # 桌面工作台架構
 
+## Batch 4A–4C
+
+- `desktop/src/TaskSelection.tsx` 將 Registry 的 Runtime 能力與模型顯示統一，原有 Agent、Team、聊天和媒體仍透過各自的參數契約工作。
+- `desktop_worker.py` 的 `task-preflight` 重用 Runtime 能力與推薦，判斷缺少的模型、引擎和連線。媒體分支沿用 ComfyUI 預檢。前端用共用對話框取得外部傳送同意，實際任務仍由原有 TaskManager 與服務端驗證。
+- `hardware.ResourceMonitor` 從 Windows API 讀取 CPU 時間及 RAM，首頁可見才以 3.5 秒間隔取樣。GPU 使用率和 VRAM 用量目前無即時來源。
+- `remote_tls.py` 在本機管理自簽、含 IPv4 SAN 的伺服器憑證。第 7 版 SQLite 新增自動 TLS 資料。私鑰使用加密 PKCS#8，密碼由 Windows 使用者範圍 DPAPI 保護。自動模式只在明確同意後啟動，更新後撤銷舊配對。Client 沿用嚴格 TLS 與憑證固定驗證。
+
 ## Batch 3D–3E
 
 - `runtime_contract.py` 驗證版本化的能力紀錄，明確表示資源來源、未知資料、連線及健康狀態。現有 Registry 和 IPC 仍可供舊頁面使用。比較流程只使用本機快照與使用者已查詢的外部能力。 [能力契約](RUNTIME_CAPABILITY.md)
