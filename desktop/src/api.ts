@@ -2,7 +2,13 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
 
 export type Params = Record<string, unknown>
 export type Plan = { device: string | null; layers: number; total_layers: number; ram: number; vram: number; mapped_bytes: number }
-export type Provider = { id: string; kind: string; label: string; host: string; port: number; models: string[]; connected: boolean }
+export type RuntimeCapability = {
+  schema: number; id: string; label: string; kind: string; health: string; connected: boolean | null; error?: string;
+  checked_at: number; cost: string; tasks: string[]; formats: string[]; models: string[];
+  resources: Record<string, {value: number | string[] | null; source: string}>;
+}
+export type Provider = { id: string; kind: string; label: string; host: string; port: number; models: string[]; connected: boolean;
+  capability?: RuntimeCapability }
 export type EngineStatus = { state: 'not_installed' | 'installed' | 'starting' | 'ready' | 'busy' | 'stopping' | 'stopped' | 'unhealthy' | 'failed';
   code?: string | null; hint?: string | null; checked_at?: string }
 export type EngineHealth = { llama: EngineStatus; comfyui: EngineStatus }
@@ -37,7 +43,7 @@ export type Info = {
   recoverable_downloads: {name: string; url: string; received: number; total: number}[];
 }
 export type Chat = [string, string]
-export type Message = { role: string; content: string }
+export type Message = { role: string; content: string; runtime?: string; model?: string; provider?: string }
 export type TaskState = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted'
 export type Task = {
   id: string; action: string; kind: string; title?: string; state: TaskState; message: string;

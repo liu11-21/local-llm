@@ -34,6 +34,7 @@ export function App() {
   const [works, setWorks] = useState<Work[]>([])
   const [selected, setSelected] = useState<Work>()
   const [preset, setPreset] = useState<Work>()
+  const [preferredRuntime, setPreferredRuntime] = useState<{id:string}>()
   const [agentJob, setAgentJob] = useState<Job>()
   const [agentBusy, setAgentBusy] = useState(false)
   const [banner, setBanner] = useState<{text: string; error: boolean}>()
@@ -107,11 +108,13 @@ export function App() {
         {page === 'home' && <Dashboard info={info} tasks={queue.tasks} works={works} go={go}
           openWork={work => {setSelected(work);go('works')}}/>}
         <div hidden={page !== 'chat'}><ChatWorkspace info={info} policy={policy} run={queue.run} cancel={queue.cancel}
-          report={report} notice={notice} go={go}/></div>
+          report={report} notice={notice} go={go} preferredRuntime={preferredRuntime}/></div>
         {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError}/>}
         {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go} refresh={refresh}/>}
-        {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run} report={report} notice={notice} refresh={refresh}/>}
-        <div hidden={page !== 'team'}><TeamWorkspace info={info} policy={policy} run={queue.run} report={report} cancel={queue.cancel}/></div>
+        {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run}
+          report={report} notice={notice} refresh={refresh} openChat={id=>{setPreferredRuntime({id});go('chat')}}/>}
+        <div hidden={page !== 'team'}><TeamWorkspace info={info && {...info, providers:info.providers.filter(item=>item.kind!=='paired')}}
+          policy={policy} run={queue.run} report={report} cancel={queue.cancel}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} health={health} preset={preset} works={works}
           tasks={queue.tasks} run={queue.run} cancel={queue.cancel} retry={queue.retry} go={go} openWork={openSavedWork}/>}
         {page === 'works' && <Works info={info} revision={works} selected={selected} choose={setSelected}

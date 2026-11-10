@@ -31,9 +31,10 @@ function Reply({ content }: { content: string }) {
   }}>{content}</Markdown></div>
 }
 
-export function ChatWorkspace({ info, policy, run, cancel, report, notice, go }: {
+export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, preferredRuntime }: {
   info?: Info; policy: string; run: Run; cancel: (id: string) => void; report: (error: unknown) => void
   notice: (message: string) => void; go: (page: 'library' | 'runtime') => void
+  preferredRuntime?: {id:string}
 }) {
   const [chats, setChats] = useState<Chat[]>([])
   const [chat, setChat] = useState(identifier)
@@ -57,11 +58,14 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go }:
   const provider = info?.providers.find(item => item.id === runtime)
   const models = runtime === 'local' ? info?.models ?? [] : provider?.models ?? []
   const model = models.includes(selectedModel) ? selectedModel : models[0] || ''
-  const canSend = !pending && !opening && !!model && (runtime !== 'local' || !!info?.engine)
+  const canSend = !pending && !opening && !!model && (runtime === 'local' ? !!info?.engine : !!provider?.connected)
   const current = chats.find(([id]) => id === chat)
 
   async function refreshChats() { setChats(await rpc<Chat[]>('chats')) }
   useEffect(() => { void refreshChats().catch(report) }, [])
+  useEffect(() => {
+    if (preferredRuntime && !locked.current) {setRuntime(preferredRuntime.id);setModel('')}
+  }, [preferredRuntime])
   useEffect(() => {
     if (scroll.current && stick.current) scroll.current.scrollTop = scroll.current.scrollHeight
   }, [messages, job?.answer, pending])
@@ -73,7 +77,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go }:
     setOpening(!!id); stick.current = true
     try {
       if (id) {
-        const rows = await rpc<Message[]>('history', {chat:id})
+        const rows = await rpc<Message[]>('history', {chat:id,with_runtime:true})
         if (request === latest.current) setMessages(rows)
       }
     } catch (error) { report(error) }
@@ -88,7 +92,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go }:
       report('請先在設定將運算政策切換為手動，再選擇可用的端點。')
       return
     }
-    const consent = provider ? window.confirm('允許將提示詞及相關對話歷史傳送至 ' + provider.host + ':' + provider.port + '？此端點可能產生費用。') : false
+    const consent = provider ? window.confirm('允許將提示詞及相關對話歷史傳送至 ' + provider.host + ':' + provider.port + '？' +
+      (provider.kind === 'paired' ? '內容會傳到已配對的運算主機。' : '此端點可能產生費用。')) : false
     if (provider && !consent) return
     locked.current = true
     setPending({text, regenerate}); setJob(undefined); setUsage(undefined); stick.current = true
@@ -97,7 +102,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go }:
       const result = await run('chat', { chat, prompt:text, model, runtime, policy, consent, context, mode,
         max_tokens:budget, temperature, regenerate }, setJob)
       if (result?.answer) {
-        setMessages(await rpc<Message[]>('history', {chat}))
+        setMessages(await rpc<Message[]>('history', {chat,with_runtime:true}))
         setUsage(result.usage)
         await refreshChats()
       } else if (!regenerate) setPrompt(text)
@@ -116,7 +121,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go }:
     try { await rpc('chat-delete', {chat, confirmed:true}); await open(); await refreshChats() }
     catch (error) { report(error) }
   }
-  const display = pending ? [
+  const display: Message[] = pending ? [
     ...messages.slice(0, pending.regenerate ? -1 : messages.length),
     ...(!pending.regenerate ? [{role:'user', content:pending.text}] : []),
     ...(job?.answer ? [{role:'assistant', content:job.answer}] : []),
@@ -143,10 +148,10 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go }:
             <button className="icon" title="刪除對話" disabled={!!pending} onClick={() => void remove()}><Trash2 size={16}/></button></>}
         </div>}
         <div className="chat-controls">
-          <label>運算環境<select value={runtime} disabled={!!pending} onChange={e => {setRuntime(e.target.value);setModel('')}}>
+          <label>運算環境<select aria-label="運算環境" value={runtime} disabled={!!pending} onChange={e => {setRuntime(e.target.value);setModel('')}}>
             <option value="local">本機 CPU／GPU</option>
             {info?.registry.runtimes.filter(item => item.id !== 'local' && item.tasks.includes('chat')).map(item =>
-              <option key={item.id} value={item.id}>{item.label}{!item.ready ? ' · 已中斷' : ''}</option>)}
+              <option key={item.id} value={item.id}>{item.kind === 'paired' ? '遠端電腦 · ' : item.kind === 'cloud' ? '雲端 · ' : ''}{item.label}{!item.ready ? ' · 尚未連線' : ''}</option>)}
           </select></label>
           <label>模型<SelectModels models={models} registry={runtime === 'local' ? info?.registry.models : undefined}
             value={model} change={setModel} disabled={!!pending}/></label>
@@ -163,6 +168,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go }:
         </div>}
         {display.map((message, index) => <article className={'message ' + message.role} key={index}>
           <b>{message.role === 'user' ? '你' : '模型'}</b>
+          {message.model && <div className="small muted pre">{message.provider} · {message.model}</div>}
           {message.role === 'user' ? <p>{message.content}</p> : <Reply content={message.content}/>}
           {message.role === 'assistant' && !(pending && index === display.length - 1) && <div className="message-tools row">
             <button className="icon" title="複製回答" onClick={() => void navigator.clipboard.writeText(message.content).then(() => notice('已複製回答。'), report)}><Copy size={15}/></button>

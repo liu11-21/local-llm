@@ -104,7 +104,30 @@ try {
   await page.getByRole('heading',{name:'選擇運算來源'}).waitFor()
   assert.equal(await page.getByLabel('HTTPS 端點').count(), 0)
   await button('連接另一台電腦').click()
+  await page.getByRole('heading',{name:'將此電腦設為運算主機'}).waitFor()
+  await page.getByText('尚未配對遠端電腦。').waitFor()
+  await page.getByText('進階：外部 HTTPS 端點',{exact:true}).click()
   await page.getByLabel('HTTPS 端點').waitFor()
+  await page.getByText('進階：外部 HTTPS 端點',{exact:true}).click()
+  const remoteShots = process.env.LOCALLLM_REMOTE_SHOTS
+  if (remoteShots) await mkdir(remoteShots,{recursive:true})
+  for (const [width,height] of [[1280,900],[1024,768],[800,600],[650,720]]) {
+    await page.setViewportSize({width,height})
+    for (const theme of ['dark','light']) {
+      if (await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme) !== theme) {
+        await page.getByTitle('切換主題').click()
+      }
+      await noOverflow()
+      if (remoteShots && ((width === 1280 && theme === 'dark') || (width === 650 && theme === 'light'))) {
+        await page.evaluate(() => window.scrollTo(0,0))
+        await page.screenshot({path:join(remoteShots,'remote-'+width+'-'+theme+'.png'),fullPage:true})
+      }
+    }
+  }
+  await page.getByLabel('主機配對邀請').fill('invalid invitation')
+  page.once('dialog', dialog => dialog.accept())
+  await button('配對主機').click()
+  await page.getByRole('alert').getByText(/配對邀請無效/).waitFor()
   await button('Google Colab／Notebook').click()
   await page.getByRole('heading',{name:'Google Colab Enterprise'}).waitFor()
   await noOverflow()
