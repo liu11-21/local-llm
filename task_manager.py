@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from threading import Event, Lock, Thread
 from uuid import uuid4
 from sqlite3 import Error as DatabaseError
+from time import monotonic
 
 from comfy_runtime import PROFILES
 from downloads import model_filename
@@ -55,6 +56,8 @@ class Task:
     key: str | None
     stop: Event = field(default_factory=Event)
     thread: Thread | None = None
+    on_snapshot: object = None
+    saved_at: float = 0
 
 
 class PauseTask(Exception):
@@ -69,7 +72,7 @@ class TaskManager:
         self.tasks = {}
         self.closed = False
 
-    def submit(self, action, payload, *, plan_id=None, plan_version=None, team_run_id=None):
+    def submit(self, action, payload, *, plan_id=None, plan_version=None, team_run_id=None, on_snapshot=None):
         lane, runtime, key, target = classify(action, payload)
         with self.lock:
             if self.closed:
@@ -93,18 +96,24 @@ class TaskManager:
                 task.public["team_run_id"] = team_run_id
             if self.save:
                 self.save(self._summary(task))
+            if on_snapshot:
+                on_snapshot(dict(task.public))
+                task.on_snapshot = on_snapshot
             self.tasks[task_id] = task
             self._dispatch()
             return {"id": task_id}
 
     def _persist(self, task):
-        if self.save:
-            try:
+        try:
+            if task.on_snapshot:
+                task.on_snapshot(dict(task.public))
+                task.saved_at = monotonic()
+            if self.save:
                 self.save(self._summary(task))
-            except (OSError, DatabaseError):
-                task.public["history_warning"] = "任務狀態無法寫入本機歷史。"
-            else:
-                task.public.pop("history_warning", None)
+        except (OSError, DatabaseError):
+            task.public["history_warning"] = "任務狀態無法寫入本機歷史。"
+        else:
+            task.public.pop("history_warning", None)
 
     def _dispatch(self):
         if self.closed:
@@ -127,6 +136,8 @@ class TaskManager:
             with self.lock:
                 if task.public["state"] == "running" and not task.stop.is_set():
                     task.public.update(values)
+                    if task.on_snapshot and monotonic() - task.saved_at >= 1:
+                        self._persist(task)
 
         result = None
         failure = None

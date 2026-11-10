@@ -14,6 +14,7 @@ from time import monotonic, sleep
 from uuid import uuid4
 
 from runtime_contract import capability
+from remote_jobs import RemoteJobs
 from task_manager import ACTIVE
 
 PROTOCOL = 1
@@ -78,9 +79,11 @@ class Host:
         self.error = None
         self.code = None
         self.jobs = {}
+        self.records = RemoteJobs(connect)
 
     @staticmethod
     def initialize(db):
+        RemoteJobs.initialize(db)
         db.execute("CREATE TABLE IF NOT EXISTS remote_host_identity(id TEXT PRIMARY KEY)")
         db.execute("""CREATE TABLE IF NOT EXISTS remote_host_grants(
                       id TEXT PRIMARY KEY, label TEXT NOT NULL, token_hash TEXT UNIQUE NOT NULL)""")
@@ -144,7 +147,8 @@ class Host:
                 return
             server, self.code = self.server, None
             self.state = "stopping"
-            for _, task, timer, _ in self.jobs.values():
+            self.records.interrupt()
+            for task, timer in self.jobs.values():
                 timer.cancel()
                 self.cancel(task)
             self.jobs.clear()
@@ -205,10 +209,11 @@ class Host:
         return row[0]
 
     def revoke(self, peer):
-        with self.lock, self.connect() as db:
-            db.execute("DELETE FROM remote_host_grants WHERE id=?", (peer,))
+        with self.lock:
+            with self.connect() as db:
+                db.execute("DELETE FROM remote_host_grants WHERE id=?", (peer,))
             for key in [key for key in self.jobs if key[0] == peer]:
-                _, task, timer, _ = self.jobs.pop(key)
+                task, timer = self.jobs.pop(key)
                 timer.cancel()
                 self.cancel(task)
 
@@ -233,27 +238,29 @@ class Host:
         with self.lock, self.connect() as db:
             if self.state != "ready" or not db.execute("SELECT 1 FROM remote_host_grants WHERE id=?", (peer,)).fetchone():
                 raise ProtocolError(401, "配對已撤銷或服務已停止。")
-            expired = [key for key, entry in self.jobs.items() if monotonic() - entry[0] > 600]
-            for key in expired:
-                del self.jobs[key]
-            previous = self.jobs.get((peer, request))
+            previous = self.records.get(db,peer,request)
             if previous:
-                if signature != previous[3]:
+                if signature != previous["signature"]:
                     raise ProtocolError(409, "任務識別碼已被其他輸入使用。")
                 return {"id": request}
             if not self.engine_status()["accepting"]:
                 raise ProtocolError(503, "主機引擎目前不可用。請在主機檢查引擎和資源。")
             if payload["model"] not in self.model_names():
                 raise ProtocolError(404, "主機沒有這個模型。請重新整理模型清單。")
-            if len(self.jobs) >= 64 or sum(self.job_active(entry[1]) for entry in self.jobs.values()) >= 4:
+            for key, (task,timer) in list(self.jobs.items()):
+                if not self.job_active(task):
+                    timer.cancel()
+                    del self.jobs[key]
+            if len(self.jobs) >= 4 or sum(key[0] == peer for key in self.jobs) >= 2:
                 raise ProtocolError(429, "主機佇列已滿，請稍後重試。")
             try:
-                task = self.scheduler.submit("remote-host-chat", payload)["id"]
+                writer = self.records.writer(peer, request, signature, "chat", payload["model"])
+                task = self.scheduler.submit("remote-host-chat", payload, on_snapshot=writer)["id"]
             except ValueError:
                 raise ProtocolError(429, "主機暫時無法接收新任務。") from None
             timer = Timer(240, self.cancel, (task,))
             timer.daemon = True
-            self.jobs[(peer, request)] = (monotonic(), task, timer, signature)
+            self.jobs[(peer, request)] = (task, timer)
             timer.start()
             return {"id": request}
 
@@ -270,17 +277,21 @@ class Host:
             return False
 
     def job(self, peer, request, cancel=False):
-        with self.lock:
-            entry = self.jobs.get((peer, request))
-            if not entry or monotonic() - entry[0] > 600:
-                raise ProtocolError(404, "找不到可恢復的主機任務。")
-            try:
-                value = self.scheduler.snapshot(entry[1], cancel=cancel)
-            except ValueError:
-                raise ProtocolError(404, "找不到可恢復的主機任務。") from None
-            if value["state"] not in ACTIVE:
-                entry[2].cancel()
-            return {key: value[key] for key in ("state", "answer", "message") if key in value}
+        with self.lock, self.connect() as db:
+            saved = self.records.get(db,peer,request)
+            if not saved or not db.execute("SELECT 1 FROM remote_host_grants WHERE id=?", (peer,)).fetchone():
+                raise ProtocolError(404, "找不到這個裝置的主機任務。")
+            if entry := self.jobs.get((peer,request)):
+                if saved["state"] in ACTIVE:
+                    try:
+                        snapshot = self.scheduler.snapshot(entry[0],cancel=cancel)
+                    except ValueError:
+                        snapshot = {}
+                    saved.update({key:snapshot[key] for key in ("state","answer","message","received","total") if key in snapshot})
+                if saved["state"] not in ACTIVE:
+                    entry[1].cancel()
+                    del self.jobs[(peer,request)]
+            return {key:value for key,value in saved.items() if key not in ("task","signature","artifact")}
 
 
 class HostServer(ThreadingHTTPServer):
