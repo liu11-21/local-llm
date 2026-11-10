@@ -10,8 +10,10 @@
 | PASS | TypeScript／Vite 建置及 Chromium UI 測試。涵蓋四種尺寸及深淺模式、Team 部分交付、創作安裝摘要、作品庫搜尋、排序、類型與模型篩選、參數與種子回填。Team 回應由可控 SSE 測試端點提供。 [實際介面截圖](UI_DESIGN.md#batch-3-創作與作品庫) |
 | PASS | 真實 Windows CPU。重新計算既有 SD 1.5 權重的 SHA-256，檢查 ComfyUI 節點，從桌面 Worker RPC 提交並透過 TaskManager 完成 256×256 PNG。SQLite 作品庫可查到尺寸、種子及真實 ComfyUI 任務 ID。 |
 | PASS | 真實 Hugging Face 安裝下載。Wan 2.1 VAE 以四個執行緒下載，實際大小 253,815,318 bytes，通過固定 revision 的 SHA-256。 [Wan 2.1 權重](https://huggingface.co/Comfy-Org/Wan-2.1/tree/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/split_files/vae) |
-| NEEDS GPU | Wan 2.1 完整權重下載與實際影片生成、ACE-Step 權重下載及音樂生成，需驗收完整模型和支援的 GPU 組合。 |
-| NOT RUN | 新版簽章、正式 Release、付費請求。3D 遠端 Host／Client 及 3E 能力契約尚未實作。 |
+| PASS | `eb5cba2` 通過 Windows Server 2022 x64 CI，含 Worker 封裝、Chromium、Tauri NSIS、靜默安裝、桌面及開始功能表捷徑、WebView2 啟動、關閉和卸載保留資料。 [Windows CI](https://github.com/liu11-21/local-llm/actions/runs/42765375251) |
+| PASS | 已下載開發安裝包，核對 GitHub 的 ZIP SHA-256、`BUILD.json` 提交與安裝 EXE SHA-256。EXE 校驗值為 `182b61cd0e7f9b78d5fb5be306c55922d27045611bd79dd6d68e909f4cafba6c`。 [Windows 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42765375251/artifacts/13739622530) |
+| NEEDS GPU | Wan 2.1 實際影片生成及 ACE-Step 實際音樂生成仍待支援的 GPU 環境驗收。 |
+| NOT RUN | Wan 2.1 其餘兩個權重及 ACE-Step 完整下載、新版簽章、正式 Release、付費請求。3D 遠端 Host／Client 及 3E 能力契約尚未實作。 |
 
 ## 第三階段 Batch 2
 
