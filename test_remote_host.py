@@ -160,7 +160,6 @@ class HostProtocolTests(unittest.TestCase):
         client = Desktop(Path(folder.name))
         self.addCleanup(client.close)
         self.host.media = lambda:{"installed":True,"state":"ready","workflows":["sd15"],"formats":["png"]}
-        self.worker.comfy.running = lambda:True
         self.worker.comfy.port = 8188
         png = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jh2sAAAAASUVORK5CYII=")
 
@@ -177,7 +176,7 @@ class HostProtocolTests(unittest.TestCase):
         self.assertEqual(check["state"],"ready")
         with self.assertRaises(ValueError):
             client.perform("media",args,Event(),lambda **_:None)
-        with patch("desktop_worker.ComfyClient.generate", generate):
+        with patch.object(self.worker.comfy,"running",return_value=True), patch("desktop_worker.ComfyClient.generate", generate):
             result = client.perform("media",{**args,"consent":True},Event(),lambda **_:None)
         name = result["file"].split("/")[-1]
         self.assertEqual((client.outputs/name).read_bytes(),png)
