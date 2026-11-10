@@ -3,7 +3,7 @@ import { convertFileSrc, isTauri } from '@tauri-apps/api/core'
 import { Film, Image, Music2 } from 'lucide-react'
 import { rpc, type EngineHealth, type Info, type MediaInstallPlan, type MediaKind, type Params, type Task, type Work,
   type WorkDimensions, type WorkflowParameter } from './api'
-import { activeTask, type Run } from './taskQueue'
+import { activeTask, TaskProgress, type Run } from './taskQueue'
 import { Empty, Panel, gb } from './ui'
 import { RuntimePicker } from './TaskSelection'
 
@@ -214,7 +214,7 @@ function MediaSetup({kind, info, port, ready, tasks, run, cancel, retry, refresh
     </>}
     {install && <p className="small pre" role={install.state === 'failed' ? 'alert' : 'status'}>{install.message}</p>}
     {downloading && install && <div className="row creation-actions">
-      {!!install.total && <progress aria-label="模型安裝進度" value={install.received ?? 0} max={install.total}/>}
+      <TaskProgress received={install.received} total={install.total} label="模型安裝進度"/>
       <button className="button" onClick={() => cancel(install.id)}>取消模型安裝</button>
     </div>}
     {install?.retryable && <button className="button section-note" disabled={!!busy}

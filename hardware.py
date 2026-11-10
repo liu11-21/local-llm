@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 from threading import Lock
+from time import monotonic
 
 MIB = 1024 ** 2
 GIB = 1024 * MIB
@@ -77,10 +78,10 @@ class ResourceMonitor:
             get_times.restype = ctypes.c_int
             with self.lock:
                 if get_times(*(ctypes.byref(value) for value in counters)):
-                    now, previous = tuple(value.value for value in counters), self.previous
-                    self.previous = now
-                    if previous is not None:
-                        idle, kernel, user = (current - old for current, old in zip(now, previous))
+                    now, previous, sampled = tuple(value.value for value in counters), self.previous, monotonic()
+                    self.previous = (sampled, now)
+                    if previous is not None and sampled - previous[0] <= 15:
+                        idle, kernel, user = (current - old for current, old in zip(now, previous[1]))
                         total = kernel + user
                         if total > 0 and 0 <= idle <= total:
                             cpu = round(100 * (total - idle) / total)

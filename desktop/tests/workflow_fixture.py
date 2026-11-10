@@ -8,9 +8,11 @@ import shutil
 import sys
 from threading import Thread
 from time import sleep
+from time import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import desktop_worker
+from runtime_provider import OpenAIProvider
 from test_remote_host import free_port, make_certificate
 
 
@@ -117,6 +119,12 @@ if __name__ == "__main__":
                 return {}
 
             def rpc(self, op, data):
+                if op == "fixture-cloud":
+                    provider = OpenAIProvider("7"*32, "cloud", "測試運算環境", "fixture.example", 443, "/v1",
+                                              "fixture-not-a-secret", ["test-text"], True, int(time()))
+                    provider.stream = lambda *_: (part for part in ("受控測試回答",))
+                    self.providers.items[provider.id] = provider
+                    return provider.id
                 if op == "remote-host-networks":
                     return {**super().rpc(op, data), "addresses":["127.0.0.1"]}
                 if op == "remote-host-start-auto":

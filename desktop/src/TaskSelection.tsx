@@ -1,6 +1,6 @@
-import type { Info } from './api'
+import type { Info, Job } from './api'
 import { useState, type ReactNode } from 'react'
-import type { Run } from './taskQueue'
+import { TaskProgress, type Run } from './taskQueue'
 import { SelectModels } from './ui'
 
 export function RuntimePicker({info, task, value, change, disabled, ariaLabel = '運算環境'}: {
@@ -32,13 +32,16 @@ export function PreparationNotice({title, children}: {title: string; children?: 
   </div>
 }
 
-export function TextSetup({info, run, openModels}: {info?: Info; run: Run; openModels: () => void}) {
+export function TextSetup({info, run, openModels, cancel}: {
+  info?: Info; run: Run; openModels: () => void; cancel: (id:string) => void
+}) {
   const [pending,setPending] = useState('')
+  const [job,setJob] = useState<Job>()
   if (!info || (info.engine && info.models.length)) return null
   const model = info.recommended.find(item => !info.models.includes(item.name))
   async function start(action: string, data: Record<string,unknown>) {
-    setPending(action)
-    try {await run(action,data)} finally {setPending('')}
+    setPending(action);setJob(undefined)
+    try {await run(action,data,setJob)} finally {setPending('')}
   }
   return <PreparationNotice title="準備本機模型">
     <p className="small">{!info.engine && !info.models.length ? '首次使用需要文字引擎和一個模型。' :
@@ -50,6 +53,8 @@ export function TextSetup({info, run, openModels}: {info?: Info; run: Run; openM
         onClick={()=>void start('download',{url:model.url, workers:4})}>
         {pending === 'download' ? '正在下載 · 見任務中心' : '下載 ' + model.repo.split('/').at(-1)}</button>}
       <button className="button" onClick={openModels}>瀏覽模型</button>
+      {pending && job && <button className="button" onClick={()=>cancel(job.id)}>取消準備</button>}
     </div>
+    {pending && job && <TaskProgress message={job.message} received={job.received} total={job.total}/>}
   </PreparationNotice>
 }

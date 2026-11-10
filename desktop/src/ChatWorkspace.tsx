@@ -6,7 +6,7 @@ import { common, createLowlight } from 'lowlight'
 import type { RootContent } from 'hast'
 import { rpc, type Chat, type Info, type Job, type Message, type Usage } from './api'
 import { PreparationNotice, RuntimePicker, TaskModelPicker, TextSetup } from './TaskSelection'
-import { useTaskPreparation } from './TaskPreparation'
+import { TaskFit, useTaskPreparation } from './TaskPreparation'
 import type { Run } from './taskQueue'
 
 const highlighter = createLowlight(common)
@@ -150,7 +150,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
           <label>運算環境<RuntimePicker info={info} task="chat" value={runtime} disabled={!!pending}
             change={value => {setRuntime(value);setModel('')}}/></label>
         </div>
-        {runtime === 'local' && <TextSetup info={info} run={run} openModels={()=>go('library')}/>}
+        <TaskFit key={`${runtime}:${model}:${policy}`} task="chat" runtime={runtime} model={model} policy={policy}/>
+        {runtime === 'local' && <TextSetup info={info} run={run} cancel={cancel} openModels={()=>go('library')}/>}
         {runtime !== 'local' && !provider?.connected && <PreparationNotice title="需要重新連線">
           <button className="button section-note" onClick={()=>go('runtime')}>檢查運算環境</button>
         </PreparationNotice>}

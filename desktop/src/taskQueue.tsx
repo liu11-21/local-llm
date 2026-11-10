@@ -15,6 +15,15 @@ const states = { queued:'排隊中', running:'進行中', paused:'等待核准',
 export const activeTask = (task: Task) => task.state === 'queued' || task.state === 'running' || task.state === 'paused'
 export type Run = (action: string, data: Params, observe?: (job: Job) => void) => Promise<Job['result']>
 
+export function TaskProgress({message, received, total, label = '下載進度'}: {
+  message?: string; received?: number | null; total?: number | null; label?: string
+}) {
+  return <>
+    {message && <small className="pre" role="status">{message}</small>}
+    {!!total && <progress value={received ?? 0} max={total} aria-label={label}/>}
+  </>
+}
+
 export function useTaskQueue(report: (error: unknown) => void, refreshed: () => Promise<void>) {
   const [tasks, setTasks] = useState<Task[]>([])
   const refreshing = useRef(0)
@@ -77,7 +86,7 @@ export function TaskCenter({ tasks, cancel, retry, compact, loadError }: {
         <small>{task.message}</small>
         {!compact && task.history_warning && <small>{task.history_warning}</small>}
         {!compact && <small>{new Date(task.created).toLocaleString()} · {task.runtime === 'local' || !task.runtime ? '本機' : '外部運算'}</small>}
-        {activeTask(task) && !!task.total && <progress value={task.received ?? 0} max={task.total} aria-label="下載進度"/>}
+        {activeTask(task) && <TaskProgress received={task.received} total={task.total}/>}
       </span>
       <span className={`tag task-${task.state}`}>{states[task.state] || task.state}</span>
       {!compact && cancel && activeTask(task) && <button className="button" onClick={() => cancel(task.id)}>取消</button>}

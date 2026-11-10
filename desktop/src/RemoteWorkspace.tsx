@@ -28,6 +28,7 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
   const [device, setDevice] = useState('我的筆電')
   const [networks,setNetworks] = useState<Networks>()
   const [network,setNetwork] = useState('')
+  const [rotate,setRotate] = useState(false)
   const [recoveryHost, setRecoveryHost] = useState('')
   const [request, setRequest] = useState('')
   const [recovered, setRecovered] = useState<{state:string; answer?:string; message?:string}>()
@@ -35,7 +36,7 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
   const running = host?.listening === true
   const selectedNetwork = network || (networks?.address && networks.addresses.includes(networks.address) ?
     networks.address : networks?.addresses[0]) || ''
-  const renew = !!networks && (!!networks.expires && networks.expires * 1000 - Date.now() < 14 * 86400000 ||
+  const renew = rotate || !!networks && (!!networks.expires && networks.expires * 1000 - Date.now() < 14 * 86400000 ||
     !!networks.address && networks.address !== selectedNetwork || !networks.fingerprint && networks.has_peers)
 
   async function refreshNetworks() {
@@ -135,12 +136,18 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
             void change(async()=>{
               const active = await rpc<Host>('remote-host-start-auto',{label:name,address:selectedNetwork,confirmed:true,replace:renew})
               setHost(active)
+              setRotate(false)
               setInvite(await rpc('remote-host-invite',{confirmed:true}))
               await refreshNetworks()
             })
           }}>分享此電腦算力</button>
           <button className="button" disabled={busy} onClick={()=>void change(refreshNetworks)}>重新偵測網路</button>
         </div>
+        {networks?.expires && <details className="section-note"><summary>主機憑證管理</summary>
+          <p className="small">到期日 {new Date(networks.expires * 1000).toLocaleDateString()}</p>
+          <label className="check"><input type="checkbox" checked={rotate} onChange={e=>setRotate(e.target.checked)}/>
+            下次分享時更新憑證並撤銷舊配對</label>
+        </details>}
         <details className="section-note"><summary>進階：手動憑證與連接埠</summary><form onSubmit={event => {
         event.preventDefault()
         if (!window.confirm('允許在指定私人網路位址分享本機文字模型？')) return

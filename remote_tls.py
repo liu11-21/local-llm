@@ -71,6 +71,8 @@ class ManagedTLS:
             db.execute("""CREATE TABLE IF NOT EXISTS remote_tls(
                           id INTEGER PRIMARY KEY CHECK(id=1), address TEXT NOT NULL, cert BLOB NOT NULL,
                           encrypted_key BLOB NOT NULL, protected_password BLOB NOT NULL, expires INTEGER NOT NULL)""")
+            if db.execute("PRAGMA user_version").fetchone()[0] < 7:
+                db.execute("PRAGMA user_version=7")
 
     @staticmethod
     def read(db):

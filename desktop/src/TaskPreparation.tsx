@@ -3,7 +3,8 @@ import { rpc } from './api'
 
 type Target = {runtime: string; model: string}
 type Transfer = {runtime: string; model: string; destination: string; cost: string}
-type Check = {blockers: string[]; transfers: Transfer[]}
+type Match = {reasons: string[]; risks: string[]; unknown: string[]}
+type Check = {blockers: string[]; transfers: Transfer[]; matches?: Match[]}
 type Prepare = (task: string, targets: Target[], policy: string, contents?: string) => Promise<'local'|'confirmed'|'cancelled'>
 const Preparation = createContext<Prepare>(async () => 'cancelled')
 
@@ -58,3 +59,25 @@ export function TaskPreparationProvider({children}: {children: ReactNode}) {
 }
 
 export const useTaskPreparation = () => useContext(Preparation)
+
+export function TaskFit({task, runtime, model, policy}: Target & {task: string; policy: string}) {
+  const [check,setCheck] = useState<Check>()
+  const [issue,setIssue] = useState('')
+  const [waiting,setWaiting] = useState(false)
+  if (!model) return null
+  const match = check?.matches?.[0]
+  return <details className="task-fit">
+    <summary>相容性與資源</summary>
+    <button className="button section-note" disabled={waiting} onClick={async()=>{
+      setWaiting(true);setIssue('')
+      try {setCheck(await rpc('task-preflight',{task,targets:[{runtime,model}],policy}))}
+      catch (error) {setIssue(error instanceof Error ? error.message : String(error))}
+      finally {setWaiting(false)}
+    }}>{waiting ? '檢查中…' : '檢查此組合'}</button>
+    {(check || issue) && <div role="status" className="small pre">
+      {check?.blockers.map(item=><p key={item}>{item}</p>)}
+      {match && [...match.reasons,...match.risks,...match.unknown].map(item=><p key={item}>{item}</p>)}
+      {issue}
+    </div>}
+  </details>
+}

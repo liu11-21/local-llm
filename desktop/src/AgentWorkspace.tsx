@@ -176,7 +176,7 @@ export function AgentWorkspace({ info, busy, job, run, report, cancel, setupRun,
           model={selectedModel} change={value => { setModel(value); invalidatePlan() }}/></label>
         <label>運算環境<RuntimePicker info={info} task="agent" value="local" disabled change={()=>{}}/></label>
       </div>
-      <TextSetup info={info} run={setupRun} openModels={openModels}/>
+      <TextSetup info={info} run={setupRun} cancel={cancel} openModels={openModels}/>
       {mode !== 'simple' && <p className="small section-note">目前選定模型的工具能力未驗證。可嘗試結構化輸出；若無法遵循格式，可切換簡易模式。</p>}
       <label>任務描述<textarea disabled={disabled} value={prompt} maxLength={2400}
         onChange={e => { setPrompt(e.target.value); invalidatePlan() }}/></label>

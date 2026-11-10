@@ -35,6 +35,14 @@ try {
   page.on('pageerror', exception => exceptions.push(exception.message))
   let started = false
   let failed = false
+  let chatSubmissions = 0
+  const batch4 = process.env.LOCALLLM_BATCH4_SHOTS
+  if (batch4) await mkdir(batch4,{recursive:true})
+  const capture = async name => {
+    if (!batch4) return
+    await page.evaluate(() => window.scrollTo(0,0))
+    await page.screenshot({path:join(batch4,'batch4-'+name+'.png'),fullPage:true})
+  }
   await page.route('**/__desktop_dev_rpc', async route => {
     const {op, data} = route.request().postDataJSON()
     const reply = value => route.fulfill({json:{ok:true,value}})
@@ -45,6 +53,7 @@ try {
       return reply({...json.value, engine:true})
     }
     if (op === 'run' && data.action === 'team') {started = true; return reply({id:'layout-team'})}
+    if (op === 'run' && data.action === 'chat') chatSubmissions++
     if (op === 'job' && data.id === 'layout-team') return reply({
       id:'layout-team', state:failed ? 'failed' : 'running', message:failed ? error : 'Layout fixture',
       members:['載入模型…', '等候可用資源…'],
@@ -62,6 +71,19 @@ try {
   }
   await page.goto(url)
   await page.getByText('本機工作台已連線').waitFor()
+  await page.getByRole('region',{name:'本機資源'}).getByLabel('CPU 使用率').waitFor()
+  await capture('home-dark')
+  await button('收合側邊欄').click()
+  assert.equal(await button('展開側邊欄').getAttribute('aria-expanded'),'false')
+  await button('展開側邊欄').click()
+  await page.setViewportSize({width:650,height:720})
+  await page.getByTitle('切換主題').click()
+  await noOverflow()
+  await capture('home-light-narrow')
+  await page.setViewportSize({width:1280,height:900})
+  await page.getByTitle('切換主題').click()
+  assert(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches &&
+    getComputedStyle(document.querySelector('.workspace-head')).animationName === 'none'))
   await navigate('AI 團隊')
   for (const member of [1, 2]) await page.getByLabel('成員 ' + member + ' 模型').selectOption(model)
   await page.getByLabel('共同任務').fill('UI layout regression fixture')
@@ -137,6 +159,7 @@ try {
   await page.getByText(/SHA-256 [0-9A-F]{64}/).waitFor()
   await button('停止分享算力').click()
   await button('分享此電腦算力').waitFor()
+  await capture('remote-sharing')
   const tls = await page.evaluate(async () => {
     const response = await fetch('/__desktop_dev_rpc',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({op:'fixture-host-credentials',data:{}})})
@@ -223,6 +246,31 @@ try {
   console.log('PASS creation installation summary, work library filters, and saved settings replay')
   console.log('PASS workspace layout in both themes at 1280, 1024, 800, and 650 px')
   await exerciseWorkflows(page,navigate,noOverflow)
+  const cloud = await page.evaluate(async () => {
+    const response = await fetch('/__desktop_dev_rpc',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({op:'fixture-cloud',data:{}})})
+    return (await response.json()).value
+  })
+  await page.setViewportSize({width:1280,height:900})
+  await page.reload()
+  await page.getByText('本機工作台已連線').waitFor()
+  await navigate('設定')
+  await page.getByLabel('預設政策').selectOption('manual')
+  await navigate('文字聊天')
+  await page.getByRole('region',{name:'文字聊天'}).getByLabel('運算環境',{exact:true}).selectOption(cloud)
+  await page.getByLabel('訊息').fill('受控測試提示')
+  await button('送出').click()
+  const consent = page.getByRole('dialog',{name:'確認資料傳送'})
+  await consent.getByText(/fixture.example:443 · 費用未知/).waitFor()
+  await capture('transfer-review')
+  await page.keyboard.press('Escape')
+  await consent.waitFor({state:'hidden'})
+  assert.equal(chatSubmissions,0)
+  await button('送出').click()
+  await consent.getByRole('button',{name:'同意並送出'}).click()
+  await page.getByText('受控測試回答',{exact:true}).waitFor()
+  assert.equal(chatSubmissions,1)
+  console.log('PASS workspace shell, resource monitor, TLS provisioning and destination consent')
   assert.deepEqual(exceptions, [])
 } finally {
   if (browser) await browser.close()
