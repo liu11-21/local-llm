@@ -140,6 +140,7 @@ class Desktop(Workspace):
               CREATE TABLE IF NOT EXISTS chat_runtime(chat TEXT NOT NULL, message INTEGER NOT NULL, runtime TEXT NOT NULL,
                   model TEXT NOT NULL, provider TEXT NOT NULL, PRIMARY KEY(chat,message));
               CREATE TABLE IF NOT EXISTS model_sources(name TEXT PRIMARY KEY COLLATE NOCASE, details TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS media_weight_verification(path TEXT PRIMARY KEY, details TEXT NOT NULL);
             """)
             db.execute("UPDATE tasks SET state='interrupted', message='工作台已關閉。' WHERE state IN ('running','queued','paused')")
             db.execute("""UPDATE task_metadata SET snapshot=json_set(snapshot, '$.state', 'interrupted',
@@ -149,8 +150,8 @@ class Desktop(Workspace):
             self.agent_plans.initialize(db)
             self.team_store.initialize(db)
             Host.initialize(db)
-            if db.execute("PRAGMA user_version").fetchone()[0] < 5:
-                db.execute("PRAGMA user_version=5")
+            if db.execute("PRAGMA user_version").fetchone()[0] < 6:
+                db.execute("PRAGMA user_version=6")
         recover_downloads(self.download_cache, self.models, pinned_model, clean=True)
         self.scheduler = TaskManager(self.perform, self.save_task)
         self.remote_host = Host(self.connect, self.scheduler, self.host_models, self.host_engine, self.host_resources)
@@ -186,6 +187,11 @@ class Desktop(Workspace):
         record = {**source, "identity": model_identity(path)}
         with self.connect() as db:
             db.execute("INSERT OR REPLACE INTO model_sources VALUES(?,?)", (name, json.dumps(record)))
+
+    def remember_weight(self, path, sha256, identity, status):
+        with self.connect() as db:
+            db.execute("INSERT OR REPLACE INTO media_weight_verification VALUES(?,?)",
+                       (path, json.dumps({"sha256": sha256, "identity": identity, "status": status})))
 
     def download(self, data, cancel, update):
         url = field(data, "url", 1400)
@@ -576,7 +582,8 @@ class Desktop(Workspace):
         if action == "media-install":
             if data.get("confirmed") is not True:
                 raise ValueError("請先確認模型來源、授權及下載內容。")
-            return install_weights(self.data, field(data, "kind", 12), field(data, "profile", 40), cancel, update)
+            return install_weights(self.data, field(data, "kind", 12), field(data, "profile", 40), cancel, update,
+                                   remember=self.remember_weight)
         if action in ("comfy-start", "comfy-install"):
             profile = field(data, "profile", 40)
             if profile not in PROFILES:
@@ -765,7 +772,9 @@ class Desktop(Workspace):
         if op == "media-readiness":
             return self.media_readiness(data)
         if op == "media-install-plan":
-            return install_plan(self.data, field(data, "kind", 12), field(data, "profile", 40))
+            with self.connect() as db:
+                records = {name: json.loads(record) for name, record in db.execute("SELECT * FROM media_weight_verification")}
+            return install_plan(self.data, field(data, "kind", 12), field(data, "profile", 40), records)
         if op == "agent-plan":
             plan = create_plan(data, self.agent_tools)
             self.model(plan["model"])

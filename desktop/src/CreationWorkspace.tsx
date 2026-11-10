@@ -8,6 +8,8 @@ import { Empty, Panel, gb } from './ui'
 
 const titles = { image: '圖片', video: '影片', music: '音樂' }
 const icons = { image: Image, video: Film, music: Music2 }
+const weightStates = {missing:'缺少', detected:'已偵測 · 尚未驗證', verified:'SHA-256 已驗證',
+  conflict:'檔案與來源不符', unavailable:'無法確認'}
 
 function workAsset(info: Info | undefined, name: string) {
   if (!/^[a-f0-9]{12}\.(png|webm|flac)$/.test(name)) return undefined
@@ -178,29 +180,33 @@ function MediaSetup({kind, info, port, ready, tasks, run, cancel, retry, refresh
       <p className="small pre">{model.label} · {model.publisher} · {model.version} · {model.license}</p>
       <p className="small pre">Hugging Face · 固定版本 {model.revision}</p>
       <p className="small">待下載 {gb(current.needed)} · 磁碟可用 {gb(current.free)}</p>
+      <p className="small">權重狀態 · {current.verified ? '全部通過 SHA-256' :
+        current.conflict ? '有檔案與固定來源不符' : current.unavailable ? '無法確認' :
+        missing ? '尚缺必要檔案' : '檔案已偵測，完整性待驗證'}</p>
       <p className="small muted">本機可用 RAM {info?.hardware.ram_available != null ? gb(info.hardware.ram_available) : '未知'}。模型所需 RAM 與 VRAM 隨生成設定變動，目前沒有經實測的最低值。</p>
       {kind !== 'image' && profile === 'CPU' && <p className="small">影片與音樂在 CPU 上可能非常慢，或因記憶體不足而失敗。</p>}
       <details><summary>權重、安裝位置與校驗值</summary>
         {current.files.map(file => <div className="section-note small pre" key={file.filename}>
-          <strong>{file.filename}</strong> · {gb(file.bytes)} · {file.status === 'present' ? '已找到' : file.status === 'conflict' ? '同名衝突' : '缺少'}
+          <strong>{file.filename}</strong> · {gb(file.bytes)} · {weightStates[file.status]}
           <div>{file.path}</div><div>SHA-256 {file.sha256}</div>
         </div>)}
         <p className="small pre">{model.terms}</p>
       </details>
       {current.conflict && <p className="creation-error small" role="alert">權重目錄有同名衝突。請檢查並自行移開該檔案後重新檢查。</p>}
+      {current.unavailable && <p className="creation-error small" role="alert">無法確認權重狀態。請檢查資料夾權限。</p>}
       {current.needed > current.free && <p className="creation-error small" role="alert">磁碟空間不足。</p>}
       {!current.installed ? <button className="button section-note" disabled={!!busy}
         onClick={() => void finish(() => run('comfy-install', {profile}))}>下載並安裝 ComfyUI</button> :
         <>
-          {!current.conflict && current.needed <= current.free && <label className="row section-note">
+          {!current.conflict && !current.unavailable && current.needed <= current.free && <label className="row section-note">
             <input type="checkbox" checked={confirmed} disabled={!!busy} onChange={e => setConfirmed(e.target.checked)}/>
             {missing ? '我已查看授權，並同意從 Hugging Face 下載上述權重' : '驗證現有權重的 SHA-256'}
           </label>}
           <div className="row section-note creation-actions">
-            <button className="button" disabled={!confirmed || !!busy || current.conflict || current.needed > current.free}
+            <button className="button" disabled={!confirmed || !!busy || current.conflict || current.unavailable || current.needed > current.free}
               onClick={() => void finish(() => run('media-install', {kind, profile, confirmed: true}))}>
               {missing ? '一鍵安裝模型' : '驗證權重'}</button>
-            {!ready && !missing && !info?.comfy_running && <button className="button" disabled={!!busy || current.conflict}
+            {!ready && !missing && !info?.comfy_running && <button className="button" disabled={!!busy || current.conflict || current.unavailable}
               onClick={() => void finish(() => run('comfy-start', {profile, port}))}>啟動所選 ComfyUI</button>}
           </div>
         </>}
@@ -307,7 +313,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
       <Panel title="流程準備">
         <p className="section-note" role="status">{!readiness || readiness.state === 'checking' ? '正在檢查本機 ComfyUI 與權重…' :
           readiness.state === 'unavailable' ? '本機 ComfyUI 目前無法連線。請先啟動服務或檢查連接埠。' :
-          readiness.state === 'missing' ? 'ComfyUI 已連線，但缺少必要權重或節點。' : 'ComfyUI 已連線，必要權重與節點齊備。'}</p>
+          readiness.state === 'missing' ? 'ComfyUI 已連線，但缺少必要權重或節點。' : 'ComfyUI 已連線，能辨識必要權重與節點。'}</p>
         {readiness?.missing?.map(name => <p className="small pre" key={name}>{name}</p>)}
         {!!readiness?.missing_nodes?.length && <p className="small pre">缺少節點 {readiness.missing_nodes.join('、')}。請更新或啟動受管理的 ComfyUI。</p>}
         <div className="row section-note creation-actions">

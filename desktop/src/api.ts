@@ -20,7 +20,8 @@ export type MediaWeight = { filename: string; path: string; url: string; bytes: 
 export type MediaModel = { id: string; label: string; kind: MediaKind; publisher: string; version: string;
   source: string; revision: string; license: string; terms: string; weights: MediaWeight[]; ram: number | null; vram: number | null }
 export type MediaInstallPlan = { model: MediaModel; target: string; profile: string; installed: boolean;
-  files: (MediaWeight & {status: 'missing' | 'present' | 'conflict'})[]; free: number; needed: number; conflict: boolean }
+  files: (MediaWeight & {status: 'missing' | 'detected' | 'verified' | 'conflict' | 'unavailable'})[];
+  free: number; needed: number; conflict: boolean; unavailable: boolean; verified: boolean }
 export type WorkDimensions = { width?: number; height?: number; duration?: number }
 export type Work = { name: string; kind: MediaKind; created: string; bytes: number; model?: string; workflow?: string; prompt?: string;
   lyrics?: string; options?: Params; schema?: number; runtime?: string; status?: string; dimensions?: WorkDimensions;

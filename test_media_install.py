@@ -127,13 +127,30 @@ class MediaInstallTests(unittest.TestCase):
             self.transfer(restored)
             self.assertNotIn((0, 63), spans)
             self.assertEqual(self.target.read_bytes(), self.payload)
-            self.assertEqual(install_plan(self.data, "image", "CPU")["files"][0]["status"], "present")
+            self.assertEqual(install_plan(self.data, "image", "CPU")["files"][0]["status"], "detected")
             spans.clear()
             self.transfer(restored)
             self.assertEqual(spans, [])
             self.target.write_bytes(self.payload[:-1] + b"x")
             with self.assertRaisesRegex(ValueError, "既有權重 SHA-256"):
                 self.transfer(restored)
+
+    def test_verification_status_is_bound_to_current_file_identity(self):
+        self.prepare()
+        self.target.parent.mkdir(parents=True)
+        self.target.write_bytes(self.payload)
+        path = str(self.target.relative_to(self.data))
+        worker = Desktop(self.data)
+        self.addCleanup(worker.close)
+        args = {"kind":"image", "profile":"CPU", "confirmed":True}
+        self.assertEqual(worker.rpc("media-install-plan", args)["files"][0]["status"], "detected")
+        worker.perform("media-install", args, Event(), lambda **_: None)
+        self.assertTrue(worker.rpc("media-install-plan", args)["verified"])
+        self.target.write_bytes(self.payload[:-1] + b"x")
+        self.assertEqual(worker.rpc("media-install-plan", args)["files"][0]["status"], "detected")
+        with self.assertRaisesRegex(ValueError, "SHA-256"):
+            worker.perform("media-install", args, Event(), lambda **_: None)
+        self.assertEqual(worker.rpc("media-install-plan", args)["files"][0]["status"], "conflict")
 
     def test_post_install_readiness_reports_missing_builtin_nodes(self):
         worker = Desktop(self.data)

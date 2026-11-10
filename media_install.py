@@ -2,6 +2,7 @@
 from dataclasses import asdict, dataclass
 import hashlib
 import json
+import os
 import shutil
 from urllib.parse import quote
 
@@ -69,7 +70,11 @@ def manifest(kind):
     }
 
 
-def install_plan(data, kind, profile):
+def weight_identity(stat):
+    return [stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns, stat.st_dev, stat.st_ino]
+
+
+def install_plan(data, kind, profile, verification=None):
     if kind not in MODELS_FOR_INSTALL or profile not in PROFILES:
         raise ValueError("請選擇有效的創作模型和 ComfyUI 便攜版。")
     data = data.resolve()
@@ -86,8 +91,18 @@ def install_plan(data, kind, profile):
         if not owned(path):
             raise ValueError("模型權重或暫存目錄不安全。")
         status = "missing"
-        if path.exists():
-            status = "present" if path.is_file() and path.stat().st_size == weight["bytes"] else "conflict"
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            status = "unavailable"
+        else:
+            status = "detected" if path.is_file() and stat.st_size == weight["bytes"] else "conflict"
+            saved = (verification or {}).get(str(path.relative_to(data)))
+            if (status == "detected" and saved and saved["sha256"] == weight["sha256"]
+                    and saved["identity"] == weight_identity(stat)):
+                status = saved["status"]
         remaining = weight["bytes"]
         if status == "missing":
             checkpoints = Checkpoints(cache, path)
@@ -101,7 +116,9 @@ def install_plan(data, kind, profile):
         files.append({**weight, "status": status})
     free = shutil.disk_usage(bundle if runtime else data).free
     return {"model": model, "profile": profile, "target": f"{kind}:{PROFILES[profile][0]}", "installed": runtime, "files": files,
-            "free": free, "needed": needed, "conflict": any(item["status"] == "conflict" for item in files)}
+            "free": free, "needed": needed, "conflict": any(item["status"] == "conflict" for item in files),
+            "unavailable": any(item["status"] == "unavailable" for item in files),
+            "verified": all(item["status"] == "verified" for item in files)}
 
 
 def check_safetensors(path):
@@ -114,12 +131,14 @@ def check_safetensors(path):
         raise ValueError("Safetensors 缺少張量資料。")
 
 
-def install_weights(data, kind, profile, cancel, update):
+def install_weights(data, kind, profile, cancel, update, *, remember=None):
     plan = install_plan(data, kind, profile)
     if not plan["installed"]:
         raise ValueError("請先安裝所選的 ComfyUI 便攜版。")
     if plan["conflict"]:
         raise ValueError("有同名檔案與固定版本不符。請確認並自行移開檔案後重試。")
+    if plan["unavailable"]:
+        raise OSError("無法讀取權重狀態。請檢查資料夾權限後再試。")
     if plan["needed"] > plan["free"]:
         raise OSError("可用磁碟空間不足，請釋出空間後再試。")
     data = data.resolve()
@@ -139,29 +158,47 @@ def install_weights(data, kind, profile, cancel, update):
         size = weight["bytes"]
         if not owned(path):
             raise ValueError("模型權重目錄不安全。")
-        if weight["status"] == "present":
+        if weight["status"] == "detected":
             update(message=f"正在驗證既有權重 · {name}", received=done, total=total)
             digest = hashlib.sha256()
+            identity = weight_identity(path.stat())
             with path.open("rb") as stream:
+                opened = weight_identity(os.fstat(stream.fileno()))
                 while chunk := stream.read(1024 ** 2):
                     check_cancel()
                     digest.update(chunk)
-            if digest.hexdigest() != weight["sha256"]:
+                if opened != weight_identity(os.fstat(stream.fileno())):
+                    raise ValueError("校驗期間權重發生變更，請重試。")
+            if not owned(path) or identity != weight_identity(path.stat()):
+                raise ValueError("校驗期間權重發生變更，請重試。")
+            status = "verified" if digest.hexdigest() == weight["sha256"] else "conflict"
+            if remember:
+                remember(str(path.relative_to(data)), weight["sha256"], identity, status)
+            if status == "conflict":
                 raise ValueError(f"既有權重 SHA-256 不符 · {name}。請確認並自行移開後再試。")
         else:
             def validate(staging):
                 update(message=f"正在驗證 SHA-256 · {name}", received=done + size, total=total)
                 check_safetensors(staging)
 
-            def before_publish(_staging, _digest):
+            identity = None
+
+            def before_publish(staging, _digest):
+                nonlocal identity
                 if not owned(path):
                     raise ValueError("模型權重目錄不安全。")
+                identity = weight_identity(staging.stat())
 
             download_file(weight["url"], path, 4, cancel,
                           lambda received, _, count: update(message=f"下載中 · {name} · {count} 個執行緒",
                                                             received=done + received, total=total),
                           validate=validate, expected_size=size, expected_sha=weight["sha256"],
                           recovery=cache, before_publish=before_publish)
+            if remember and owned(path):
+                actual = weight_identity(path.stat())
+                # Moving or linking can update ctime, while the content identity remains the same.
+                if actual[:2] == identity[:2] and actual[3:] == identity[3:]:
+                    remember(str(path.relative_to(data)), weight["sha256"], actual, "verified")
         done += size
         update(received=done, total=total)
     return {"message": "模型權重已通過 SHA-256 驗證。"}
