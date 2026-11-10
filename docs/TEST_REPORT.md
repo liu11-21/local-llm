@@ -9,6 +9,7 @@
 | PASS | Windows 本機 Python 測試共 91 項，86 項通過，5 項 HTTPS 回環協定測試由 CI 執行。本機案例涵蓋推薦與隱私、任務所有權、重啟與冪等、客戶端任務 ID 持久化、排隊上限、流程白名單、續傳及 SHA-256 驗證。 |
 | PASS | Chromium 驗證重新開啟引導、下載失敗後重試、第一次文字回答保存。另驗證選擇遠端圖片主機、核對目的地、取回校驗檔案、作品庫來源，以及先前四種尺寸與兩種主題。模型與傳輸測試採用受控資料。 [實際 UI](UI_DESIGN.md#首次使用與遠端圖片) |
 | PASS | 本機 Windows 用真實 ComfyUI 和 SD 1.5 CPU 生成 256×256 PNG。經 Host 的圖片工作程式建立 129,063 bytes 結果與 SHA-256。此案例驗證生成端，HTTPS 則另有受控測試。 |
+| PASS | `1209427` 通過 Windows Server 2022 x64 CI，包括 Python、受控 ComfyUI 的真實 HTTPS 回環與跨裝置權限測試、Chromium、NSIS 打包、每使用者安裝、捷徑啟動與卸載。已下載 ZIP，核對 GitHub 公布的 SHA-256、`BUILD.json` 的提交與版本，以及 EXE SHA-256 `884af1f3dc8d5f21d784b6cc4ab807ba20ed6de5e95141276eee9d93eb84569b`。 [Windows CI](https://github.com/liu11-21/local-llm/actions/runs/42834205770) · [Windows 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42834205770/artifacts/13773116908) |
 | NEEDS WINDOWS | 這台 Windows 嘗試啟動真實 llama.cpp 時被應用程式控制原則封鎖，錯誤 `WinError 4551`。首次引導已走到受控回答保存。實際新裝文字推理需要允許執行的 Windows 電腦。 |
 | NEEDS REMOTE HOST | 兩台實體電腦跨 LAN 或 VPN 傳送圖片仍待驗收。 |
 | NEEDS GPU | 真實遠端 GPU 生成和即時 GPU／VRAM 資源監控仍待實作或驗收。 |
