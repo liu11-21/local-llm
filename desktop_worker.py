@@ -31,7 +31,7 @@ from download_recovery import recover_downloads
 from downloads import check_gguf, download_model
 from engine import LocalEngine
 from engine_health import EngineHealth
-from hardware import detect_hardware, estimate_ram
+from hardware import ResourceMonitor, detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
 from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
@@ -116,6 +116,7 @@ class Desktop(Workspace):
         self.database = self.data / "desktop.sqlite3"
         self.download_cache = self.models / ".localllm-downloads"
         self.hardware_cache = None
+        self.resource_monitor = ResourceMonitor()
         self.hardware_sample_at = 0
         self.agent_plans = AgentPlans(self.connect)
         self.team_store = TeamStore(self.connect)
@@ -758,6 +759,8 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == "system-resources":
+            return self.resource_monitor.sample(self.models)
         if op == "remote-client-pair":
             if data.get("confirmed") is not True:
                 raise ValueError("請先確認邀請來自您信任的運算主機。")

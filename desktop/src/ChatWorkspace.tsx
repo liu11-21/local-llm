@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm'
 import { common, createLowlight } from 'lowlight'
 import type { RootContent } from 'hast'
 import { rpc, type Chat, type Info, type Job, type Message, type Usage } from './api'
-import { SelectModels } from './ui'
+import { RuntimePicker, TaskModelPicker } from './TaskSelection'
 import type { Run } from './taskQueue'
 
 const highlighter = createLowlight(common)
@@ -148,13 +148,9 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
             <button className="icon" title="刪除對話" disabled={!!pending} onClick={() => void remove()}><Trash2 size={16}/></button></>}
         </div>}
         <div className="chat-controls">
-          <label>運算環境<select aria-label="運算環境" value={runtime} disabled={!!pending} onChange={e => {setRuntime(e.target.value);setModel('')}}>
-            <option value="local">本機 CPU／GPU</option>
-            {info?.registry.runtimes.filter(item => item.id !== 'local' && item.tasks.includes('chat')).map(item =>
-              <option key={item.id} value={item.id}>{item.kind === 'paired' ? '遠端電腦 · ' : item.kind === 'cloud' ? '雲端 · ' : ''}{item.label}{!item.ready ? ' · 尚未連線' : ''}</option>)}
-          </select></label>
-          <label>模型<SelectModels models={models} registry={runtime === 'local' ? info?.registry.models : undefined}
-            value={model} change={setModel} disabled={!!pending}/></label>
+          <label>模型<TaskModelPicker info={info} runtime={runtime} model={model} change={setModel} disabled={!!pending}/></label>
+          <label>運算環境<RuntimePicker info={info} task="chat" value={runtime} disabled={!!pending}
+            change={value => {setRuntime(value);setModel('')}}/></label>
         </div>
       </header>
       <div className="messages" ref={scroll} aria-label="對話內容" onScroll={event => {

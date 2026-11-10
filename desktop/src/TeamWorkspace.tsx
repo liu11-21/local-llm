@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import type { Info, Job } from './api'
 import type { Run } from './taskQueue'
-import { Empty, Panel, SelectModels } from './ui'
+import { Empty, Panel } from './ui'
+import { RuntimePicker, TaskModelPicker } from './TaskSelection'
 import { TeamWorkflow } from './TeamWorkflow'
 
 export function TeamWorkspace({info, policy, run, report, cancel}: {
   info?: Info; policy: string; run: Run; report: (error: unknown) => void; cancel: (id: string) => void
 }) {
   const [workflow, setWorkflow] = useState(false)
-  const models = info?.models ?? []
   const [team, setTeam] = useState<string[]>(['', ''])
   const [teamRuntimes, setTeamRuntimes] = useState<string[]>(['local', 'local'])
   const [lead, setLead] = useState(0)
@@ -47,10 +47,12 @@ export function TeamWorkspace({info, policy, run, report, cancel}: {
                 {lead!==i && <button className="button" disabled={busy} onClick={()=>setLead(i)}>設為主模型</button>}
                 {team.length>2 && <button className="icon" aria-label={`移除成員 ${i+1}`} disabled={busy} onClick={()=>{setTeam(t=>t.filter((_,j)=>j!==i));setTeamRuntimes(t=>t.filter((_,j)=>j!==i));setLead(l=>l>=i?Math.max(0,l-1):l)}}><X size={16}/></button>}
               </div>
-              <label>運算環境<select aria-label={`成員 ${i+1} 運算環境`} disabled={busy} value={teamRuntimes[i]} onChange={e=>{
-                const value=e.target.value;setTeamRuntimes(t=>t.map((old,j)=>j===i?value:old));setTeam(t=>t.map((old,j)=>j===i?'':old))
-              }}><option value="local">本機</option>{info?.providers.map(p=><option value={p.id} key={p.id}>{p.label}</option>)}</select></label>
-              <label>模型<SelectModels ariaLabel={`成員 ${i+1} 模型`} models={teamRuntimes[i]==='local'?models:info?.providers.find(p=>p.id===teamRuntimes[i])?.models||[]} value={m} registry={teamRuntimes[i]==='local' ? info?.registry.models : undefined} disabled={busy} change={v=>setTeam(t=>t.map((old,j)=>j===i?v:old))}/></label>
+              <label>運算環境<RuntimePicker info={info} task="team" ariaLabel={`成員 ${i+1} 運算環境`} disabled={busy}
+                value={teamRuntimes[i]} change={value=>{
+                  setTeamRuntimes(t=>t.map((old,j)=>j===i?value:old));setTeam(t=>t.map((old,j)=>j===i?'':old))
+                }}/></label>
+              <label>模型<TaskModelPicker ariaLabel={`成員 ${i+1} 模型`} info={info} runtime={teamRuntimes[i]}
+                model={m} disabled={busy} change={v=>setTeam(t=>t.map((old,j)=>j===i?v:old))}/></label>
               {job?.members?.[i] && <p className="team-member-status muted small" role="status">{job.members[i]}</p>}
             </div>)}
             <div className="row section-note"><button className="button" disabled={busy || team.length>=6} onClick={()=>{setTeam(t=>[...t,'']);setTeamRuntimes(t=>[...t,'local'])}}><Plus size={16}/>成員</button><label className="check"><input type="checkbox" checked={serial} onChange={e=>setSerial(e.target.checked)}/>強制依序執行本機模型</label></div>

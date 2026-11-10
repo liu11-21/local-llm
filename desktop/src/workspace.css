@@ -1,0 +1,116 @@
+/* Workspace color, typography and motion tokens. Individual views share these surfaces. */
+:root {
+  --bg:#090a0c;
+  --surface:#15171b;
+  --surface-2:#1d2025;
+  --inset:#111317;
+  --border:#292d34;
+  --ink:#f5f5f7;
+  --muted:#a7adb7;
+  --subtle:#969da8;
+  --accent:#e7edf5;
+  --accent-ink:#101318;
+  --accent-bg:#232932;
+  --good:#91d6b2;
+  --error:#ffc2b8;
+  --error-bg:#2b1d1e;
+  --focus:#b6d5ff;
+  --speed:165ms;
+  --radius:14px;
+}
+
+:root[data-theme=light] {
+  --bg:#f5f6f7;
+  --surface:#fff;
+  --surface-2:#edf0f3;
+  --inset:#f1f3f5;
+  --border:#dce0e5;
+  --ink:#16181c;
+  --muted:#545d68;
+  --subtle:#5f6976;
+  --accent:#242c38;
+  --accent-ink:#fff;
+  --accent-bg:#e5ebf2;
+  --good:#226545;
+  --error:#942c2d;
+  --error-bg:#fbeff0;
+  --focus:#315b91;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme=dark]) {
+    --bg:#f5f6f7; --surface:#fff; --surface-2:#edf0f3; --inset:#f1f3f5;
+    --border:#dce0e5; --ink:#16181c; --muted:#545d68; --subtle:#5f6976;
+    --accent:#242c38; --accent-ink:#fff; --accent-bg:#e5ebf2;
+    --good:#226545; --error:#942c2d; --error-bg:#fbeff0; --focus:#315b91;
+  }
+}
+
+.shell { grid-template-columns:198px minmax(0,1fr); transition:grid-template-columns var(--speed) ease; }
+.sidebar { background:var(--inset); }
+.sidebar-collapsed { grid-template-columns:66px minmax(0,1fr); }
+.sidebar-collapsed .sidebar { padding-inline:9px; }
+.sidebar-collapsed .nav-label,.sidebar-collapsed .brand span,.sidebar-collapsed .nav-group p,
+.sidebar-collapsed .sidebar-foot span:not(.signal),.sidebar-collapsed .sidebar-foot small,.sidebar-collapsed .nav-count { display:none; }
+.sidebar-collapsed .nav-item { justify-content:center; padding-inline:0; }
+.sidebar-collapsed .brand { padding:0; justify-content:center; }
+.sidebar-collapsed .sidebar-foot { justify-content:center; grid-template-columns:auto; }
+.nav-item.selected { box-shadow:inset 2px 0 0 var(--focus); }
+.topbar { background:var(--bg); }
+.page-title,.workspace-head { animation:workspace-enter 170ms ease-out both; }
+@keyframes workspace-enter { from { opacity:.72; transform:translateY(4px); } to { opacity:1; transform:none; } }
+.button { transition:background var(--speed),border-color var(--speed),transform 120ms ease-out; }
+.button:active:not(:disabled) { transform:scale(.985); }
+
+.home { gap:24px; }
+.workspace-head { display:grid; grid-template-columns:minmax(0,1.18fr) minmax(0,1fr); gap:15px; }
+.workspace-intro,.resource-board {
+  border:1px solid var(--border); border-radius:var(--radius); padding:clamp(17px,2.7vw,34px);
+  background:var(--surface); min-width:0;
+}
+.workspace-intro { display:flex; flex-direction:column; justify-content:center; min-height:236px; }
+.workspace-intro h1 { margin:15px 0 7px; font-size:clamp(28px,3.2vw,46px); line-height:1.17; font-weight:730; letter-spacing:-.047em; }
+.workspace-intro p:not(.eyebrow) { color:var(--muted); }
+.workspace-intro .row { margin-top:22px; }
+.resource-board { display:grid; align-content:start; gap:13px; }
+.resource-board header { display:grid; align-items:center; grid-template-columns:auto 1fr auto; gap:8px; }
+.resource-board header svg,.resource-foot svg { color:var(--subtle); flex:none; }
+.resource-board h2 { font-size:15px; }
+.resource-meters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.resource-meter { display:grid; grid-template-columns:1fr auto; gap:7px; padding:9px 10px; border-radius:8px; background:var(--inset); }
+.resource-meter span,.resource-meter small { color:var(--muted); font-size:11px; }
+.resource-meter b { font-variant-numeric:tabular-nums; font-size:12px; }
+.resource-meter small { grid-column:1/-1; }
+.resource-meter meter,.meter-track { appearance:none; width:100%; height:5px; grid-column:1/-1; background:var(--border); border-radius:8px; overflow:hidden; }
+.resource-meter meter::-webkit-meter-bar { background:var(--border); border:0; }
+.resource-meter meter::-webkit-meter-optimum-value { background:var(--good); }
+.resource-foot { display:flex; align-items:center; gap:7px; border-top:1px solid var(--border); padding-top:10px; font-size:11px; color:var(--muted); }
+.resource-foot p { flex:1; min-width:0; }
+.workspace-section-title { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+.workspace-destinations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.destination { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; min-height:73px; min-width:0; text-align:left; padding:12px; transition:background var(--speed),border-color var(--speed); }
+.destination:hover { background:var(--surface-2); border-color:var(--subtle); }
+.destination svg { color:var(--subtle); flex:none; }
+.destination small { display:block; margin-top:4px; color:var(--muted); font-size:11px; overflow-wrap:anywhere; }
+.workspace-recent { min-width:0; }
+.workspace-recent > button { margin-top:8px; }
+.task-preparation { border-left:2px solid var(--focus); padding:7px 10px; margin:10px 0; background:var(--inset); border-radius:0 8px 8px 0; }
+.task-preparation-title { font-size:var(--small); font-weight:650; }
+
+@media (max-width:870px) {
+  .shell { grid-template-columns:164px minmax(0,1fr); }
+  .sidebar-collapsed { grid-template-columns:66px minmax(0,1fr); }
+  .workspace-head { grid-template-columns:minmax(0,1fr); }
+  .workspace-intro { min-height:190px; }
+  .workspace-destinations { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:650px) {
+  .desktop-nav { display:none; }
+  .sidebar-collapsed .sidebar.open { padding-inline:9px; }
+  .sidebar-collapsed .sidebar.open .nav-label,.sidebar-collapsed .sidebar.open .brand span,
+  .sidebar-collapsed .sidebar.open .nav-group p,.sidebar-collapsed .sidebar.open .sidebar-foot span,
+  .sidebar-collapsed .sidebar.open .sidebar-foot small,.sidebar-collapsed .sidebar.open .nav-count { display:revert; }
+  .sidebar-collapsed .sidebar.open .nav-item,.sidebar-collapsed .sidebar.open .brand { justify-content:start; padding-inline:9px; }
+  .sidebar-collapsed .sidebar.open .sidebar-foot { grid-template-columns:8px 1fr; justify-content:initial; }
+}

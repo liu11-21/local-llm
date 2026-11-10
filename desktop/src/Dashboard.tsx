@@ -1,47 +1,95 @@
-import { ArrowRight, Boxes, Cpu, HardDrive, Image, MemoryStick, MessageSquare, Server, Users } from 'lucide-react'
-import type { Info, Task, Work } from './api'
+import { useEffect, useState } from 'react'
+import { Activity, ArrowRight, AudioLines, Bot, Cpu, Film, Image, MessageSquare, Server, Users } from 'lucide-react'
+import { rpc, type Info, type Task, type Work } from './api'
 import { Empty, Panel, gb } from './ui'
 import { TaskCenter, activeTask } from './taskQueue'
 
+const destinations = [
+  ['chat', '文字聊天', '提問、整理與寫作', MessageSquare],
+  ['agent', 'AI 代理人', '使用已核准的工具', Bot],
+  ['team', 'AI 團隊', '分工、審查與整合', Users],
+  ['image', '圖片生成', '把構想轉成圖像', Image],
+  ['video', '影片生成', '從文字建立短片', Film],
+  ['music', '音樂生成', '建立配樂與歌曲', AudioLines],
+] as const
+
+type Sample = {cpu_percent: number | null; ram_used: number | null; ram_total: number | null;
+  gpu_percent: number | null; vram_used: number | null; vram_total: number | null}
+
+function Resources({info, tasks}: {info?: Info; tasks: Task[]}) {
+  const [sample, setSample] = useState<Sample>()
+  useEffect(() => {
+    if (!info) return
+    let mounted = true
+    let pending = false
+    const update = async () => {
+      if (document.hidden || pending) return
+      pending = true
+      try {
+        const current = await rpc<Sample>('system-resources')
+        if (mounted) setSample(current)
+      } catch { if (mounted) setSample(undefined) }
+      finally { pending = false }
+    }
+    void update()
+    const interval = window.setInterval(update, 3500)
+    return () => {mounted = false; window.clearInterval(interval)}
+  }, [!!info])
+  const running = tasks.filter(task => task.state === 'running')
+  const model = info?.registry.models.find(item => item.id === info.active?.[0])
+  const usage = (used?: number | null, total?: number | null) =>
+    total && used != null ? Math.round(100 * used / total) : undefined
+  const meters = [
+    {label:'CPU', value:sample?.cpu_percent},
+    {label:'RAM', value:usage(sample?.ram_used, sample?.ram_total), detail:sample?.ram_used != null ?
+      gb(sample.ram_used) + ' / ' + gb(sample.ram_total) : undefined},
+    {label:'GPU', value:sample?.gpu_percent},
+    {label:'VRAM', value:usage(sample?.vram_used, sample?.vram_total)},
+  ]
+  return <section className="resource-board" aria-label="本機資源">
+    <header><Activity size={16}/><h2>本機資源</h2><span className="small">{sample ? '即時取樣' : '等待資料'}</span></header>
+    <div className="resource-meters">{meters.map(({label,value,detail}) =>
+      <div key={label} className="resource-meter">
+        <span>{label}</span><b>{value == null ? '未知' : value + '%'}</b>
+        {value == null ? <div className="meter-track" aria-hidden="true"/> :
+          <meter min={0} max={100} value={value} aria-label={label + ' 使用率'}/>}
+        {detail && <small>{detail}</small>}
+      </div>)}</div>
+    <div className="resource-foot"><Server size={15}/><p className="pre">{model?.label || info?.active?.[0] ||
+      (info?.comfy_running ? 'ComfyUI 運作中' : '尚未載入本機模型')}</p>
+      <span>{running.length ? [...new Set(running.map(task => task.runtime === 'local' || !task.runtime ? '本機' : '外部'))].join('、') : '運算待命'}</span></div>
+  </section>
+}
+
 export function Dashboard({ info, tasks, works, go, openWork }: {
   info?: Info; tasks: Task[]; works: Work[];
-  go: (page: 'chat' | 'team' | 'library' | 'image' | 'runtime' | 'tasks' | 'works') => void
+  go: (page: typeof destinations[number][0] | 'library' | 'runtime' | 'tasks' | 'works') => void
   openWork: (work: Work) => void
 }) {
-  const hardware = info?.hardware
-  const model = info?.registry.models.find(item => item.id === info.recent_model)
-  const ready = info?.registry.runtimes.filter(item => item.ready) ?? []
   const count = tasks.filter(activeTask).length
   return <div className="home">
-    <header className="home-intro">
-      <div><p className="eyebrow">LOCAL LLM / WORKSPACE</p><h1>你的 AI 工作台</h1>
-        <p>在同一個地方聊天、創作並管理模型。</p></div>
-      <button className="button primary" onClick={() => go(info?.models.length ? 'chat' : 'library')}>
-        {info?.models.length ? <MessageSquare size={17}/> : <Boxes size={17}/>}
-        {info?.models.length ? '開啟聊天' : '下載第一個模型'}
-      </button>
-    </header>
-    {info && !info.models.length && <div className="setup-banner"><Boxes size={20}/><div><strong>設定第一個本機模型</strong>
-      <p>在模型中心選擇適合硬體的 GGUF。下載完成後，到運算環境安裝文字引擎，即可開始對話。</p></div></div>}
-    <div className="home-summary">
-      <button onClick={() => go('chat')}><MessageSquare size={18}/><span>最近使用模型</span><strong>{model?.label || info?.recent_model || '尚未使用'}</strong></button>
-      <button onClick={() => go('runtime')}><Server size={18}/><span>可用運算環境</span><strong>{ready.length} 個環境</strong></button>
-      <button onClick={() => go('tasks')}><Cpu size={18}/><span>執行中與排隊</span><strong>{count} 筆任務</strong></button>
-      <button onClick={() => go('works')}><Image size={18}/><span>最近作品</span><strong>{works.length} 個檔案</strong></button>
+    <div className="workspace-head">
+      <header className="workspace-intro">
+        <p className="eyebrow"><span className={info ? 'signal good' : 'signal'}/> LOCAL LLM / WORKSPACE</p>
+        <h1>你的 AI 工作台</h1>
+        <p>選擇想做的任務，在本機或已連線的運算環境中開始。</p>
+        <div className="row creation-actions">
+          <button className="button primary" onClick={() => go('chat')}>開始聊天 <ArrowRight size={16}/></button>
+          <button className="button" onClick={() => go('runtime')}>檢視運算環境</button>
+        </div>
+      </header>
+      <Resources info={info} tasks={tasks}/>
     </div>
+    <section aria-labelledby="workspace-destinations">
+      <div className="workspace-section-title"><h2 id="workspace-destinations">選擇任務</h2><button className="button" aria-label="前往模型與應用" onClick={()=>go('library')}>模型與應用 <ArrowRight size={14}/></button></div>
+      <div className="workspace-destinations">{destinations.map(([id,title,description,Icon]) =>
+        <button key={id} className="destination" onClick={() => go(id)}>
+          <Icon size={20}/><div><strong>{title}</strong><small>{description}</small></div><ArrowRight size={15}/>
+        </button>)}</div>
+    </section>
     <div className="dashboard">
-      <TaskCenter tasks={tasks} compact/>
-      <Panel title="本機資源">
-        <div className="resource-row"><Cpu size={17}/><span>CPU 執行緒</span><b>{hardware?.cpu_threads ?? '—'}</b></div>
-        <div className="resource-row"><MemoryStick size={17}/><span>可用記憶體</span><b>{gb(hardware?.ram_available)}</b></div>
-        <div className="resource-row"><HardDrive size={17}/><span>可用磁碟</span><b>{gb(hardware?.disk_available)}</b></div>
-        <div className="resource-row"><Server size={17}/><span>運算服務</span><b>{info?.registry.engines.filter(engine => engine.running).map(engine => engine.label).join('、') || '待命'}</b></div>
-      </Panel>
-      <Panel title="快速開始"><div className="quick-links">
-        <button onClick={() => go('team')}><Users size={17}/>執行模型團隊<ArrowRight size={15}/></button>
-        <button onClick={() => go('image')}><Image size={17}/>開始創作<ArrowRight size={15}/></button>
-        <button onClick={() => go('library')}><Boxes size={17}/>探索模型<ArrowRight size={15}/></button>
-      </div></Panel>
+      <div className="workspace-recent"><TaskCenter tasks={tasks} compact/>
+        {!!count && <button className="button" onClick={()=>go('tasks')}><Cpu size={15}/>查看 {count} 筆執行中或排隊任務</button>}</div>
       <Panel title="最近作品">{works.length ? works.slice(0,3).map(work => <button className="work-link" key={work.name} onClick={() => openWork(work)}>
         <Image size={16}/><span>{work.model || work.name}</span><ArrowRight size={15}/>
       </button>) : <Empty>生成的圖片、影片與音樂會列在這裡。</Empty>}</Panel>

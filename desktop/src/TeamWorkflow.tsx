@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { rpc, type Info, type Job } from './api'
 import type { Run } from './taskQueue'
-import { Empty, Panel, SelectModels } from './ui'
+import { Empty, Panel } from './ui'
+import { RuntimePicker, TaskModelPicker } from './TaskSelection'
 
 type Member = {id: string; name: string; role: string; system: string; goal: string;
   model: string; runtime: string; tools: string[]; tool_arguments?: {[key: string]: {[parameter: string]: string}}; tokens: number; steps: number}
@@ -170,16 +171,10 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
               edit({members:remaining,lead:team.lead===member.id ? remaining[0].id : team.lead})
             }}>移除</button>}</div>
           <div className="team-flow-fields">
-            <label>運算環境<select aria-label={'角色 '+(index+1)+' 運算環境'} value={member.runtime} disabled={busy}
-              onChange={e=>editMember(member.id,{runtime:e.target.value,model:''})}>
-              <option value="local">本機</option>
-              {member.runtime!=='local' && !info?.providers.some(provider=>provider.id===member.runtime) &&
-                <option value={member.runtime}>端點需重新連線</option>}
-              {info?.providers.map(provider=><option value={provider.id} key={provider.id}>{provider.label}</option>)}
-            </select></label>
-            <label>模型<SelectModels ariaLabel={'角色 '+(index+1)+' 模型'} models={modelOptions(member)}
-              value={member.model} registry={member.runtime==='local' ? info?.registry.models : undefined}
-              disabled={busy} change={value=>editMember(member.id,{model:value})}/></label>
+            <label>運算環境<RuntimePicker info={info} task="team" ariaLabel={'角色 '+(index+1)+' 運算環境'}
+              value={member.runtime} disabled={busy} change={value=>editMember(member.id,{runtime:value,model:''})}/></label>
+            <label>模型<TaskModelPicker ariaLabel={'角色 '+(index+1)+' 模型'} info={info} runtime={member.runtime}
+              model={member.model} disabled={busy} change={value=>editMember(member.id,{model:value})}/></label>
           </div>
           <details><summary>角色設定 · {member.id}</summary>
             <div className="team-flow-fields">

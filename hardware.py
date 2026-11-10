@@ -5,6 +5,7 @@ from enum import IntEnum
 import os
 from pathlib import Path
 import shutil
+from threading import Lock
 
 MIB = 1024 ** 2
 GIB = 1024 * MIB
@@ -57,6 +58,36 @@ def detect_hardware(model_dir):
     except OSError:
         pass
     return Hardware(os.cpu_count(), total, available, disk)
+
+
+class ResourceMonitor:
+    """Sample real system counters only while the dashboard asks for them."""
+
+    def __init__(self):
+        self.previous = None
+        self.lock = Lock()
+
+    def sample(self, directory):
+        hardware = detect_hardware(directory)
+        cpu = None
+        if os.name == "nt":
+            counters = [ctypes.c_uint64() for _ in range(3)]
+            get_times = ctypes.WinDLL("kernel32").GetSystemTimes
+            get_times.argtypes = [ctypes.POINTER(ctypes.c_uint64)] * 3
+            get_times.restype = ctypes.c_int
+            with self.lock:
+                if get_times(*(ctypes.byref(value) for value in counters)):
+                    now, previous = tuple(value.value for value in counters), self.previous
+                    self.previous = now
+                    if previous is not None:
+                        idle, kernel, user = (current - old for current, old in zip(now, previous))
+                        total = kernel + user
+                        if total > 0 and 0 <= idle <= total:
+                            cpu = round(100 * (total - idle) / total)
+        used = (hardware.ram_total - hardware.ram_available
+                if hardware.ram_total is not None and hardware.ram_available is not None else None)
+        return {"cpu_percent": cpu, "ram_used": used, "ram_total": hardware.ram_total,
+                "gpu_percent": None, "vram_used": None, "vram_total": None}
 
 
 def estimate_ram(model_bytes):

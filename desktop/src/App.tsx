@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Activity, AudioLines, Bot, Boxes, ChevronRight, Film, FolderOpen, House, Image,
-  ListTodo, LoaderCircle, Menu, MessageSquare, Moon, Server, Settings, Sun, Users, X,
+  ListTodo, LoaderCircle, Menu, MessageSquare, Moon, PanelLeftClose, PanelLeftOpen, Server, Settings, Sun, Users, X,
 } from 'lucide-react'
 import { rpc, type Info, type Job, type Work } from './api'
 import { AgentWorkspace } from './AgentWorkspace'
@@ -28,6 +28,7 @@ const pages = navigation.flatMap(([, items]) => [...items])
 export function App() {
   const [page, setPage] = useState<Page>('home')
   const [menu, setMenu] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar') === 'collapsed')
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'system')
   const [policy, setPolicy] = useState(() => localStorage.getItem('policy') || 'auto')
   const [info, setInfo] = useState<Info>()
@@ -51,6 +52,13 @@ export function App() {
   useEffect(() => { void refresh() }, [])
   useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem('theme', theme) }, [theme])
   useEffect(() => { localStorage.setItem('policy', policy) }, [policy])
+  useEffect(() => { localStorage.setItem('sidebar', collapsed ? 'collapsed' : 'expanded') }, [collapsed])
+  useEffect(() => {
+    if (!menu) return
+    const close = (event: KeyboardEvent) => {if (event.key === 'Escape') setMenu(false)}
+    window.addEventListener('keydown', close)
+    return () => window.removeEventListener('keydown', close)
+  }, [menu])
   const queue = useTaskQueue(report, refresh)
   const count = queue.tasks.filter(activeTask).length
   const health = useEngineHealth()
@@ -76,19 +84,21 @@ export function App() {
     } catch (error) {report(error)}
   }
 
-  return <div className="shell">
+  return <div className={'shell ' + (collapsed ? 'sidebar-collapsed' : '')}>
     <aside className={menu ? 'sidebar open' : 'sidebar'}>
       <button className="brand" onClick={() => go('home')}><img src={logo} alt=""/><span>Local LLM<small>AI 工作台</small></span></button>
       <nav aria-label="主要導覽">{navigation.map(([group, items]) => <div className="nav-group" key={group}><p>{group}</p>
         {items.map(([id, text, ItemIcon]) => <button key={id} className={page === id ? 'nav-item selected' : 'nav-item'}
-          onClick={() => go(id)} aria-current={page === id ? 'page' : undefined}>
-          <ItemIcon size={17}/>{text}{id === 'tasks' && count > 0 && <span className="nav-count">{count}</span>}
+          onClick={() => go(id)} aria-current={page === id ? 'page' : undefined} aria-label={text} title={collapsed ? text : undefined}>
+          <ItemIcon size={17}/><span className="nav-label">{text}</span>{id === 'tasks' && count > 0 && <span className="nav-count">{count}</span>}
         </button>)}</div>)}</nav>
       <div className="sidebar-foot"><span className={info ? 'signal good' : 'signal'}/><span>{info ? '本機工作台已連線' : '等待工作程序'}</span><small>開發版</small></div>
     </aside>
     <main>
       <header className="topbar"><div>
         <button className="mobile icon" title="導覽" aria-expanded={menu} onClick={() => setMenu(!menu)}><Menu size={19}/></button>
+        <button className="desktop-nav icon" aria-label={collapsed ? '展開側邊欄' : '收合側邊欄'} aria-expanded={!collapsed}
+          onClick={() => setCollapsed(value => !value)}>{collapsed ? <PanelLeftOpen size={17}/> : <PanelLeftClose size={17}/>}</button>
         <span>工作區</span><ChevronRight size={14}/><b>{title}</b>
       </div><div>
         <button className="button top-tasks" onClick={() => go('tasks')}><Activity size={16}/>任務{count > 0 && ' ' + count}</button>
