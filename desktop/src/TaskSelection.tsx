@@ -1,4 +1,6 @@
 import type { Info } from './api'
+import { useState, type ReactNode } from 'react'
+import type { Run } from './taskQueue'
 import { SelectModels } from './ui'
 
 export function RuntimePicker({info, task, value, change, disabled, ariaLabel = '運算環境'}: {
@@ -23,9 +25,31 @@ export function TaskModelPicker({info, runtime, model, change, disabled, ariaLab
     registry={runtime === 'local' ? info?.registry.models : undefined} disabled={disabled} change={change}/>
 }
 
-export function PreparationNotice({title, children}: {title: string; children?: React.ReactNode}) {
+export function PreparationNotice({title, children}: {title: string; children?: ReactNode}) {
   return <div className="task-preparation">
     <p className="task-preparation-title">{title}</p>
     {children}
   </div>
+}
+
+export function TextSetup({info, run, openModels}: {info?: Info; run: Run; openModels: () => void}) {
+  const [pending,setPending] = useState('')
+  if (!info || (info.engine && info.models.length)) return null
+  const model = info.recommended.find(item => !info.models.includes(item.name))
+  async function start(action: string, data: Record<string,unknown>) {
+    setPending(action)
+    try {await run(action,data)} finally {setPending('')}
+  }
+  return <PreparationNotice title="準備本機模型">
+    <p className="small">{!info.engine && !info.models.length ? '首次使用需要文字引擎和一個模型。' :
+      !info.engine ? '已找到模型，還需要文字引擎。' : '文字引擎已就緒，請先選擇一個模型。'}</p>
+    <div className="row section-note creation-actions">
+      {!info.engine && <button className="button" disabled={!!pending} onClick={()=>void start('engine-install',{})}>
+        {pending === 'engine-install' ? '正在安裝 · 見任務中心' : '安裝文字引擎'}</button>}
+      {!info.models.length && model && <button className="button" disabled={!!pending}
+        onClick={()=>void start('download',{url:model.url, workers:4})}>
+        {pending === 'download' ? '正在下載 · 見任務中心' : '下載 ' + model.repo.split('/').at(-1)}</button>}
+      <button className="button" onClick={openModels}>瀏覽模型</button>
+    </div>
+  </PreparationNotice>
 }

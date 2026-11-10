@@ -5,6 +5,7 @@ import { rpc, type EngineHealth, type Info, type MediaInstallPlan, type MediaKin
   type WorkDimensions, type WorkflowParameter } from './api'
 import { activeTask, type Run } from './taskQueue'
 import { Empty, Panel, gb } from './ui'
+import { RuntimePicker } from './TaskSelection'
 
 const titles = { image: '圖片', video: '影片', music: '音樂' }
 const icons = { image: Image, video: Film, music: Music2 }
@@ -260,7 +261,9 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
     let timer = 0
     async function check(refresh: boolean) {
       try {
-        const state = await rpc<Readiness>('media-readiness', {kind, port: servicePort, workflow: workflow?.id, refresh})
+        const {media:state} = await rpc<{media:Readiness}>('task-preflight', {
+          task:kind, targets:[{runtime:'local',model:workflow?.id ?? ''}], port:servicePort, workflow:workflow?.id, refresh,
+        })
         if (!mounted) return
         setReadiness(state)
         if (state.state === 'checking') timer = window.setTimeout(() => void check(false), 320)
@@ -280,9 +283,13 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
       param.type === 'text' ? e.target.value : e.target.value === '' ? param.default : Number(e.target.value)}))}/></label>
   return <div className="dashboard creation">
     <Panel title={'建立' + titles[kind]} description="依所選工作流程調整設定。生成工作會加入任務中心。">
-      <label>工作流程<select value={workflow?.id ?? ''} disabled={!workflow || busy} onChange={e => {setId(e.target.value);setOverrides({})}}>
-        {workflows.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
-      </select></label>
+      <div className="chat-controls">
+        <label>模型與流程<select aria-label="模型與流程" value={workflow?.id ?? ''} disabled={!workflow || busy}
+          onChange={e => {setId(e.target.value);setOverrides({})}}>
+          {workflows.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+        </select></label>
+        <label>運算環境<RuntimePicker info={info} task={kind} value="local" disabled change={()=>{}}/></label>
+      </div>
       <form onSubmit={async event => {
         event.preventDefault()
         if (!workflow || busy || !ready || !prompt.trim()) return

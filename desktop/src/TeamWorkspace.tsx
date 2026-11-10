@@ -4,6 +4,7 @@ import type { Info, Job } from './api'
 import type { Run } from './taskQueue'
 import { Empty, Panel } from './ui'
 import { RuntimePicker, TaskModelPicker } from './TaskSelection'
+import { useTaskPreparation } from './TaskPreparation'
 import { TeamWorkflow } from './TeamWorkflow'
 
 export function TeamWorkspace({info, policy, run, report, cancel}: {
@@ -18,19 +19,16 @@ export function TeamWorkspace({info, policy, run, report, cancel}: {
   const [teamResult, setTeamResult] = useState<Job['result']>()
   const [job, setJob] = useState<Job>()
   const [busy, setBusy] = useState(false)
+  const prepare = useTaskPreparation()
   const runTeam = async () => {
-    const external = teamRuntimes.filter(id => id !== 'local').map(id => info?.providers.find(p => p.id === id))
-    if (external.includes(undefined)) { report('團隊包含已移除的端點，請重新選擇。'); return }
-    if (external.length && policy !== 'manual') { report('請先在設定切換為手動運算政策。'); return }
-    const hosts = [...new Set(external.map(p => `${p!.host}:${p!.port}`))].join('、')
-    const consent = !!external.length && window.confirm(
-      `允許將共同任務傳送至 ${hosts}？` + (teamRuntimes[lead] !== 'local' ?
-        '遠端主模型也會收到成功成員的草稿。這些請求可能產生費用。' : '這些請求可能產生費用。'))
-    if (external.length && !consent) return
-    setTeamResult(undefined); setJob(undefined); setBusy(true)
+    setBusy(true)
     try {
-      setTeamResult(await run('team', {members: team.map((model,i) => ({runtime: teamRuntimes[i],model})),
-        lead,prompt:teamPrompt,serial,policy,consent}, setJob))
+      const members = team.map((model,i) => ({runtime: teamRuntimes[i],model}))
+      const preparation = await prepare('team',members,policy,teamRuntimes[lead] === 'local' ? '共同任務' : '共同任務與成員草稿')
+      if (preparation === 'cancelled') return
+      setTeamResult(undefined); setJob(undefined)
+      setTeamResult(await run('team', {members,lead,prompt:teamPrompt,serial,policy,consent:preparation === 'confirmed'}, setJob))
+    } catch (error) {report(error)
     } finally {setBusy(false)}
   }
   return <>

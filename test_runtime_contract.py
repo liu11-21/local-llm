@@ -47,7 +47,8 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertTrue(compare(host, "chat", "demo", ram=12, now=175)["needs_connection"])
         self.assertEqual(compare(host, "chat", "demo", policy="privacy", now=105)["state"], "incompatible")
         self.assertEqual(compare(host, "chat", "demo", vram=1, now=105)["state"], "uncertain")
-        self.assertTrue(compare(local, "chat", "missing", ram=4, now=105)["needs_install"])
+        self.assertTrue(compare(local, "chat", "missing", ram=4, now=105, installable=True)["needs_install"])
+        self.assertEqual(compare(local, "chat", "missing", now=105)["state"], "incompatible")
 
     def test_unknown_cost_and_bad_health_do_not_get_recommended(self):
         cloud = capability("cloud", "Cloud", "cloud-api", "Provider", health="unhealthy", connected=True,

@@ -5,7 +5,8 @@ import remarkGfm from 'remark-gfm'
 import { common, createLowlight } from 'lowlight'
 import type { RootContent } from 'hast'
 import { rpc, type Chat, type Info, type Job, type Message, type Usage } from './api'
-import { RuntimePicker, TaskModelPicker } from './TaskSelection'
+import { PreparationNotice, RuntimePicker, TaskModelPicker, TextSetup } from './TaskSelection'
+import { useTaskPreparation } from './TaskPreparation'
 import type { Run } from './taskQueue'
 
 const highlighter = createLowlight(common)
@@ -56,6 +57,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const scroll = useRef<HTMLDivElement>(null)
   const stick = useRef(true)
   const provider = info?.providers.find(item => item.id === runtime)
+  const prepare = useTaskPreparation()
   const models = runtime === 'local' ? info?.models ?? [] : provider?.models ?? []
   const model = models.includes(selectedModel) ? selectedModel : models[0] || ''
   const canSend = !pending && !opening && !!model && (runtime === 'local' ? !!info?.engine : !!provider?.connected)
@@ -88,17 +90,13 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
     if (!canSend || locked.current) return
     const text = regenerate ? messages.at(-2)?.content || '' : prompt.trim()
     if (!text || (regenerate && messages.at(-1)?.role !== 'assistant')) return
-    if (runtime !== 'local' && (!provider || ['privacy','local'].includes(policy) || (provider.kind !== 'paired' && policy !== 'manual'))) {
-      report(provider?.kind === 'paired' ? '目前運算偏好限制資料留在本機。' : '請先在設定將運算政策切換為手動，再選擇可用的端點。')
-      return
-    }
-    const consent = provider ? window.confirm('允許將提示詞及相關對話歷史傳送至 ' + provider.host + ':' + provider.port + '？' +
-      (provider.kind === 'paired' ? '內容會傳到已配對的運算主機。' : '此端點可能產生費用。')) : false
-    if (provider && !consent) return
     locked.current = true
-    setPending({text, regenerate}); setJob(undefined); setUsage(undefined); stick.current = true
-    if (!regenerate) setPrompt('')
     try {
+      const preparation = await prepare('chat',[{model,runtime}],policy,'提示詞及相關對話歷史')
+      if (preparation === 'cancelled') return
+      const consent = preparation === 'confirmed'
+      setPending({text, regenerate}); setJob(undefined); setUsage(undefined); stick.current = true
+      if (!regenerate) setPrompt('')
       const result = await run('chat', { chat, prompt:text, model, runtime, policy, consent, context, mode,
         max_tokens:budget, temperature, regenerate }, setJob)
       if (result?.answer) {
@@ -152,6 +150,10 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
           <label>運算環境<RuntimePicker info={info} task="chat" value={runtime} disabled={!!pending}
             change={value => {setRuntime(value);setModel('')}}/></label>
         </div>
+        {runtime === 'local' && <TextSetup info={info} run={run} openModels={()=>go('library')}/>}
+        {runtime !== 'local' && !provider?.connected && <PreparationNotice title="需要重新連線">
+          <button className="button section-note" onClick={()=>go('runtime')}>檢查運算環境</button>
+        </PreparationNotice>}
       </header>
       <div className="messages" ref={scroll} aria-label="對話內容" onScroll={event => {
         const node = event.currentTarget; stick.current = node.scrollHeight - node.scrollTop - node.clientHeight < 72
@@ -159,8 +161,6 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         {opening ? <p role="status" className="empty">正在開啟對話…</p> : !display.length && <div className="chat-empty">
           <div className="tile-icon"><MessageSquare size={24}/></div><h2>今天想聊什麼？</h2>
           <p>提問、整理想法，或從一個草稿開始。</p>
-          {runtime === 'local' && (!info?.engine || !models.length) && <button className="button section-note"
-            onClick={() => go(info?.engine ? 'library' : 'runtime')}>{info?.engine ? '下載第一個模型' : '安裝文字引擎'}</button>}
         </div>}
         {display.map((message, index) => <article className={'message ' + message.role} key={index}>
           <b>{message.role === 'user' ? '你' : '模型'}</b>

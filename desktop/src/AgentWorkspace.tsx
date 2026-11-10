@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
-import { rpc, type Job, type Params, type Registry } from './api'
-import { SelectModels, gb } from './ui'
+import { rpc, type Info, type Job, type Params } from './api'
+import { gb } from './ui'
+import { RuntimePicker, TaskModelPicker, TextSetup } from './TaskSelection'
+import { useTaskPreparation } from './TaskPreparation'
+import type { Run } from './taskQueue'
 
 type PlanEvent = {kind: string; at: string; tool?: string; message?: string; code?: string; step?: number; arguments?: Params}
 type AgentPlan = { id: string; version: number; role: string; model: string; prompt: string; steps: string[];
@@ -56,16 +59,18 @@ function Evidence({evidence}: {evidence?: Record<string, unknown>}) {
   </>
 }
 
-export function AgentWorkspace({ models, registry, engine, busy, job, run, report, cancel }: {
-  models: string[]
-  registry?: Registry['models']
-  engine: boolean
+export function AgentWorkspace({ info, busy, job, run, report, cancel, setupRun, openModels }: {
+  info?: Info
+  setupRun: Run
+  openModels: () => void
   busy: boolean
   job?: Job
   run: (action: string, payload: Params) => Promise<Job['result']>
   report: (error: unknown) => void
   cancel: (id: string) => void
 }) {
+  const prepare = useTaskPreparation()
+  const models = info?.models ?? []
   const [role, setRole] = useState('general')
   const [model, setModel] = useState('')
   const [prompt, setPrompt] = useState('')
@@ -110,6 +115,7 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
     setPlanning(true)
     const previous = plan?.state === 'awaiting_approval' ? plan : undefined
     try {
+      if (await prepare('agent',[{runtime:'local',model:selectedModel}],'local') === 'cancelled') return
       setPlan(await rpc('agent-plan', {role, model:selectedModel, prompt, tools, mode, review_calls:review,
         limits:bounds, previous:previous?.id, version:previous?.version}))
       void refreshHistory()
@@ -165,8 +171,12 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
         <option value="general">一般助理</option><option value="research">研究整理</option>
         <option value="technical">技術分析</option>
       </select></label>
-      <label>本機模型<SelectModels ariaLabel="本機模型" models={models} registry={registry} disabled={disabled || !models.length}
-        value={selectedModel} change={value => { setModel(value); invalidatePlan() }}/></label>
+      <div className="chat-controls">
+        <label>模型<TaskModelPicker ariaLabel="本機模型" info={info} runtime="local" disabled={disabled || !models.length}
+          model={selectedModel} change={value => { setModel(value); invalidatePlan() }}/></label>
+        <label>運算環境<RuntimePicker info={info} task="agent" value="local" disabled change={()=>{}}/></label>
+      </div>
+      <TextSetup info={info} run={setupRun} openModels={openModels}/>
       {mode !== 'simple' && <p className="small section-note">目前選定模型的工具能力未驗證。可嘗試結構化輸出；若無法遵循格式，可切換簡易模式。</p>}
       <label>任務描述<textarea disabled={disabled} value={prompt} maxLength={2400}
         onChange={e => { setPrompt(e.target.value); invalidatePlan() }}/></label>
@@ -182,9 +192,8 @@ export function AgentWorkspace({ models, registry, engine, busy, job, run, repor
           <label key={key}>{label}<input type="number" min={min} max={max} disabled={disabled} value={bounds[key] ?? fallback}
             onChange={e => {invalidatePlan(); setBounds(current => ({...current, [key]:Number(e.target.value)}))}}/></label>)}</div>
       </details>}
-      <button className="button section-note" disabled={disabled || !engine || !selectedModel || !prompt.trim()}
+      <button className="button section-note" disabled={disabled || !info?.engine || !selectedModel || !prompt.trim()}
         onClick={preview}>{planning ? '準備中…' : '預覽執行計畫'}</button>
-      {!engine && <p className="small muted">請先在運算環境安裝 llama.cpp。</p>}
       {plan?.state === 'awaiting_approval' && <section className="estimate"><div><strong>待核准 · {plan.role}</strong>
         <p>{plan.model} · 版本 {plan.version}</p><ol>{plan.steps.map((step, index) => <li key={step}>{index + 1}. {step}</li>)}</ol>
         <p>{plan.tools.length ? plan.tools.map(tool => toolNames[tool] || tool).join('、') : '不使用工具'} · {plan.review_calls ? '逐次核准' : '核准後可在清單內使用'}</p>

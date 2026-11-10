@@ -5,7 +5,7 @@ TASK_FORMAT = {"chat": "GGUF", "agent": "GGUF", "team": "GGUF", "image": "safete
                "video": "safetensors", "music": "safetensors", "notebook": None}
 
 
-def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None):
+def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None, installable=False):
     reasons, risks, unknown = [], [], []
     incompatible = install = connect = False
     local = record["kind"] == "local"
@@ -46,8 +46,14 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
         if local and format == "safetensors":
             unknown.append("創作權重是否可用，請以 ComfyUI 的預檢為準。")
         elif model not in record["models"]:
-            install = local
-            risks.append("目前的模型清單沒有這個模型。")
+            if connect:
+                unknown.append("連線或清單已過期，暫時無法確認模型。")
+            elif local and installable:
+                install = True
+                reasons.append("這個模型可以下載。")
+            else:
+                incompatible = True
+                reasons.append("這個環境目前沒有該模型，無法從這裡安裝。")
         else:
             reasons.append("已在運算環境的模型清單中找到此模型。")
     elif task != "notebook":

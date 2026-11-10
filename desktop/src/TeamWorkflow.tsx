@@ -3,6 +3,7 @@ import { rpc, type Info, type Job } from './api'
 import type { Run } from './taskQueue'
 import { Empty, Panel } from './ui'
 import { RuntimePicker, TaskModelPicker } from './TaskSelection'
+import { useTaskPreparation } from './TaskPreparation'
 
 type Member = {id: string; name: string; role: string; system: string; goal: string;
   model: string; runtime: string; tools: string[]; tool_arguments?: {[key: string]: {[parameter: string]: string}}; tokens: number; steps: number}
@@ -35,6 +36,7 @@ function Graph({nodes, members}: {nodes: Node[]; members: Member[]}) {
 export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
   visible: boolean; info?: Info; policy: string; run: Run; report: (error: unknown) => void; cancel: (id: string) => void
 }) {
+  const prepare = useTaskPreparation()
   const [definitions, setDefinitions] = useState<{templates:Team[]; roles:Role[]}>()
   const [tools, setTools] = useState<Tool[]>([])
   const [saved, setSaved] = useState<Team[]>([])
@@ -119,24 +121,19 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel}: {
 
   async function execute() {
     if (!team || !preview || busy || !prompt.trim()) return
-    const external = team.members.filter(member => member.runtime !== 'local')
-      .map(member => info?.providers.find(provider => provider.id===member.runtime))
-    if (external.includes(undefined) || (external.length && policy!=='manual')) {
-      report('請重新選擇已連線的端點，並切換為手動運算政策。'); return
-    }
-    const hosts = [...new Set(external.map(provider => provider!.host + ':' + provider!.port))]
-    const consent = hosts.length > 0 && window.confirm('允許將任務與相關節點草稿傳送至 ' + hosts.join('、') + '？可能產生費用。')
-    if (hosts.length && !consent) return
-    const selectedTools = preview.members.flatMap(member => member.tools.map(tool =>
-      member.name + ' · ' + (tools.find(item => item.id===tool)?.name || tool) + ' ' +
-      JSON.stringify(member.tool_arguments?.[tool] ?? {})))
-    const confirmTools = selectedTools.length > 0 && window.confirm(
-      '允許本次團隊流程讀取以下本機唯讀工具？\n' + selectedTools.join('\n'))
-    if (selectedTools.length && !confirmTools) return
-    setBusy(true); setRecord(undefined); setJob(undefined)
-    let id: string | undefined
+    setBusy(true)
     try {
-      await run('team-workflow',{team:preview,prompt,policy,consent,confirm_tools:confirmTools}, current => {
+      const preparation = await prepare('team',preview.members.map(({runtime,model})=>({runtime,model})),policy,'任務與相關節點草稿')
+      if (preparation === 'cancelled') return
+      const selectedTools = preview.members.flatMap(member => member.tools.map(tool =>
+        member.name + ' · ' + (tools.find(item => item.id===tool)?.name || tool) + ' ' +
+        JSON.stringify(member.tool_arguments?.[tool] ?? {})))
+      const confirmTools = selectedTools.length > 0 && window.confirm(
+        '允許本次團隊流程讀取以下本機唯讀工具？\n' + selectedTools.join('\n'))
+      if (selectedTools.length && !confirmTools) return
+      setRecord(undefined); setJob(undefined)
+      let id: string | undefined
+      await run('team-workflow',{team:preview,prompt,policy,consent:preparation === 'confirmed',confirm_tools:confirmTools}, current => {
         id = current.team_run_id; setJob(current)
       })
       if (id) setRecord(await rpc('team-run-get',{id}))

@@ -350,6 +350,55 @@ class Desktop(Workspace):
                 *(item.get("capability") or external_capability(item) for item in info["providers"]),
                 colab_capability(info["colab_ready"])]
 
+    def task_preflight(self, data):
+        task = field(data, "task", 20)
+        targets = data.get("targets")
+        if task not in TASK_FORMAT or not isinstance(targets, list) or not 1 <= len(targets) <= 6:
+            raise ValueError("請選擇任務和模型。")
+        policy = data.get("policy", "auto")
+        if not isinstance(policy, str) or policy not in POLICIES:
+            raise ValueError("運算政策無效。")
+        if task in MODELS:
+            if len(targets) != 1 or field(targets[0], "runtime", 32) != "local":
+                raise ValueError("這個工作流程需要本機 ComfyUI。")
+            state = self.media_readiness({**data, "kind":task})
+            return {"media":state, "blockers":[], "transfers":[]}
+        info = self.rpc("info", {})
+        records = {record["id"]: record for record in self.runtime_capabilities(info)}
+        providers = {provider["id"]: provider for provider in info["providers"]}
+        blockers, transfers, matches = [], [], []
+        for target in targets:
+            runtime, model = field(target, "runtime", 32), field(target, "model", 200)
+            record = records.get(runtime)
+            if record is None or task not in record["tasks"] or (task == "team" and record["kind"] == "remote-host"):
+                blockers.append("所選運算環境不支援這個任務。")
+                continue
+            estimate = (next((item["ram"] for item in info["registry"]["models"] if item["id"] == model), None)
+                        if runtime == "local" else record["model_ram"].get(model))
+            match = compare(record, task, model, policy=policy, ram=estimate)
+            matches.append(match)
+            if runtime == "local":
+                if not info["engine"]:
+                    blockers.append("需要安裝本機文字引擎。")
+                if model not in info["models"]:
+                    blockers.append("找不到所選的本機模型。請先下載或重新選擇。")
+                continue
+            provider = providers.get(runtime)
+            if not provider or not provider["connected"]:
+                blockers.append("運算環境離線。請先重新連線。")
+                continue
+            try:
+                route(policy, runtime, True, paired=provider["kind"] == "paired")
+            except ValueError as error:
+                blockers.append(str(error))
+            if model not in provider["models"]:
+                blockers.append("所選模型不在該環境的清單中。請更新模型清單。")
+            if record["health"] == "unhealthy":
+                blockers.append("遠端引擎目前無法接收工作。")
+            transfers.append({"runtime":provider["label"], "model":model, "destination":record["destination"],
+                              "cost":record["cost"], "needs_network":True})
+        return {"blockers":list(dict.fromkeys(blockers)), "transfers":transfers, "matches":matches}
+
     def host_models(self):
         return sorted(path.name for path in self.models.glob("*.gguf")
                       if path.is_file() and not path.is_symlink() and len(path.name) <= 180
@@ -761,6 +810,8 @@ class Desktop(Workspace):
     def rpc(self, op, data):
         if op == "system-resources":
             return self.resource_monitor.sample(self.models)
+        if op == "task-preflight":
+            return self.task_preflight(data)
         if op == "remote-client-pair":
             if data.get("confirmed") is not True:
                 raise ValueError("請先確認邀請來自您信任的運算主機。")
@@ -886,7 +937,8 @@ class Desktop(Workspace):
                     raise ValueError("請選擇有效的比較任務與運算偏好。")
                 estimate = next((item["ram"] for item in info["registry"]["models"] if item["id"] == model), None)
                 return [compare(item, task, model, ram=estimate if item["kind"] == "local" else item["model_ram"].get(model),
-                                policy=policy) for item in capabilities]
+                                policy=policy, installable=any(entry["name"] == model for entry in info["recommended"]))
+                        for item in capabilities]
             return [{"capability": item, "fresh": fresh(item)} for item in capabilities]
         if op == "model-imported":
             path = self.model(field(data, "model", 180))
