@@ -9,7 +9,7 @@ from comfy_runtime import PROFILES
 from downloads import model_filename
 
 ACTIVE = {"queued", "running", "paused"}
-RETRYABLE = {"download", "engine-install", "comfy-install", "update-download"}
+RETRYABLE = {"download", "engine-install", "comfy-install", "media-install", "update-download"}
 CAPACITY = {"compute": 1, "network": 2, "remote": 2}
 RESOURCES = {"compute": ["local-compute"], "network": ["network", "disk"], "remote": ["network", "external-runtime"]}
 
@@ -25,11 +25,17 @@ def classify(action, data):
             if not isinstance(url, str):
                 raise ValueError("請輸入模型下載網址。")
             target = model_filename(url)
-        elif action == "comfy-install":
+        elif action in ("comfy-install", "media-install"):
             profile = data.get("profile")
             if not isinstance(profile, str) or profile not in PROFILES:
                 raise ValueError("請選擇有效的 ComfyUI 便攜版。")
-            target = PROFILES[profile][0]
+            bundle = PROFILES[profile][0]
+            if action == "media-install":
+                kind = data.get("kind")
+                if kind not in ("image", "video", "music") or data.get("confirmed") is not True:
+                    raise ValueError("請確認創作模型的安裝摘要。")
+                return "network", "local", f"network:{bundle}", f"{kind}:{bundle}"
+            target = bundle
         else:
             target = action
         return "network", "local", f"network:{target.casefold()}", target
@@ -79,6 +85,8 @@ class TaskManager:
                          "resources": RESOURCES[lane],
                          "state": "queued", "created": timestamp(), "message": "等候可用資源…",
                          "started": None, "finished": None, "error": None}, payload, key)
+            if action == "media-install":
+                task.public.update(media_target=target)
             if plan_id is not None:
                 task.public.update(plan_id=plan_id, plan_version=plan_version)
             if team_run_id is not None:

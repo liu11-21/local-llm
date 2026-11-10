@@ -113,7 +113,7 @@ export function App() {
         {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run} report={report} notice={notice} refresh={refresh}/>}
         <div hidden={page !== 'team'}><TeamWorkspace info={info} policy={policy} run={queue.run} report={report} cancel={queue.cancel}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} health={health} preset={preset} works={works}
-          tasks={queue.tasks} run={queue.run} go={go} openWork={openSavedWork}/>}
+          tasks={queue.tasks} run={queue.run} cancel={queue.cancel} retry={queue.retry} go={go} openWork={openSavedWork}/>}
         {page === 'works' && <Works info={info} works={works} selected={selected} choose={setSelected}
           reuse={work => {setPreset(work);go(work.kind)}}/>}
         <div hidden={page !== 'agent'}><AgentWorkspace models={info?.models ?? []} registry={info?.registry.models} engine={!!info?.engine}

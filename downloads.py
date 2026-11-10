@@ -1,4 +1,4 @@
-"""Download GGUF files with bounded parallel HTTP range requests."""
+"""Download model files with bounded parallel HTTP range requests."""
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import nullcontext
 import hashlib
@@ -86,17 +86,25 @@ def check_gguf(path):
 
 def download_model(url, directory, workers, cancel, report, *, opener=open_download, recovery=None,
                    expected_size=None, expected_sha=None, before_publish=None):
-    """Report (downloaded bytes, total bytes, worker count) and publish only complete files."""
+    target = Path(directory).resolve() / model_filename(url)
+    return download_file(url, target, workers, cancel, report, validate=check_gguf, opener=opener,
+                         recovery=recovery, expected_size=expected_size, expected_sha=expected_sha,
+                         before_publish=before_publish)
+
+
+def download_file(url, target, workers, cancel, report, *, validate, opener=open_download,
+                  recovery=None, expected_size=None, expected_sha=None, before_publish=None):
+    """Transfer to a caller-validated destination and atomically publish after verification."""
     if not 1 <= workers <= 16:
         raise ValueError("下載執行緒須介於 1 到 16。")
-    target = Path(directory).resolve() / model_filename(url)
     target.parent.mkdir(parents=True, exist_ok=True)
     with download_lock(recovery, target) if recovery else nullcontext() as checkpoints:
         return _download(url, target, workers, cancel, report, opener, checkpoints,
-                         expected_size, expected_sha, before_publish)
+                         expected_size, expected_sha, before_publish, validate)
 
 
-def _download(url, target, workers, cancel, report, opener, checkpoints, expected_size, expected_sha, before_publish):
+def _download(url, target, workers, cancel, report, opener, checkpoints, expected_size, expected_sha,
+              before_publish, validate):
     if target.exists() or target.is_symlink():
         if checkpoints:
             checkpoints.discard_unrecoverable()
@@ -211,7 +219,7 @@ def _download(url, target, workers, cancel, report, opener, checkpoints, expecte
         if ranged:
             with staging.open("r+b") as output:
                 output.truncate(total)
-            with ThreadPoolExecutor(max_workers=count, thread_name_prefix="gguf-range") as pool:
+            with ThreadPoolExecutor(max_workers=count, thread_name_prefix="model-range") as pool:
                 if resumable and total >= BLOCK:
                     def download_blocks(worker):
                         for index in range(worker, (total + BLOCK - 1) // BLOCK, count):
@@ -248,7 +256,7 @@ def _download(url, target, workers, cancel, report, opener, checkpoints, expecte
             raise ValueError("模型下載不完整。")
         if expected_size is not None and received != expected_size:
             raise ValueError("下載長度與模型倉庫公布的大小不符。")
-        check_gguf(staging)
+        validate(staging)
         if expected_sha or before_publish:
             digest = hashlib.sha256()
             with staging.open("rb") as source:

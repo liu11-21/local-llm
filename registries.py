@@ -6,6 +6,7 @@ from pathlib import Path
 from comfy_runtime import PROFILES, VERSION as COMFY_VERSION
 from hardware import estimate_ram
 from media import DEFAULT_WORKFLOWS, workflow_manifest
+from media_install import manifest as media_manifest
 
 QUANT = re.compile(r"[-_.](IQ[1-9][A-Z0-9_]*|Q[1-9][A-Z0-9_]*|F16|F32|BF16)$", re.I)
 SIZE = re.compile(r"(?<![0-9.])(\d+(?:\.\d+)?[BM])(?=$|[-_ ])", re.I)
@@ -67,7 +68,8 @@ def workspace_registry(info, models, engine_version, sources):
     runtimes.append({"id":"colab", "label":"Colab Enterprise", "kind":"notebook", "ready":info["colab_ready"],
                      "models":[], "tasks":["notebook"]})
     return {"models":installed_models(models, info["models"], sources), "engines":engines,
-            "runtimes":runtimes, "workflows":workflow_manifest()}
+            "runtimes":runtimes, "workflows":workflow_manifest(),
+            "media_models":[media_manifest(kind) for kind in DEFAULT_WORKFLOWS]}
 
 
 def recent_works(directory, limit=24):

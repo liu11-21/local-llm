@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { convertFileSrc, isTauri } from '@tauri-apps/api/core'
 import { Film, Image, Music2 } from 'lucide-react'
-import { rpc, type EngineHealth, type Info, type MediaKind, type Params, type Task, type Work } from './api'
+import { rpc, type EngineHealth, type Info, type MediaInstallPlan, type MediaKind, type Params, type Task, type Work } from './api'
 import { activeTask, type Run } from './taskQueue'
 import { Empty, Panel, gb } from './ui'
 
@@ -44,11 +44,96 @@ export function Works({ info, works, selected, choose, reuse }: {
   </Panel></div>
 }
 
-type Readiness = {state: 'checking' | 'ready' | 'missing' | 'unavailable'; port: number; missing?: string[]}
+type Readiness = {state: 'checking' | 'ready' | 'missing' | 'unavailable'; port: number; missing?: string[]; missing_nodes?: string[]}
 
-export function CreationWorkspace({ kind, info, health, preset, works, tasks, run, go, openWork }: {
+function MediaSetup({kind, info, port, ready, tasks, run, cancel, retry, refresh}: {
+  kind: MediaKind; info?: Info; port: number; ready: boolean; tasks: Task[]; run: Run;
+  cancel: (id: string) => void; retry: (id: string) => Promise<void>; refresh: () => void
+}) {
+  const [selection, setSelection] = useState('')
+  const [plan, setPlan] = useState<MediaInstallPlan>()
+  const [issue, setIssue] = useState('')
+  const [confirmed, setConfirmed] = useState(false)
+  const [pending, setPending] = useState(false)
+  const [check, setCheck] = useState(0)
+  const profiles = info?.profiles ?? []
+  const profile = selection || info?.comfy_profiles_installed[0] || profiles[0] || ''
+  const model = info?.registry.media_models?.find(item => item.kind === kind)
+  const install = plan && tasks.find(task => task.media_target === plan.target)
+  const downloading = install && activeTask(install)
+  const busy = pending || downloading || tasks.some(task => activeTask(task) && ['comfy-install','comfy-start'].includes(task.action))
+  const installedProfiles = info?.comfy_profiles_installed.join(',')
+  const installState = install?.state
+  useEffect(() => {
+    if (!profile || !model) return
+    let mounted = true
+    setIssue('')
+    void rpc<MediaInstallPlan>('media-install-plan', {kind, profile}).then(
+      result => {if (mounted) setPlan(result)},
+      error => {if (mounted) {setIssue(String(error instanceof Error ? error.message : error)); setPlan(undefined)}},
+    )
+    return () => {mounted = false}
+  }, [kind, profile, model?.id, installedProfiles, check, installState === 'completed'])
+  if (!model || !profile) return null
+  const current = plan?.profile === profile ? plan : undefined
+  const missing = current?.files.some(file => file.status === 'missing')
+  async function finish(action: () => Promise<unknown>) {
+    setPending(true)
+    try {await action()} finally {
+      setPending(false); setConfirmed(false); setCheck(n => n + 1); refresh()
+    }
+  }
+  return <details className="section-note" open={!ready || undefined}>
+    <summary>安裝或檢查本機模型</summary>
+    <label>本機運算環境<select value={profile} disabled={!!busy} onChange={event => {
+      setSelection(event.target.value); setConfirmed(false)
+    }}>{profiles.map(name => <option key={name}>{name}</option>)}</select></label>
+    {!current && <p className="small" role={issue ? 'alert' : 'status'}>{issue || '正在讀取安裝摘要…'}</p>}
+    {current && <>
+      <p className="small pre">{model.label} · {model.publisher} · {model.version} · {model.license}</p>
+      <p className="small pre">Hugging Face · 固定版本 {model.revision}</p>
+      <p className="small">待下載 {gb(current.needed)} · 磁碟可用 {gb(current.free)}</p>
+      <p className="small muted">本機可用 RAM {info?.hardware.ram_available != null ? gb(info.hardware.ram_available) : '未知'}。模型所需 RAM 與 VRAM 隨生成設定變動，目前沒有經實測的最低值。</p>
+      {kind !== 'image' && profile === 'CPU' && <p className="small">影片與音樂在 CPU 上可能非常慢，或因記憶體不足而失敗。</p>}
+      <details><summary>權重、安裝位置與校驗值</summary>
+        {current.files.map(file => <div className="section-note small pre" key={file.filename}>
+          <strong>{file.filename}</strong> · {gb(file.bytes)} · {file.status === 'present' ? '已找到' : file.status === 'conflict' ? '同名衝突' : '缺少'}
+          <div>{file.path}</div><div>SHA-256 {file.sha256}</div>
+        </div>)}
+        <p className="small pre">{model.terms}</p>
+      </details>
+      {current.conflict && <p className="creation-error small" role="alert">權重目錄有同名衝突。請檢查並自行移開該檔案後重新檢查。</p>}
+      {current.needed > current.free && <p className="creation-error small" role="alert">磁碟空間不足。</p>}
+      {!current.installed ? <button className="button section-note" disabled={!!busy}
+        onClick={() => void finish(() => run('comfy-install', {profile}))}>下載並安裝 ComfyUI</button> :
+        <>
+          {!current.conflict && current.needed <= current.free && <label className="row section-note">
+            <input type="checkbox" checked={confirmed} disabled={!!busy} onChange={e => setConfirmed(e.target.checked)}/>
+            {missing ? '我已查看授權，並同意從 Hugging Face 下載上述權重' : '驗證現有權重的 SHA-256'}
+          </label>}
+          <div className="row section-note creation-actions">
+            <button className="button" disabled={!confirmed || !!busy || current.conflict || current.needed > current.free}
+              onClick={() => void finish(() => run('media-install', {kind, profile, confirmed: true}))}>
+              {missing ? '一鍵安裝模型' : '驗證權重'}</button>
+            {!ready && !missing && !info?.comfy_running && <button className="button" disabled={!!busy || current.conflict}
+              onClick={() => void finish(() => run('comfy-start', {profile, port}))}>啟動所選 ComfyUI</button>}
+          </div>
+        </>}
+    </>}
+    {install && <p className="small pre" role={install.state === 'failed' ? 'alert' : 'status'}>{install.message}</p>}
+    {downloading && install && <div className="row creation-actions">
+      {!!install.total && <progress aria-label="模型安裝進度" value={install.received ?? 0} max={install.total}/>}
+      <button className="button" onClick={() => cancel(install.id)}>取消模型安裝</button>
+    </div>}
+    {install?.retryable && <button className="button section-note" disabled={!!busy}
+      onClick={() => void finish(() => retry(install.id))}>重試模型安裝</button>}
+  </details>
+}
+
+export function CreationWorkspace({ kind, info, health, preset, works, tasks, run, cancel, retry, go, openWork }: {
   kind: MediaKind; info?: Info; health?: EngineHealth; preset?: Work; works: Work[]; tasks: Task[];
   run: Run; go: (page: 'runtime' | 'works') => void
+  cancel: (id: string) => void; retry: (id: string) => Promise<void>
   openWork: (name: string) => void
 }) {
   const [id, setId] = useState('')
@@ -80,7 +165,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
     let timer = 0
     async function check(refresh: boolean) {
       try {
-        const state = await rpc<Readiness>('media-readiness', {kind, port: servicePort, refresh})
+        const state = await rpc<Readiness>('media-readiness', {kind, port: servicePort, workflow: workflow?.id, refresh})
         if (!mounted) return
         setReadiness(state)
         if (state.state === 'checking') timer = window.setTimeout(() => void check(false), 320)
@@ -89,7 +174,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
     setReadiness(undefined)
     timer = window.setTimeout(() => void check(true), 250)
     return () => {mounted = false; window.clearTimeout(timer)}
-  }, [kind, servicePort, serviceState, recheck])
+  }, [kind, servicePort, serviceState, recheck, workflow?.id])
   const busy = pending || active
   const ready = readiness?.state === 'ready'
   return <div className="dashboard creation">
@@ -131,12 +216,15 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
       <Panel title="流程準備">
         <p className="section-note" role="status">{!readiness || readiness.state === 'checking' ? '正在檢查本機 ComfyUI 與權重…' :
           readiness.state === 'unavailable' ? '本機 ComfyUI 目前無法連線。請先啟動服務或檢查連接埠。' :
-          readiness.state === 'missing' ? 'ComfyUI 已連線，仍缺少下列權重。' : 'ComfyUI 已連線，必要權重齊備。'}</p>
+          readiness.state === 'missing' ? 'ComfyUI 已連線，但缺少必要權重或節點。' : 'ComfyUI 已連線，必要權重與節點齊備。'}</p>
         {readiness?.missing?.map(name => <p className="small pre" key={name}>{name}</p>)}
+        {!!readiness?.missing_nodes?.length && <p className="small pre">缺少節點 {readiness.missing_nodes.join('、')}。請更新或啟動受管理的 ComfyUI。</p>}
         <div className="row section-note creation-actions">
           <button className="button" onClick={() => go('runtime')}>管理 ComfyUI</button>
           <button className="button" onClick={() => setRecheck(n => n+1)}>重新檢查</button>
         </div>
+        <MediaSetup kind={kind} info={info} port={servicePort} ready={ready} tasks={tasks} run={run} cancel={cancel} retry={retry}
+          refresh={() => setRecheck(n => n+1)}/>
         {active && <p className="pre" role="status">{task.message}</p>}
         {task?.state === 'failed' && <p className="pre creation-error" role="alert">{task.message}</p>}
       </Panel>

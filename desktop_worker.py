@@ -35,6 +35,7 @@ from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
 from registries import model_identity, recent_works, workspace_registry
+from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import Providers, route
 from task_manager import TaskManager, timestamp
 from team_workflow import ROLES as TEAM_ROLES, TeamStore, run_team as run_team_workflow, specification, templates
@@ -49,7 +50,7 @@ ENGINE_LICENSE_HASH = "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0
 MAX_LINE = 256 * 1024
 WORKSPACE_VERSION = "0.6.2"
 ACTIONS = {"chat", "download", "team", "team-workflow", "comfy-start", "comfy-stop", "media", "engine-start",
-           "engine-stop", "engine-install", "comfy-install", "agent", "update-download"}
+           "engine-stop", "engine-install", "comfy-install", "media-install", "agent", "update-download"}
 
 
 def chat_id(data):
@@ -288,6 +289,8 @@ class Desktop(Workspace):
         kind = field(data, "kind", 12)
         if kind not in MODELS:
             raise ValueError("不支援的創作類型。")
+        workflow_id = field(data, "workflow", 40, optional=True)
+        nodes = required_nodes(kind, workflow_id) if workflow_id else []
         port = self.comfy.port if self.comfy.running() else data.get("port")
         if type(port) is not int or not 1024 <= port <= 65535:
             raise ValueError("請輸入有效的 ComfyUI 連接埠。")
@@ -295,19 +298,22 @@ class Desktop(Workspace):
             existing = self.media_checks.get(kind)
             if existing and existing["state"] == "checking":
                 return {"state": "checking", "port": port}
-            if existing and existing["port"] == port and data.get("refresh") is not True:
+            if (existing and existing["port"] == port and existing.get("workflow") == workflow_id
+                    and data.get("refresh") is not True):
                 return existing
             self.media_checks[kind] = {"state": "checking", "port": port}
 
         def check():
-            state = {"port": port, "state": "unavailable"}
+            state = {"port": port, "workflow": workflow_id, "state": "unavailable"}
             try:
                 client = ComfyClient(port, timeout=1.5)
                 stats = client.json("/system_stats")
                 if not isinstance(stats, dict) or not isinstance(stats.get("system"), dict):
                     raise ValueError("無法識別的 ComfyUI API")
                 missing = client.missing_models(kind)
-                state.update(state="missing" if missing else "ready", missing=missing)
+                missing_nodes = [node for node in nodes if node not in client.json("/object_info/" + node)]
+                state.update(state="missing" if missing or missing_nodes else "ready",
+                             missing=missing, missing_nodes=missing_nodes)
             except (OSError, HTTPException, ValueError, RuntimeError, TypeError, AttributeError):
                 pass
             with self.lock:
@@ -456,6 +462,10 @@ class Desktop(Workspace):
     def perform(self, action, data, cancel, update):
         if action == "download":
             return self.download(data, cancel, update)
+        if action == "media-install":
+            if data.get("confirmed") is not True:
+                raise ValueError("請先確認模型來源、授權及下載內容。")
+            return install_weights(self.data, field(data, "kind", 12), field(data, "profile", 40), cancel, update)
         if action in ("comfy-start", "comfy-install"):
             profile = field(data, "profile", 40)
             if profile not in PROFILES:
@@ -600,6 +610,8 @@ class Desktop(Workspace):
             return self.engine_health()
         if op == "media-readiness":
             return self.media_readiness(data)
+        if op == "media-install-plan":
+            return install_plan(self.data, field(data, "kind", 12), field(data, "profile", 40))
         if op == "agent-plan":
             plan = create_plan(data, self.agent_tools)
             self.model(plan["model"])

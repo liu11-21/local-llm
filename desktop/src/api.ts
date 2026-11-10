@@ -10,6 +10,11 @@ export type Recommendation = { repo: string; name: string; description: string; 
 export type WorkflowParameter = { key: string; label: string; type: 'integer' | 'text'; default: number | string | null; min: number; max: number; step: number }
 export type MediaKind = 'image' | 'video' | 'music'
 export type Workflow = { id: string; label: string; kind: MediaKind; models: string[]; output: string; parameters: WorkflowParameter[] }
+export type MediaWeight = { filename: string; path: string; url: string; bytes: number; sha256: string }
+export type MediaModel = { id: string; label: string; kind: MediaKind; publisher: string; version: string;
+  source: string; revision: string; license: string; terms: string; weights: MediaWeight[]; ram: number | null; vram: number | null }
+export type MediaInstallPlan = { model: MediaModel; target: string; profile: string; installed: boolean;
+  files: (MediaWeight & {status: 'missing' | 'present' | 'conflict'})[]; free: number; needed: number; conflict: boolean }
 export type Work = { name: string; kind: MediaKind; created: string; bytes: number; model?: string; workflow?: string; prompt?: string; lyrics?: string; options?: Params }
 export type Registry = {
   models: { id: string; label: string; bytes: number; quantization: string | null; format: string; publisher?: string; ram: number;
@@ -18,6 +23,7 @@ export type Registry = {
   engines: { id: string; label: string; version: string; installed: boolean; running: boolean }[];
   runtimes: { id: string; label: string; kind: string; ready: boolean; tasks: string[] }[];
   workflows: Workflow[];
+  media_models?: MediaModel[];
 }
 export type Info = {
   models: string[]; model_folder: string; output_folder: string; engine: boolean;
@@ -35,6 +41,7 @@ export type Task = {
   created: string; started?: string | null; finished?: string | null; runtime?: string;
   lane?: string; error?: string | null; received?: number | null; total?: number | null; retryable?: boolean;
   history_warning?: string | null;
+  media_target?: string;
 }
 export type Usage = { input: number; context: number; max_output: number; omitted_turns: number }
 export type Job = {
