@@ -9,6 +9,7 @@
 | PASS | Windows 本機 83 項 Python 測試中 79 項通過，4 項 TLS 網路回環案例由 Windows CI 執行。新案例涵蓋引擎和模型缺少、離線、外部政策、未知費用、ComfyUI 預檢、私人位址、受保護私鑰、憑證重用及更新撤銷。 |
 | PASS | Chromium 在 1280×900、1024×768、800×600、650×720 驗證深淺模式、長名稱、錯誤、鍵盤焦點、reduced motion、側欄收合、即時資源、Host 自動 TLS、同意對話框及既有 Agent／Team／作品庫。確認 Esc 未送出，核准只提交一次並保存一則回答。 [實際畫面](UI_DESIGN.md#batch-4a4c-工作台與任務準備) |
 | PASS | 自動產生的憑證與 DPAPI 保護密碼通過本機 TLS 記憶體握手。瀏覽器同時驗證 Host 建立邀請及顯示指紋。 |
+| PASS | `9f0c31d` 通過 Windows CI 的 Python、Worker 封裝、Chromium、NSIS 建置、安裝及卸載。已下載並核對 GitHub ZIP SHA-256、建置提交與安裝 EXE。EXE SHA-256 為 `d9af8ccb9028ab4ec0212f167b92b10b192a50147eb594a5836624c1b8e5cc7e`。 [Windows CI](https://github.com/liu11-21/local-llm/actions/runs/42822400834) · [開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42822400834/artifacts/13767404197) |
 | NEEDS REMOTE HOST | 兩台實體電腦之間的自動 TLS、私人網路與斷線行為仍待驗收。 |
 | NEEDS GPU | 實體遠端 GPU 推理與即時 GPU／VRAM 用量的驗收。 |
 | NOT RUN | 4D 遠端媒體與持久任務、4E 完整新手引導及進一步跨 Runtime 整合。 |
