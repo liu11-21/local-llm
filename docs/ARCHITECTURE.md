@@ -1,5 +1,11 @@
 # 桌面工作台架構
 
+## Batch 3A–3C
+
+- `team_workflow.py` 依交付節點及相依成果計算 `outcome`。任務中心仍使用原有狀態機。固定工具的參數先由 `tool_registry.py` 驗證，之後隨預覽核准，並和工具結果一同存入執行紀錄。同步工具呼叫逾時後，底層執行若仍在進行，就繼續占用原本的執行槽。關閉工作台時會通知取消並短暫等待。仍需強制停止時，應由個別的子程序隔離方案提供。
+- `media_install.py` 定義 ComfyUI 固定 revision、授權、位元組長度、SHA-256、必要節點與權重安裝位置。安裝經過同一 TaskManager，由共享下載器先暫存及校驗，再發布到受管便攜版。CPU 和 NVIDIA CUDA 12.6 共用 bundle，安裝任務依 bundle 去重。確認摘要才會下載權重。使用者已放置的同名檔案只讀取與比對。
+- `creations.details` 沿用 SQLite 表，新增 JSON `schema: 1`、工作流程、Runtime、ComfyUI 任務與來源檔名。舊資料仍可讀，無需更動資料庫表。新作品記錄媒體標頭中的尺寸或時長，舊作品在查詢時補讀。作品庫只列舉安全輸出檔名，沿用 Tauri 本機 asset protocol，並在開啟原檔前再次驗證路徑。
+
 目前以 Windows x64 為目標；舊 Tkinter 和 GitHub Pages 仍走各自原本的入口。
 
 | 層 | 實作 | 職責 |

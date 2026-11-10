@@ -1,5 +1,18 @@
 # 桌面工作台測試紀錄
 
+## 第三階段 Batch 3A–3C
+
+基準為 `d39afbf`，開發安裝包版本為 `0.6.2`。
+
+| 狀態 | 範圍與證據 |
+|---|---|
+| PASS | 64 項 Python 測試。涵蓋 Team 交付與審查狀態、必要依賴、工具參數及核准、權限、逾時後的執行槽、ComfyUI 權重清單、SHA-256、磁碟不足、取消、續傳、同名保護、節點預檢、舊作品、作品篩選、安全原檔路徑及媒體中繼資料。 |
+| PASS | TypeScript／Vite 建置及 Chromium UI 測試。涵蓋四種尺寸及深淺模式、Team 部分交付、創作安裝摘要、作品庫搜尋、排序、類型與模型篩選、參數與種子回填。Team 回應由可控 SSE 測試端點提供。 [實際介面截圖](UI_DESIGN.md#batch-3-創作與作品庫) |
+| PASS | 真實 Windows CPU。重新計算既有 SD 1.5 權重的 SHA-256，檢查 ComfyUI 節點，從桌面 Worker RPC 提交並透過 TaskManager 完成 256×256 PNG。SQLite 作品庫可查到尺寸、種子及真實 ComfyUI 任務 ID。 |
+| PASS | 真實 Hugging Face 安裝下載。Wan 2.1 VAE 以四個執行緒下載，實際大小 253,815,318 bytes，通過固定 revision 的 SHA-256。 [Wan 2.1 權重](https://huggingface.co/Comfy-Org/Wan-2.1/tree/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/split_files/vae) |
+| NEEDS GPU | Wan 2.1 完整權重下載與實際影片生成、ACE-Step 權重下載及音樂生成，需驗收完整模型和支援的 GPU 組合。 |
+| NOT RUN | 新版簽章、正式 Release、付費請求。3D 遠端 Host／Client 及 3E 能力契約尚未實作。 |
+
 ## 第三階段 Batch 2
 
 開發基準為 `c83dfca`，工作台版本為 `0.6.2`。
