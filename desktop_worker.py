@@ -38,8 +38,9 @@ from registries import media_metadata, model_identity, recent_works, work_file, 
 from remote_client import RemoteClients
 from remote_host import ANSWER_LIMIT, Host
 from media_install import install_plan, install_weights, required_nodes
-from runtime_provider import Providers, route
+from runtime_provider import POLICIES, Providers, route
 from runtime_contract import colab_capability, external_capability, fresh, local_capability, observed
+from runtime_recommendation import TASK_FORMAT, compare
 from task_manager import TaskManager, timestamp
 from team_workflow import ROLES as TEAM_ROLES, TeamStore, run_team as run_team_workflow, specification, templates
 from tool_registry import builtins as agent_tools
@@ -828,12 +829,31 @@ class Desktop(Workspace):
             info["recoverable_downloads"] = recover_downloads(self.download_cache, self.models, pinned_model)
             info["recent_model"] = recent[0] if recent else None
             return info
-        if op in ("runtime-capabilities", "runtime-capability-refresh"):
-            if op == "runtime-capability-refresh":
+        if op in ("runtime-capabilities", "runtime-capability-refresh", "runtime-capability-invalidate",
+                  "runtime-compare"):
+            if op in ("runtime-capability-refresh", "runtime-capability-invalidate"):
                 id = field(data, "id", 32)
-                provider = self.remote_clients.items.get(id) or self.providers.get(id)
-                provider.discover()
-            return [{"capability": item, "fresh": fresh(item)} for item in self.runtime_capabilities(self.rpc("info", {}))]
+                paired = self.remote_clients.items.get(id)
+                if id == "local":
+                    self.hardware_cache = None
+                elif op == "runtime-capability-refresh":
+                    (paired or self.providers.get(id)).discover()
+                elif paired:
+                    paired.record = None
+                else:
+                    self.providers.get(id).checked_at = 0
+            info = self.rpc("info", {})
+            capabilities = self.runtime_capabilities(info)
+            if op == "runtime-compare":
+                task = field(data, "task", 20)
+                model = field(data, "model", 200, optional=True)
+                policy = data.get("policy", "auto")
+                if task not in TASK_FORMAT or not isinstance(policy, str) or policy not in POLICIES:
+                    raise ValueError("請選擇有效的比較任務與運算偏好。")
+                estimate = next((item["ram"] for item in info["registry"]["models"] if item["id"] == model), None)
+                return [compare(item, task, model, ram=estimate if item["kind"] in ("local", "remote-host") else None,
+                                policy=policy) for item in capabilities]
+            return [{"capability": item, "fresh": fresh(item)} for item in capabilities]
         if op == "model-imported":
             path = self.model(field(data, "model", 180))
             check_gguf(path)

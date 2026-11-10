@@ -6,6 +6,7 @@ import { activeTask, type Run } from './taskQueue'
 import { Estimate, Panel, SelectModels, gb } from './ui'
 import { ColabWorkspace } from './ColabWorkspace'
 import { RemoteWorkspace } from './RemoteWorkspace'
+import { RuntimeComparison } from './RuntimeComparison'
 
 function Health({status}: {status?: EngineStatus}) {
   if (!status) return <p className="muted small">正在查詢引擎健康狀態…</p>
@@ -56,6 +57,7 @@ export function RuntimeWorkspace({info, health, policy, tasks, run, report, noti
             <p className="small section-note">{info?.providers.length ?? 0} 個外部端點已設定 ·
               {info?.registry.runtimes.find(item=>item.id==='colab')?.ready ? ' Colab Enterprise 已連線' : ' Colab Enterprise 尚未連線'}</p>
           </Panel>
+          <RuntimeComparison info={info} policy={policy}/>
           {mode==='local' && <div className="dashboard"><Panel title="本機文字引擎" description={activeText || (info?.engine ? 'llama.cpp 已安裝，等待載入模型。' : '首次使用需要下載官方 llama.cpp。')}>
             <Health status={health?.llama}/>
             {info?.engine ? <><SelectModels models={models} value={local} change={setLocal} registry={info?.registry.models}/><div className="row section-note"><button className="button primary" disabled={engineBusy || !local} onClick={()=>run('engine-start',{model:local,mode:'auto',context:2048})}>啟動模型</button><button className="button" disabled={engineBusy || !activeText} onClick={()=>run('engine-stop',{})}>停止模型</button></div></> :

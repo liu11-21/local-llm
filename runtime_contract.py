@@ -87,9 +87,8 @@ def local_capability(info, health, active_jobs):
     devices = info.get("devices", [])
     text, media = health["llama"]["state"], health["comfyui"]["state"]
     engines = (["llama.cpp"] if info["engine"] else []) + (["ComfyUI"] if info.get("comfy_installed") else [])
-    dedicated = [free for _, free, shared in devices if not shared]
     return capability("local", "本機 CPU／GPU", "local", "Local LLM", connected=True, source="desktop",
-                      health=("busy" if active_jobs else "unhealthy" if "unhealthy" in (text, media)
+                      health=("busy" if active_jobs else "unhealthy" if {text, media} & {"unhealthy", "failed"}
                               else "ready" if engines else "setup"),
                       tasks=("chat", "agent", "team", "image", "video", "music"), formats=("GGUF", "safetensors"),
                       engines=engines, models=info["models"][:250], network=False, destination="this-device",
@@ -97,10 +96,9 @@ def local_capability(info, health, active_jobs):
                           "cpu_threads": observed(hardware["cpu_threads"]), "ram_total": observed(hardware["ram_total"]),
                           "ram_available": observed(hardware["ram_available"]), "active_jobs": observed(active_jobs),
                           "gpus": observed([name for name, _, _ in devices][:32] or None),
-                          "vram_available": observed(max(dedicated, default=None), "reported"),
                       }, features={"stream": bool(info["engine"]), "cancel": True, "load": bool(info["engine"]),
                                    "unload": bool(info["engine"]), "download": True},
-                      error="引擎目前無法回應。" if "unhealthy" in (text, media) else None)
+                      error="引擎目前無法回應。" if {text, media} & {"unhealthy", "failed"} else None)
 
 
 def external_capability(provider):
@@ -109,7 +107,8 @@ def external_capability(provider):
                       health="ready" if provider["connected"] else "offline", tasks=("chat",), models=provider["models"],
                       features={"stream": None, "cancel": None, "load": False, "unload": False, "download": False},
                       network=True, destination=f'{provider["host"]}:{provider["port"]}', auth="api-key",
-                      source="provider-model-list", checked_at=provider.get("checked_at", 0))
+                      source="provider-model-list", checked_at=provider.get("checked_at", 0),
+                      error=None if provider["connected"] else "端點未連線。")
 
 
 def colab_capability(available):
