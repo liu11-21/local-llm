@@ -111,6 +111,46 @@ try {
   await navigate('圖片生成')
   await page.getByText('生成完成後，作品會顯示在這裡。').waitFor()
   await noOverflow()
+  const shots = process.env.LOCALLLM_BATCH3_SHOTS
+  if (shots) await mkdir(shots,{recursive:true})
+  const shot = name => shots && page.screenshot({path:join(shots,'batch3-'+name+'.png'),fullPage:true})
+  for (const [width,height] of [[1280,900],[1024,768],[800,600],[650,720]]) {
+    await page.setViewportSize({width,height})
+    for (const theme of ['dark','light']) {
+      if (await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme) !== theme) {
+        await page.getByTitle('切換主題').click()
+      }
+      await page.getByText(/Hugging Face · 固定版本/).waitFor()
+      await button('下載並安裝 ComfyUI').waitFor()
+      await noOverflow()
+      if ((width === 1280 && theme === 'dark') || (width === 650 && theme === 'light')) {
+        await shot('creation-' + width + '-' + theme)
+      }
+    }
+  }
+  assert(await page.evaluate(async () => {
+    const response = await fetch('/__desktop_dev_rpc',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({op:'fixture-create-work',data:{}})})
+    return (await response.json()).value
+  }))
+  await navigate('作品庫')
+  await page.getByRole('img',{name:'生成作品'}).waitFor()
+  await page.getByLabel('搜尋作品').fill('找不到這個字串')
+  await page.getByText('找不到符合條件的作品。').waitFor()
+  await page.getByLabel('搜尋作品').fill('雪松')
+  await page.getByLabel('模型篩選').selectOption('Stable Diffusion 1.5')
+  await page.getByLabel('類型',{exact:true}).selectOption('image')
+  await page.getByLabel('日期排序').selectOption('oldest')
+  await button('重新使用設定').waitFor()
+  await noOverflow()
+  await page.setViewportSize({width:1280,height:900})
+  await shot('works')
+  await button('重新使用設定').click()
+  assert.equal(await page.getByLabel('提示詞',{exact:true}).inputValue(),'雪中的雪松')
+  assert.equal(await page.getByLabel('寬度',{exact:true}).inputValue(),'256')
+  await page.getByText('進階生成參數',{exact:true}).click()
+  assert.equal(await page.getByLabel('種子（留白為隨機）').inputValue(),'417')
+  console.log('PASS creation installation summary, work library filters, and saved settings replay')
   console.log('PASS workspace layout in both themes at 1280, 1024, 800, and 650 px')
   await exerciseWorkflows(page,navigate,noOverflow)
   assert.deepEqual(exceptions, [])

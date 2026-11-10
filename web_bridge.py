@@ -188,11 +188,12 @@ class Workspace:
             port = self.comfy.port if self.comfy.running() else data.get("port")
             if type(port) is not int:
                 raise ValueError("請填寫 ComfyUI 連接埠。")
+            source = {}
             path = ComfyClient(port).generate(kind, field(data, "prompt", 12000),
                                               field(data, "lyrics", 12000, optional=True), self.outputs, cancel, report,
                                               workflow_id=field(data, "workflow", 40, optional=True),
-                                              options=data.get("options"))
-            return {"file": f"/output/{path.name}", "message": f"已保存 {path.name}"}
+                                              options=data.get("options"), on_source=source.update)
+            return {"file": f"/output/{path.name}", "message": f"已保存 {path.name}", "source": source}
         raise ValueError("這個本機功能不存在。")
 
 

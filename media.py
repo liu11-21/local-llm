@@ -59,6 +59,7 @@ def workflow_manifest():
     return [{"id": key, "kind": kind, "label": label, "engine": "comfyui",
              "models": [file for _, _, file in MODELS[kind][2]], "output": FORMATS[kind][0],
              "parameters": [{"key": param, "label": PARAMETERS[param][0], "default": default,
+                             "basic": param in {"width", "height", "frames", "seconds"},
                              "min": PARAMETERS[param][1], "max": PARAMETERS[param][2], "step": PARAMETERS[param][3],
                              "type": "text" if param == "negative" else "integer"}
                             for param, default in defaults.items()]}
@@ -184,7 +185,7 @@ class ComfyClient:
             return False
         return isinstance(result, dict) and result.get("cancelled") is True
 
-    def generate(self, kind, prompt, lyrics, output_dir, cancel, report, *, workflow_id=None, options=None):
+    def generate(self, kind, prompt, lyrics, output_dir, cancel, report, *, workflow_id=None, options=None, on_source=None):
         graph = workflow(kind, prompt, lyrics, workflow_id=workflow_id, options=options)
         self.check_models(kind)
         if cancel.is_set():
@@ -219,7 +220,10 @@ class ComfyClient:
                         continue
                     name = item.get("filename")
                     if isinstance(name, str) and name.lower().endswith(suffix):
-                        return self.save_output(name, item.get("subfolder", ""), suffix, magic, output_dir, cancel)
+                        path = self.save_output(name, item.get("subfolder", ""), suffix, magic, output_dir, cancel)
+                        if on_source:
+                            on_source({"engine": "ComfyUI", "job": prompt_id[:160], "original": name[:300]})
+                        return path
             raise RuntimeError("ComfyUI 完成任務，但找不到可儲存的輸出。")
         raise TimeoutError("等待 ComfyUI 生成逾時，請在 ComfyUI 查看任務狀態。")
 
@@ -235,6 +239,8 @@ class ComfyClient:
             with connection.getresponse() as response:
                 if response.status != 200 or response.read(len(magic)) != magic:
                     raise ValueError("ComfyUI 傳回的媒體格式不符。")
+                size = response.length
+                expected = size + len(magic) if size is not None else None
                 with NamedTemporaryFile(dir=output_dir, suffix=".part", delete=False) as stream:
                     temporary = Path(stream.name)
                     stream.write(magic)
@@ -244,6 +250,10 @@ class ComfyClient:
                         if stream.tell() + len(block) > RESULT_LIMIT:
                             raise ValueError("生成檔案超過 512 MiB。")
                         stream.write(block)
+                    if stream.tell() <= len(magic) or (expected is not None and stream.tell() != expected):
+                        raise ValueError("ComfyUI 傳回的媒體不完整，請重新生成。")
+            if cancel.is_set():
+                raise InterruptedError("已停止儲存媒體。")
             temporary.rename(target)
             return target
         finally:

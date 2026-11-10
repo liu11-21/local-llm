@@ -1,7 +1,10 @@
 """Development test worker with a controlled loopback llama.cpp protocol fixture."""
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from base64 import b64decode
 import json
+import os
 from pathlib import Path
+import shutil
 import sys
 from threading import Thread
 from time import sleep
@@ -93,10 +96,29 @@ if __name__ == "__main__":
                 super().__init__(data)
                 self.local.endpoint = lambda: (server.server_port, "isolated-test-key")
 
+            def add_sample_work(self):
+                name = "a12345678901.png"
+                self.outputs.mkdir(exist_ok=True)
+                actual = os.environ.get("LOCALLLM_BATCH3_REAL_IMAGE")
+                if actual:
+                    shutil.copyfile(actual, self.outputs / name)
+                else:
+                    (self.outputs / name).write_bytes(b64decode(
+                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jh2sAAAAASUVORK5CYII="))
+                with self.connect() as db:
+                    db.execute("INSERT INTO creations VALUES(?,?)", (name, json.dumps({
+                        "model": "Stable Diffusion 1.5", "workflow": "sd15-preview", "prompt": "雪中的雪松",
+                        "options": {"seed": 417, "width": 256, "height": 256, "steps": 1},
+                        "runtime": "local-comfyui", "status": "completed", "schema": 1,
+                    })))
+
             def prepare(self, _data, _cancel, _update):
                 return {}
 
             def rpc(self, op, data):
+                if op == "fixture-create-work":
+                    self.add_sample_work()
+                    return True
                 result = super().rpc(op, data)
                 if op == "info":
                     result["engine"] = True

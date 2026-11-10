@@ -34,7 +34,7 @@ from engine_health import EngineHealth
 from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
-from registries import model_identity, recent_works, workspace_registry
+from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
 from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import Providers, route
 from task_manager import TaskManager, timestamp
@@ -216,6 +216,41 @@ class Desktop(Workspace):
                        "message": message, "created": created.replace(" ", "T") + "Z"}
             live[task_id] = {**record, "retryable": False}
         return sorted(live.values(), key=lambda job: job["created"], reverse=True)[:60]
+
+    def works(self, query=None):
+        records = recent_works(self.outputs, limit=24 if query is None else None)
+        with self.connect() as db:
+            if query is None:
+                for item in records:
+                    row = db.execute("SELECT details FROM creations WHERE name=?", (item["name"],)).fetchone()
+                    if row:
+                        item.update(json.loads(row[0]))
+            else:
+                details = dict(db.execute("SELECT name, details FROM creations"))
+                for item in records:
+                    if item["name"] in details:
+                        item.update(json.loads(details[item["name"]]))
+        if query is None:
+            return records
+        kind = field(query, "kind", 12, optional=True)
+        model = field(query, "model", 160, optional=True)
+        term = field(query, "query", 180, optional=True).casefold()
+        offset = query.get("offset", 0)
+        if (kind and kind not in MODELS or query.get("sort") not in (None, "newest", "oldest")
+                or type(offset) is not int or offset < 0):
+            raise ValueError("作品篩選條件無效。")
+        models = sorted({item["model"] for item in records if item.get("model")})
+        matches = [item for item in records if (not kind or item["kind"] == kind)
+                   and (not model or item.get("model") == model)
+                   and (not term or any(term in item.get(key, "").casefold()
+                                        for key in ("name", "model", "workflow", "prompt", "lyrics")))]
+        if query.get("sort") == "oldest":
+            matches.reverse()
+        page = matches[offset:offset + 24]
+        for item in page:
+            if not item.get("dimensions"):
+                item["dimensions"] = media_metadata(self.outputs / item["name"])
+        return {"items": page, "models": models, "total": len(matches)}
 
     def prepare(self, data, cancel, update):
         name = field(data, "model", 180)
@@ -598,11 +633,14 @@ class Desktop(Workspace):
         if action == "media" and result and result.get("file"):
             kind = field(data, "kind", 12)
             selected = field(data, "workflow", 40, optional=True) or DEFAULT_WORKFLOWS[kind]
-            details = {"workflow":selected, "model":workflow_spec(kind, selected)[1],
+            name = result["file"].rsplit("/", 1)[-1]
+            details = {"workflow":selected, "model":MODELS[kind][1], "schema":1, "status":"completed",
+                       "source":result.get("source"), "runtime":"local-comfyui",
+                       "dimensions":media_metadata(self.outputs / name),
                        "prompt":field(data, "prompt", 12000), "lyrics":field(data, "lyrics", 12000, optional=True),
                        "options":workflow_options(kind, selected, data.get("options"))}
             with self.connect() as db:
-                db.execute("INSERT INTO creations VALUES(?,?)", (result["file"].rsplit("/", 1)[-1], json.dumps(details)))
+                db.execute("INSERT INTO creations VALUES(?,?)", (name, json.dumps(details)))
         return result
 
     def rpc(self, op, data):
@@ -684,13 +722,15 @@ class Desktop(Workspace):
             self.save_model_source(path.name, path, {"verification": "imported"})
             return None
         if op == "works":
-            records = recent_works(self.outputs)
-            with self.connect() as db:
-                for item in records:
-                    row = db.execute("SELECT details FROM creations WHERE name=?", (item["name"],)).fetchone()
-                    if row:
-                        item.update(json.loads(row[0]))
-            return records
+            return self.works()
+        if op == "works-library":
+            return self.works(data)
+        if op == "work-open":
+            path = work_file(self.outputs, field(data, "name", 20))
+            if os.name != "nt":
+                raise ValueError("開啟原始檔案需要 Windows 桌面。")
+            os.startfile(path)
+            return None
         if op == "search":
             return search_models(field(data, "query", 180, optional=True))
         if op == "files":

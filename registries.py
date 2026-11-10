@@ -1,5 +1,6 @@
 """Discovery and capability records used by the desktop application."""
 import re
+import struct
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -72,18 +73,105 @@ def workspace_registry(info, models, engine_version, sources):
             "media_models":[media_manifest(kind) for kind in DEFAULT_WORKFLOWS]}
 
 
+WORK_KINDS = {".png":"image", ".webm":"video", ".flac":"music"}
+
+
+def work_file(directory, name):
+    if not re.fullmatch(r"[a-f0-9]{12}\.(png|webm|flac)", name):
+        raise ValueError("作品檔名無效。")
+    path = directory / name
+    if directory.resolve() != directory.absolute() or path.is_symlink() or path.resolve() != path.absolute() or not path.is_file():
+        raise ValueError("找不到作品原始檔案，請確認檔案是否被移動。")
+    return path
+
+
+def webm_metadata(stream, file_size):
+    def vint(identifier=False):
+        first = stream.read(1)[0]
+        width = 9 - first.bit_length()
+        if width > (4 if identifier else 8):
+            raise ValueError("invalid EBML field")
+        rest = stream.read(width - 1)
+        if len(rest) != width - 1:
+            raise ValueError("short EBML field")
+        value = int.from_bytes(bytes([first]) + rest, "big")
+        if identifier:
+            return value
+        value ^= 1 << (7 * width)
+        return None if value == (1 << (7 * width)) - 1 else value
+
+    def elements(end):
+        for _ in range(256):
+            if stream.tell() >= end:
+                break
+            tag, size = vint(True), vint()
+            start = stream.tell()
+            limit = end if size is None else start + size
+            if limit > end:
+                raise ValueError("EBML element exceeds its container")
+            yield tag, limit, size
+            stream.seek(limit)
+
+    scale, duration = 1_000_000, None
+    dimensions = {}
+    try:
+        for tag, segment, _ in elements(file_size):
+            if tag != 0x18538067:  # Segment
+                continue
+            for tag, boundary, _ in elements(segment):
+                if tag == 0x1549A966:  # Info
+                    for key, _, size in elements(boundary):
+                        if key == 0x2AD7B1 and size in range(1, 9):
+                            scale = int.from_bytes(stream.read(size), "big")
+                        elif key == 0x4489 and size in (4, 8):
+                            duration = struct.unpack(">f" if size == 4 else ">d", stream.read(size))[0]
+                if tag == 0x1654AE6B:  # Tracks
+                    for key, track, _ in elements(boundary):
+                        if key != 0xAE:
+                            continue
+                        for key, video, _ in elements(track):
+                            if key != 0xE0:
+                                continue
+                            for key, _, size in elements(video):
+                                if key in (0xB0, 0xBA) and size in range(1, 5):
+                                    pixels = int.from_bytes(stream.read(size), "big")
+                                    dimensions["width" if key == 0xB0 else "height"] = pixels
+            break
+    except (IndexError, OSError, ValueError, struct.error):
+        return {}
+    if duration and 0 < duration * scale < float("inf"):
+        dimensions["duration"] = duration * scale / 1_000_000_000
+    return dimensions
+
+
+def media_metadata(path):
+    """Read media metadata without decoding or loading the full file."""
+    try:
+        with path.open("rb") as stream:
+            if path.suffix == ".webm":
+                return webm_metadata(stream, path.stat().st_size)
+            header = stream.read(42)
+    except OSError:
+        return {}
+    if path.suffix == ".png" and len(header) >= 24 and header[:16] == b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR":
+        width, height = struct.unpack(">II", header[16:24])
+        if width and height:
+            return {"width": width, "height": height}
+    if path.suffix == ".flac" and len(header) == 42 and header[:4] == b"fLaC" and header[4] & 127 == 0 and header[5:8] == b"\x00\x00\x22":
+        packed = int.from_bytes(header[18:26], "big")
+        sample_rate, samples = packed >> 44, packed & (2**36 - 1)
+        if sample_rate and samples:
+            return {"duration": samples / sample_rate}
+    return {}
+
+
 def recent_works(directory, limit=24):
-    kinds = {".png":"image", ".webm":"video", ".flac":"music"}
     records = []
     for path in directory.glob("*"):
-        if not re.fullmatch(r"[a-f0-9]{12}\.(png|webm|flac)", path.name) or path.is_symlink():
-            continue
         try:
-            stat = path.stat()
-            if not path.is_file():
-                continue
-        except OSError:
+            stat = work_file(directory, path.name).stat()
+        except (OSError, ValueError):
             continue
-        records.append({"name":path.name, "kind":kinds[path.suffix], "bytes":stat.st_size,
+        records.append({"name":path.name, "kind":WORK_KINDS[path.suffix], "bytes":stat.st_size,
                         "created":datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()})
-    return sorted(records, key=lambda record: record["created"], reverse=True)[:limit]
+    return sorted(records, key=lambda record: (record["created"], record["name"]), reverse=True)[:limit]

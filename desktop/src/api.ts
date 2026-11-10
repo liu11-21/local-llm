@@ -7,7 +7,7 @@ export type EngineStatus = { state: 'not_installed' | 'installed' | 'starting' |
   code?: string | null; hint?: string | null; checked_at?: string }
 export type EngineHealth = { llama: EngineStatus; comfyui: EngineStatus }
 export type Recommendation = { repo: string; name: string; description: string; size: number; url: string; fit: string }
-export type WorkflowParameter = { key: string; label: string; type: 'integer' | 'text'; default: number | string | null; min: number; max: number; step: number }
+export type WorkflowParameter = { key: string; label: string; type: 'integer' | 'text'; default: number | string | null; min: number; max: number; step: number; basic?: boolean }
 export type MediaKind = 'image' | 'video' | 'music'
 export type Workflow = { id: string; label: string; kind: MediaKind; models: string[]; output: string; parameters: WorkflowParameter[] }
 export type MediaWeight = { filename: string; path: string; url: string; bytes: number; sha256: string }
@@ -15,7 +15,10 @@ export type MediaModel = { id: string; label: string; kind: MediaKind; publisher
   source: string; revision: string; license: string; terms: string; weights: MediaWeight[]; ram: number | null; vram: number | null }
 export type MediaInstallPlan = { model: MediaModel; target: string; profile: string; installed: boolean;
   files: (MediaWeight & {status: 'missing' | 'present' | 'conflict'})[]; free: number; needed: number; conflict: boolean }
-export type Work = { name: string; kind: MediaKind; created: string; bytes: number; model?: string; workflow?: string; prompt?: string; lyrics?: string; options?: Params }
+export type WorkDimensions = { width?: number; height?: number; duration?: number }
+export type Work = { name: string; kind: MediaKind; created: string; bytes: number; model?: string; workflow?: string; prompt?: string;
+  lyrics?: string; options?: Params; schema?: number; runtime?: string; status?: string; dimensions?: WorkDimensions;
+  source?: {engine: string; job: string; original: string} }
 export type Registry = {
   models: { id: string; label: string; bytes: number; quantization: string | null; format: string; publisher?: string; ram: number;
     verification: 'verified' | 'known' | 'imported' | 'unknown'; repository?: string; version?: string; source?: string;
