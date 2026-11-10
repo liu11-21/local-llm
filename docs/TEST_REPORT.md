@@ -9,6 +9,8 @@
 | PASS | Windows 本機 Python 共 77 項測試，73 項通過，4 項 TLS 回環案例移至乾淨的 CI 環境。本機 DPAPI、記憶體 TLS 正確與錯誤 IP 身分、SSE 重連不重複輸出、推薦政策及權重驗證失效均通過。 |
 | PASS | Windows CI 的受控 Host／Client 測試涵蓋 TLS、無授權拒絕、協定版本、配對、撤銷、配對持久化、同一任務重送、任務所有權和取消。推理使用受控的模型回應。 [第一輪 Host／Client CI](https://github.com/liu11-21/local-llm/actions/runs/42771568190) |
 | PASS | Chromium 深淺模式，1280×900、1024×768、800×600、650×720。測試啟用與停止 Host、長主機名稱、建立邀請、無效邀請、能力比較，以及既有 Agent、Team 與創作。 [實際 UI](UI_DESIGN.md#batch-3d3e-私人遠端運算) |
+| PASS | `1704f45` 通過 Windows Server 2022 x64 CI，包括受控 HTTPS 配對後從桌面聊天提交、儲存回答來源、封裝與安裝／卸載。 [Windows CI](https://github.com/liu11-21/local-llm/actions/runs/42817141781) |
+| PASS | 已下載 ZIP，核對 GitHub 的 ZIP SHA-256、`BUILD.json` 提交和安裝 EXE。EXE SHA-256 為 `17454342b4f122c662132efe04be130395f1b437fe6f073b2fc0bed411b0db6a`。 [Windows 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42817141781/artifacts/13764692723) |
 | NEEDS REMOTE HOST | 兩台實體 Windows 電腦之間的 LAN／VPN、防火牆、TLS、長時間斷線和重連驗收。 |
 | NEEDS GPU | 遠端實體 GPU 上的 llama.cpp 載入、生成效能及 CPU 回退需要另行驗收。 |
 | NEEDS CLOUD AUTH | 推薦只讀取能力，Colab Enterprise 及雲端推理的付費路徑沿用既有契約，這次沒有提交測試推理。 |
