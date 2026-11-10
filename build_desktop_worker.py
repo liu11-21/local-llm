@@ -28,6 +28,11 @@ def main():
     packager = distribution("PyInstaller")
     license_file = next(file for file in packager.files if file.name == "COPYING.txt")
     shutil.copyfile(packager.locate_file(license_file), notices / "PyInstaller-COPYING.txt")
+    for name in ("cryptography", "cffi", "pycparser"):
+        package = distribution(name)
+        for file in package.files or ():
+            if file.name.startswith("LICENSE"):
+                shutil.copyfile(package.locate_file(file), notices / f"{name}-{file.name}.txt")
 
 
 if __name__ == "__main__":

@@ -117,6 +117,10 @@ if __name__ == "__main__":
                 return {}
 
             def rpc(self, op, data):
+                if op == "remote-host-networks":
+                    return {**super().rpc(op, data), "addresses":["127.0.0.1"]}
+                if op == "remote-host-start-auto":
+                    return super().rpc(op, {**data, "port":free_port()})
                 if op == "fixture-host-credentials":
                     certificate, key = make_certificate(self.data)
                     return {"certificate": str(certificate), "key": str(key), "port": free_port()}

@@ -6,8 +6,10 @@ type Host = {
   state: 'stopped' | 'starting' | 'ready' | 'busy' | 'unhealthy' | 'stopping' | 'failed'
   error?: string; label?: string; address?: string; port?: number; models?: string[]; listening: boolean
   peers: {id:string; label:string}[]
+  fingerprint?: string
   engine?: {installed:boolean; accepting:boolean; busy:boolean; error?:string; engine_state:string; model_loaded:boolean}
 }
+type Networks = {addresses: string[]; address?: string; fingerprint?: string; expires?: number; has_peers: boolean}
 const states = {stopped:'已停止', starting:'啟動中', ready:'分享中', busy:'忙碌', unhealthy:'異常',
   stopping:'停止中', failed:'啟動失敗'}
 
@@ -24,11 +26,21 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
   const [invite, setInvite] = useState('')
   const [code, setCode] = useState('')
   const [device, setDevice] = useState('我的筆電')
+  const [networks,setNetworks] = useState<Networks>()
+  const [network,setNetwork] = useState('')
   const [recoveryHost, setRecoveryHost] = useState('')
   const [request, setRequest] = useState('')
   const [recovered, setRecovered] = useState<{state:string; answer?:string; message?:string}>()
   const peers = info?.providers.filter(item => item.kind === 'paired') ?? []
   const running = host?.listening === true
+  const selectedNetwork = network || (networks?.address && networks.addresses.includes(networks.address) ?
+    networks.address : networks?.addresses[0]) || ''
+  const renew = !!networks && (!!networks.expires && networks.expires * 1000 - Date.now() < 14 * 86400000 ||
+    !!networks.address && networks.address !== selectedNetwork || !networks.fingerprint && networks.has_peers)
+
+  async function refreshNetworks() {
+    setNetworks(await rpc<Networks>('remote-host-networks'))
+  }
 
   useEffect(() => {
     let mounted = true
@@ -37,6 +49,7 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
       error => {if (mounted) setIssue(error instanceof Error ? error.message : String(error))},
     )
     check()
+    void refreshNetworks().catch(error=>{if(mounted) setIssue(error instanceof Error ? error.message : String(error))})
     const timer = window.setInterval(check, 2200)
     return () => { mounted = false; window.clearInterval(timer) }
   }, [])
@@ -52,8 +65,9 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
     <Panel title="連接我的遠端電腦" description="在高效能電腦建立邀請，再透過信任的管道複製到這台電腦。">
       <form className="runtime-endpoint" onSubmit={event => {
         event.preventDefault()
-        if (!window.confirm('確認邀請由您信任的運算主機直接提供？')) return
         void change(async () => {
+          const identity = await rpc<{address:string;port:number;fingerprint:string}>('remote-client-preview',{invite:code})
+          if (!window.confirm(`主機 ${identity.address}:${identity.port}\nSHA-256 ${identity.fingerprint}\n請與主機畫面核對指紋，確認信任後再配對。`)) return
           await rpc('remote-client-pair', {invite:code, label:device, confirmed:true})
           setCode(''); setNote('已配對。請在聊天選擇這台主機。'); await refresh()
         })
@@ -107,7 +121,27 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
     <Panel title="將此電腦設為運算主機" description="允許已配對裝置在私人網路使用這台電腦的文字模型。">
       <p className="section-note" role="status">{host ? states[host.state] : '正在讀取主機狀態…'}</p>
       {host?.error && <p className="pre creation-error">{host.error}</p>}
-      {!running && <form onSubmit={event => {
+      {!running && <>
+        <label>主機名稱<input required maxLength={100} value={name} onChange={e=>setName(e.target.value)}/></label>
+        <label>私人網路<select aria-label="私人網路" value={selectedNetwork} onChange={e=>setNetwork(e.target.value)}>
+          {!selectedNetwork && <option value="">沒有偵測到私人 IPv4</option>}
+          {networks?.addresses.map(ip=><option key={ip}>{ip}</option>)}
+        </select></label>
+        <p className="small section-note">{renew ? '位址或信任資料有變更。更新憑證後，舊裝置需要重新配對。' :
+          '工作台會配置 TLS 憑證並建立一次性邀請。'}</p>
+        <div className="row creation-actions section-note">
+          <button className="button primary" disabled={busy || !selectedNetwork || !name.trim()} onClick={()=>{
+            if (!window.confirm(renew ? '更新主機憑證並撤銷現有配對？' : '允許在所選私人網路分享這台電腦的算力？')) return
+            void change(async()=>{
+              const active = await rpc<Host>('remote-host-start-auto',{label:name,address:selectedNetwork,confirmed:true,replace:renew})
+              setHost(active)
+              setInvite(await rpc('remote-host-invite',{confirmed:true}))
+              await refreshNetworks()
+            })
+          }}>分享此電腦算力</button>
+          <button className="button" disabled={busy} onClick={()=>void change(refreshNetworks)}>重新偵測網路</button>
+        </div>
+        <details className="section-note"><summary>進階：手動憑證與連接埠</summary><form onSubmit={event => {
         event.preventDefault()
         if (!window.confirm('允許在指定私人網路位址分享本機文字模型？')) return
         void change(async () => {
@@ -115,21 +149,19 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
           setKeyFile('')
         })
       }}>
-        <label>主機名稱<input required maxLength={100} value={name} onChange={e=>setName(e.target.value)}/></label>
         <label>本機私人 IPv4 位址<input required value={address} placeholder="192.168.1.20" onChange={e=>setAddress(e.target.value)}/></label>
-        <details open className="section-note"><summary>進階 TLS 設定</summary>
           <label>HTTPS 連接埠<input required type="number" min={1024} max={65535} value={port} onChange={e=>setPort(+e.target.value)}/></label>
           <label>公開 PEM 憑證路徑<input required value={certificate} onChange={e=>setCertificate(e.target.value)}/></label>
           <label>PEM 私鑰路徑<input required value={keyFile} onChange={e=>setKeyFile(e.target.value)}/></label>
           <p className="small pre">憑證必須包含上面的私人 IP。由您信任的管理者配置憑證與私鑰。</p>
-        </details>
         <button className="button primary section-note" disabled={busy || !host}>啟用運算主機</button>
-      </form>}
+      </form></details></>}
       {running && <div className="section-note">
         <p className="pre">{host?.label} · {host?.address}:{host?.port}</p>
         <p className="small pre">{host?.engine?.accepting ? '可接收文字任務' : host?.engine?.error} · {host?.models?.length ?? 0} 個模型</p>
         <p className="small pre">文字引擎 {host?.engine?.model_loaded ? '已載入模型' : '尚未載入模型'} ·
           本機可用 RAM {info?.hardware.ram_available != null ? gb(info.hardware.ram_available) : '未知'}</p>
+        {host?.fingerprint && <details><summary>核對主機指紋</summary><p className="small pre">SHA-256 {host.fingerprint}</p></details>}
         <div className="row creation-actions">
           <button className="button primary" disabled={busy || host?.state === 'failed'} onClick={()=>void change(async()=>{
             setInvite(await rpc('remote-host-invite',{confirmed:true}))
@@ -138,8 +170,9 @@ export function RemoteWorkspace({info, refresh, openChat}: {info?:Info; refresh:
             setHost(await rpc('remote-host-stop'));setInvite('')
           })}>停止分享算力</button>
         </div>
-        {invite && <label className="section-note">複製邀請給受信任的裝置（5 分鐘有效）
-          <textarea aria-label="複製配對邀請" value={invite} readOnly onFocus={event=>event.currentTarget.select()}/></label>}
+        {invite && <><label className="section-note">複製邀請給受信任的裝置（5 分鐘有效）
+          <textarea aria-label="複製配對邀請" value={invite} readOnly onFocus={event=>event.currentTarget.select()}/></label>
+          <button className="button" onClick={()=>void change(async()=>{await navigator.clipboard.writeText(invite);setNote('已複製邀請。')})}>複製邀請</button></>}
       </div>}
       {!!host?.peers.length && <details open className="section-note"><summary>已配對裝置</summary>
         {host.peers.map(peer=><div className="list-row pre" key={peer.id}><span>{peer.label}</span>

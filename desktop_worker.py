@@ -36,6 +36,7 @@ from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
 from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
 from remote_client import RemoteClients
+from remote_tls import ManagedTLS, inspect_invite
 from remote_host import ANSWER_LIMIT, Host
 from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import POLICIES, Providers, route
@@ -159,6 +160,7 @@ class Desktop(Workspace):
         self.remote_host = Host(self.connect, self.scheduler, self.host_models, self.host_engine, self.host_resources,
                                 self.host_model_ram)
         self.remote_clients = RemoteClients(self.connect)
+        self.remote_tls = ManagedTLS(self.connect, self.remote_host)
 
     @contextmanager
     def connect(self):
@@ -812,6 +814,15 @@ class Desktop(Workspace):
             return self.resource_monitor.sample(self.models)
         if op == "task-preflight":
             return self.task_preflight(data)
+        if op == "remote-host-networks":
+            return self.remote_tls.settings()
+        if op == "remote-host-start-auto":
+            if data.get("confirmed") is not True:
+                raise ValueError("請確認要分享本機算力。")
+            return self.remote_tls.start(field(data, "address", 45), data.get("port", 9443),
+                                         field(data, "label", 100), replace=data.get("replace") is True)
+        if op == "remote-client-preview":
+            return inspect_invite(field(data, "invite", 24576))
         if op == "remote-client-pair":
             if data.get("confirmed") is not True:
                 raise ValueError("請先確認邀請來自您信任的運算主機。")

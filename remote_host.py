@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from secrets import compare_digest, token_urlsafe
 import ssl
+from sqlite3 import Error as DatabaseError
 from threading import BoundedSemaphore, Lock, Thread, Timer
 from time import monotonic, sleep
 from uuid import uuid4
@@ -86,7 +87,7 @@ class Host:
         if not db.execute("SELECT 1 FROM remote_host_identity").fetchone():
             db.execute("INSERT INTO remote_host_identity VALUES(?)", (uuid4().hex,))
 
-    def start(self, bind, port, label, cert, key):
+    def start(self, bind, port, label, cert, key, *, password=b"", configure=None):
         bind = private_ip(bind)
         if (type(port) is not int or not 1024 <= port <= 65535 or not 0 < len(label.strip()) <= 100
                 or any(ord(char) < 32 for char in label)):
@@ -108,11 +109,19 @@ class Host:
                 self.certificate = leaf.group()
                 ssl.PEM_cert_to_DER_cert(self.certificate)
                 # Disallow OpenSSL's interactive password prompt in the IPC worker.
-                context.load_cert_chain(cert, key, password=lambda: b"")
+                context.load_cert_chain(cert, key, password=lambda: password)
                 with self.connect() as db:
                     self.id = db.execute("SELECT id FROM remote_host_identity").fetchone()[0]
-                self.server = HostServer((bind, port), context, self)
-            except (OSError, ValueError):
+                server = HostServer((bind, port), context, self)
+                try:
+                    if configure:
+                        with self.connect() as db:
+                            configure(db)
+                except Exception:
+                    server.server_close()
+                    raise
+                self.server = server
+            except (OSError, ValueError, DatabaseError):
                 self.state, self.error = "failed", "無法啟用 Host。請檢查私人位址、連接埠、PEM 憑證及私鑰。"
                 raise ValueError(self.error) from None
             self.label, self.address, self.port = label.strip(), bind, port
@@ -152,7 +161,8 @@ class Host:
             active = self.state == "ready"
             result = {"state": self.state, "error": self.error, "peers": peers, "listening": self.server is not None}
             if self.server:
-                result.update(label=self.label, address=self.address, port=self.port)
+                result.update(label=self.label, address=self.address, port=self.port,
+                              fingerprint=sha256(ssl.PEM_cert_to_DER_cert(self.certificate)).hexdigest().upper())
             if active:
                 engines = self.engine_status()
                 result.update(engine=engines, models=self.model_names(),

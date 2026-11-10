@@ -125,9 +125,18 @@ try {
     }
   }
   await page.getByLabel('主機配對邀請').fill('invalid invitation')
-  page.once('dialog', dialog => dialog.accept())
   await button('配對主機').click()
   await page.getByRole('alert').getByText(/配對邀請無效/).waitFor()
+  page.once('dialog', dialog => dialog.accept())
+  await button('分享此電腦算力').click()
+  const automaticInvite = page.getByLabel('複製配對邀請',{exact:true})
+  await automaticInvite.waitFor()
+  const identity = JSON.parse(Buffer.from(await automaticInvite.inputValue(),'base64').toString('utf-8'))
+  assert.equal(identity.host,'127.0.0.1')
+  await page.getByText('核對主機指紋',{exact:true}).click()
+  await page.getByText(/SHA-256 [0-9A-F]{64}/).waitFor()
+  await button('停止分享算力').click()
+  await button('分享此電腦算力').waitFor()
   const tls = await page.evaluate(async () => {
     const response = await fetch('/__desktop_dev_rpc',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({op:'fixture-host-credentials',data:{}})})
@@ -135,6 +144,7 @@ try {
   })
   const longHost = '家用遠端電腦'.repeat(12)
   await page.getByLabel('主機名稱',{exact:true}).fill(longHost)
+  await page.getByText('進階：手動憑證與連接埠',{exact:true}).click()
   await page.getByLabel('本機私人 IPv4 位址').fill('127.0.0.1')
   await page.getByLabel('HTTPS 連接埠').fill(String(tls.port))
   await page.getByLabel('公開 PEM 憑證路徑').fill(tls.certificate)
@@ -153,7 +163,7 @@ try {
   await invitation.waitFor()
   assert((await invitation.inputValue()).length > 100)
   await button('停止分享算力').click()
-  await button('啟用運算主機').waitFor()
+  await button('分享此電腦算力').waitFor()
   await page.locator('summary').filter({hasText:'比較運算環境'}).click()
   await page.getByLabel('比較任務').selectOption('notebook')
   await button('比較能力').click()
