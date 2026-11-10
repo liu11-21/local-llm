@@ -348,6 +348,9 @@ class Handler(BaseHTTPRequestHandler):
             peer = host.authenticate(self.headers.get("Authorization", ""))
             if self.command == "GET" and self.path == "/v1/capabilities":
                 self.reply(host.capabilities())
+            elif self.command == "POST" and self.path == "/v1/unpair":
+                host.revoke(peer)
+                self.reply({"revoked": True})
             elif self.command == "POST" and self.path == "/v1/jobs":
                 self.reply(host.submit(peer, self.body()), 202)
             elif match := JOB_PATH.fullmatch(self.path):

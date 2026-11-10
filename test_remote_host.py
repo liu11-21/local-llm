@@ -10,6 +10,7 @@ import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
+from threading import Event
 from uuid import uuid4
 
 from desktop_worker import Desktop
@@ -122,3 +123,27 @@ class HostProtocolTests(unittest.TestCase):
         for forbidden in ("0.0.0.0", "8.8.8.8", "example.com"):
             with self.subTest(forbidden=forbidden), self.assertRaises(ValueError):
                 private_ip(forbidden)
+
+    @unittest.skipUnless(os.name == "nt", "DPAPI requires Windows")
+    def test_client_pairs_streams_reopens_and_revokes(self):
+        from remote_client import RemoteClients
+        folder = TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        client = Desktop(Path(folder.name))
+        self.addCleanup(client.close)
+
+        def infer(_data, _cancel, update):
+            update(answer="測試回答")
+
+        self.worker.host_chat = infer
+        client.rpc("remote-client-pair", {"invite": self.host.issue(), "label":"laptop", "confirmed":True})
+        stored = client.remote_clients.get(self.host.id)
+        self.assertEqual(list(stored.stream("demo.gguf", [{"role":"user","content":"hello"}], 128, 0.4, Event())),
+                         ["測試回答"])
+        with client.connect() as db:
+            self.assertNotIn(stored.token.encode(), bytes(db.execute("SELECT protected FROM remote_client_secrets").fetchone()[0]))
+        restored = RemoteClients(client.connect)
+        self.assertFalse(restored.get(stored.id).summary()["connected"])
+        self.assertTrue(restored.get(stored.id).discover()["connected"])
+        self.assertTrue(restored.remove(stored.id)["revoked"])
+        self.assertEqual(self.host.status()["peers"], [])

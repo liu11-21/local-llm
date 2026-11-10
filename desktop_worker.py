@@ -35,6 +35,7 @@ from hardware import detect_hardware, estimate_ram
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
 from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
+from remote_client import RemoteClients
 from remote_host import ANSWER_LIMIT, Host
 from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import Providers, route
@@ -135,6 +136,8 @@ class Desktop(Workspace):
                   prompt TEXT, answer TEXT, steps TEXT, created TEXT DEFAULT CURRENT_TIMESTAMP);
               CREATE TABLE IF NOT EXISTS task_metadata(id TEXT PRIMARY KEY, snapshot TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS creations(name TEXT PRIMARY KEY, details TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS chat_runtime(chat TEXT NOT NULL, message INTEGER NOT NULL, runtime TEXT NOT NULL,
+                  model TEXT NOT NULL, provider TEXT NOT NULL, PRIMARY KEY(chat,message));
               CREATE TABLE IF NOT EXISTS model_sources(name TEXT PRIMARY KEY COLLATE NOCASE, details TEXT NOT NULL);
             """)
             db.execute("UPDATE tasks SET state='interrupted', message='工作台已關閉。' WHERE state IN ('running','queued','paused')")
@@ -145,19 +148,25 @@ class Desktop(Workspace):
             self.agent_plans.initialize(db)
             self.team_store.initialize(db)
             Host.initialize(db)
-            if db.execute("PRAGMA user_version").fetchone()[0] < 4:
-                db.execute("PRAGMA user_version=4")
+            if db.execute("PRAGMA user_version").fetchone()[0] < 5:
+                db.execute("PRAGMA user_version=5")
         recover_downloads(self.download_cache, self.models, pinned_model, clean=True)
         self.scheduler = TaskManager(self.perform, self.save_task)
         self.remote_host = Host(self.connect, self.scheduler, self.host_models, self.host_engine, self.host_resources)
+        self.remote_clients = RemoteClients(self.connect)
 
     @contextmanager
     def connect(self):
         with closing(sqlite3.connect(self.database, timeout=5)) as db, db:
             yield db
 
-    def history(self, chat):
+    def history(self, chat, with_runtime=False):
         with self.connect() as db:
+            if with_runtime:
+                return [{"role": role, "content": text, **({"runtime": runtime, "model": model, "provider": provider} if runtime else {})}
+                        for role, text, runtime, model, provider in db.execute("""SELECT messages.role,messages.text,
+                        r.runtime,r.model,r.provider FROM messages LEFT JOIN chat_runtime AS r
+                        ON r.chat=messages.chat AND r.message=messages.rowid WHERE messages.chat=? ORDER BY messages.rowid""", (chat,))]
             return [{"role": role, "content": value} for role, value in db.execute(
                 "SELECT role,text FROM messages WHERE chat=? ORDER BY rowid", (chat,))]
 
@@ -328,7 +337,7 @@ class Desktop(Workspace):
     def runtime_capabilities(self, info):
         active = sum(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
         return [local_capability(info, self.engine_health(), active),
-                *(external_capability(item) for item in info["providers"]),
+                *(item.get("capability") or external_capability(item) for item in info["providers"]),
                 colab_capability(info["colab_ready"])]
 
     def host_models(self):
@@ -620,8 +629,9 @@ class Desktop(Workspace):
             if type(budget) is not int or not 64 <= budget <= 2048 or type(temperature) not in (int, float) or not 0 <= temperature <= 2:
                 raise ValueError("生成參數超出範圍。")
             chosen = route(data.get("policy", "auto"), data.get("runtime", "local"), data.get("consent") is True)
+            paired = self.remote_clients.items.get(chosen)
             if chosen != "local":
-                provider = self.providers.get(chosen)
+                provider = paired or self.providers.get(chosen)
                 plan = None
             else:
                 plan = self.prepare(data, cancel, update)
@@ -637,8 +647,12 @@ class Desktop(Workspace):
                          "omitted_turns": (original - len(messages)) // 2}
             update(message="正在生成回答…", answer="", usage=usage)
             answer = ""
-            stream = (self.local.stream(messages, max_tokens=budget, temperature=temperature, cancel=cancel)
-                      if chosen == "local" else provider.stream(model, messages, budget, temperature, cancel))
+            if chosen == "local":
+                stream = self.local.stream(messages, max_tokens=budget, temperature=temperature, cancel=cancel)
+            elif paired:
+                stream = paired.stream(model, messages, budget, temperature, cancel, update)
+            else:
+                stream = provider.stream(model, messages, budget, temperature, cancel)
             with closing(stream):
                 for token in stream:
                     if cancel.is_set():
@@ -665,6 +679,12 @@ class Desktop(Workspace):
                 else:
                     db.executemany("INSERT INTO messages VALUES(?,?,?)",
                                    [(chat, "user", prompt), (chat, "assistant", answer)])
+                message = db.execute("SELECT max(rowid) FROM messages WHERE chat=?", (chat,)).fetchone()[0]
+                provider_label = "Local LLM" if chosen == "local" else getattr(provider, "label", "OpenAI-compatible")
+                if not isinstance(provider_label, str):
+                    provider_label = "OpenAI-compatible"
+                db.execute("INSERT OR REPLACE INTO chat_runtime VALUES(?,?,?,?,?)",
+                           (chat, message, chosen, model, provider_label))
                 db.execute("INSERT OR REPLACE INTO settings VALUES('recent_model',?)", (model,))
             return {"answer": answer, "plan": plan, "usage": usage, "message": "回答已儲存。"}
         if action == "media":
@@ -710,6 +730,18 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == "remote-client-pair":
+            if data.get("confirmed") is not True:
+                raise ValueError("請先確認邀請來自您信任的運算主機。")
+            return self.remote_clients.pair(field(data, "invite", 24576), field(data, "label", 80))
+        if op in ("remote-client-refresh", "remote-client-job", "remote-client-remove"):
+            id = identifier(data.get("id"))
+            if op == "remote-client-remove":
+                return self.remote_clients.remove(id)
+            client = self.remote_clients.get(id)
+            if op == "remote-client-job":
+                return client.job(data.get("request"))
+            return client.discover()
         if op == "remote-host-status":
             return self.remote_host.status()
         if op == "remote-host-start":
@@ -784,7 +816,8 @@ class Desktop(Workspace):
                 executable = engine_path(self.data)
                 self.hardware_cache = engine_devices(executable) if executable else []
             info.update(devices=self.hardware_cache, active=self.active if self.local.running() else None,
-                        media=MODELS, output_folder=str(self.outputs), providers=self.providers.list())
+                        media=MODELS, output_folder=str(self.outputs),
+                        providers=self.providers.list() + [item.summary() for item in self.remote_clients.items.values()])
             info["comfy_profiles_installed"] = [name for name in PROFILES if installed(install_directory(self.data / "comfyui", name))]
             info["comfy_installed"] = bool(info["comfy_profiles_installed"])
             info["colab_ready"] = self.providers.colab.capabilities()["available"]
@@ -797,7 +830,8 @@ class Desktop(Workspace):
             return info
         if op in ("runtime-capabilities", "runtime-capability-refresh"):
             if op == "runtime-capability-refresh":
-                provider = self.providers.get(field(data, "id", 32))
+                id = field(data, "id", 32)
+                provider = self.remote_clients.items.get(id) or self.providers.get(id)
                 provider.discover()
             return [{"capability": item, "fresh": fresh(item)} for item in self.runtime_capabilities(self.rpc("info", {}))]
         if op == "model-imported":
@@ -847,7 +881,7 @@ class Desktop(Workspace):
         if op == "task-retry":
             return self.scheduler.retry(field(data, "id", 32))
         if op == "history":
-            return self.history(chat_id(data))
+            return self.history(chat_id(data), with_runtime=data.get("with_runtime") is True)
         if op in ("chat-rename", "chat-delete"):
             chat = chat_id(data)
             if self.scheduler.has_chat(chat):
@@ -859,6 +893,7 @@ class Desktop(Workspace):
                     if data.get("confirmed") is not True:
                         raise ValueError("請先確認刪除此對話。")
                     db.execute("DELETE FROM messages WHERE chat=?", (chat,))
+                    db.execute("DELETE FROM chat_runtime WHERE chat=?", (chat,))
                     db.execute("DELETE FROM chats WHERE id=?", (chat,))
             return None
         if op == "chats":
