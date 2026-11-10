@@ -36,6 +36,7 @@ export type Registry = {
   media_models?: MediaModel[];
 }
 export type Info = {
+  dedicated_vram_available?: number | null;
   models: string[]; model_folder: string; output_folder: string; engine: boolean;
   hardware: { cpu_threads: number | null; ram_total: number | null; ram_available: number | null; disk_available: number | null };
   active: [string, string, number, Plan] | null; devices: [string, number, boolean][]; recent_model: string | null;

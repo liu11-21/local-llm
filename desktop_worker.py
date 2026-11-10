@@ -42,6 +42,7 @@ from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import POLICIES, Providers, route
 from runtime_contract import colab_capability, external_capability, fresh, local_capability, observed
 from runtime_recommendation import TASK_FORMAT, compare
+from onboarding import onboarding_plan
 from task_manager import TaskManager, timestamp
 from team_workflow import ROLES as TEAM_ROLES, TeamStore, run_team as run_team_workflow, specification, templates
 from tool_registry import builtins as agent_tools
@@ -810,6 +811,10 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == "onboarding-plan":
+            task = field(data, "task", 20)
+            info = self.rpc("info", {})
+            return onboarding_plan(info, self.runtime_capabilities(info), task, data.get("policy", "auto"))
         if op == "system-resources":
             return self.resource_monitor.sample(self.models)
         if op == "task-preflight":

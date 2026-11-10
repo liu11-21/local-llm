@@ -272,6 +272,35 @@ try {
   assert.equal(await page.getByText('受控測試回答',{exact:true}).count(),1)
   assert.equal(chatSubmissions,1)
   console.log('PASS workspace shell, resource monitor, TLS provisioning and destination consent')
+  await page.evaluate(async () => {
+    await fetch('/__desktop_dev_rpc',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({op:'fixture-first-use',data:{}})})
+  })
+  await page.reload()
+  let guide = page.getByRole('dialog',{name:'開始使用 Local LLM'})
+  await guide.getByRole('button',{name:'開始使用',exact:true}).click()
+  await guide.getByText('CPU 執行緒',{exact:true}).waitFor()
+  await page.reload()
+  guide = page.getByRole('dialog',{name:'開始使用 Local LLM'})
+  await guide.getByRole('button',{name:'選擇用途',exact:true}).click()
+  await guide.getByRole('button',{name:'文字聊天',exact:true}).click()
+  await guide.getByRole('button',{name:'一鍵準備',exact:true}).waitFor()
+  const firstUseShots = process.env.LOCALLLM_FIRST_USE_SHOTS
+  if (firstUseShots) {
+    await mkdir(firstUseShots,{recursive:true})
+    await page.screenshot({path:join(firstUseShots,'first-use-prepare.png')})
+  }
+  await guide.getByRole('button',{name:'一鍵準備',exact:true}).click()
+  await guide.getByRole('alert').getByText('受控下載中斷').waitFor()
+  await guide.getByRole('button',{name:'重試準備',exact:true}).click()
+  await guide.getByRole('button',{name:'開始第一次聊天',exact:true}).click()
+  await page.getByLabel('訊息').fill('第一次本機聊天')
+  await button('送出').click()
+  await page.getByRole('dialog',{name:'第一項任務已完成'}).waitFor()
+  if(firstUseShots) await page.screenshot({path:join(firstUseShots,'first-use-complete.png')})
+  await page.getByRole('dialog',{name:'第一項任務已完成'}).getByRole('button',{name:'完成',exact:true}).click()
+  await page.getByText('首次對話已保存。',{exact:true}).waitFor()
+  console.log('PASS first use resumes after reload, retries interrupted setup, and saves the first chat')
   assert.deepEqual(exceptions, [])
 } finally {
   if (browser) await browser.close()

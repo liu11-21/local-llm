@@ -103,6 +103,12 @@
 .transfer-dialog::backdrop { background:#050609b8; }
 .transfer-target { border-top:1px solid var(--border); padding:9px 0; }
 .transfer-target div { color:var(--muted); font-size:var(--small); }
+.onboarding { max-width:min(560px,calc(100vw - 28px)); }
+.onboarding .eyebrow { margin-bottom:8px; }
+.guide-hardware,.guide-uses { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:14px 0; }
+.guide-hardware div { background:var(--inset); border-radius:8px; padding:8px; min-width:0; overflow-wrap:anywhere; }
+.guide-hardware dt { color:var(--muted); font-size:11px; }
+.guide-hardware dd { margin:0; }
 
 @media (max-width:870px) {
   .shell { grid-template-columns:164px minmax(0,1fr); }

@@ -35,7 +35,7 @@ function Reply({ content }: { content: string }) {
 export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, preferredRuntime }: {
   info?: Info; policy: string; run: Run; cancel: (id: string) => void; report: (error: unknown) => void
   notice: (message: string) => void; go: (page: 'library' | 'runtime') => void
-  preferredRuntime?: {id:string}
+  preferredRuntime?: {id:string;model?:string}
 }) {
   const [chats, setChats] = useState<Chat[]>([])
   const [chat, setChat] = useState(identifier)
@@ -66,7 +66,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   async function refreshChats() { setChats(await rpc<Chat[]>('chats')) }
   useEffect(() => { void refreshChats().catch(report) }, [])
   useEffect(() => {
-    if (preferredRuntime && !locked.current) {setRuntime(preferredRuntime.id);setModel('')}
+    if (preferredRuntime && !locked.current) {setRuntime(preferredRuntime.id);setModel(preferredRuntime.model ?? '')}
   }, [preferredRuntime])
   useEffect(() => {
     if (scroll.current && stick.current) scroll.current.scrollTop = scroll.current.scrollHeight

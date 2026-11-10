@@ -98,6 +98,7 @@ if __name__ == "__main__":
             def __init__(self, data):
                 super().__init__(data)
                 self.local.endpoint = lambda: (server.server_port, "isolated-test-key")
+                self.first_use = None
 
             def add_sample_work(self):
                 name = "a12345678901.png"
@@ -115,10 +116,30 @@ if __name__ == "__main__":
                         "runtime": "local-comfyui", "status": "completed", "schema": 1,
                     })))
 
-            def prepare(self, _data, _cancel, _update):
+            def prepare(self, data, _cancel, _update):
+                if self.first_use is not None:
+                    self.active = (data["model"],"cpu",2048,{})
                 return {}
 
+            def perform(self, action, data, cancel, update):
+                if self.first_use is not None:
+                    if action == "engine-install":
+                        self.first_use["engine"] = True
+                        return {"message":"受控文字引擎已安裝"}
+                    if action == "download":
+                        if not self.first_use["retry"]:
+                            self.first_use["retry"] = True
+                            raise OSError("受控下載中斷")
+                        self.first_use["model"] = desktop_worker.pinned_model(data["url"])["file"]
+                        (self.models / self.first_use["model"]).touch()
+                        return {"message":"受控模型已下載"}
+                return super().perform(action,data,cancel,update)
+
             def rpc(self, op, data):
+                if op == "fixture-first-use":
+                    self.first_use = {"engine":False,"model":None,"retry":False}
+                    self.local.stream = lambda *_, **__: (part for part in ("首次對話已保存。",))
+                    return True
                 if op == "fixture-cloud":
                     provider = OpenAIProvider("7"*32, "cloud", "測試運算環境", "fixture.example", 443, "/v1",
                                               "fixture-not-a-secret", ["test-text"], True, int(time()))
@@ -138,6 +159,11 @@ if __name__ == "__main__":
                 result = super().rpc(op, data)
                 if op == "info":
                     result["engine"] = True
+                    if self.first_use is not None:
+                        model = self.first_use["model"]
+                        result["engine"] = self.first_use["engine"]
+                        result["models"] = [model] if model else []
+                        result["registry"]["models"] = [item for item in result["registry"]["models"] if item["id"]==model]
                 return result
 
         desktop_worker.Desktop = FixtureDesktop

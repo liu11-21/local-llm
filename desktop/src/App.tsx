@@ -14,6 +14,7 @@ import { SettingsWorkspace } from './SettingsWorkspace'
 import { TeamWorkspace } from './TeamWorkspace'
 import { activeTask, TaskCenter, useTaskQueue, type Run } from './taskQueue'
 import { engineLabels, useEngineHealth } from './engineHealth'
+import { Onboarding, readGuide, saveGuide, type Guide, type Use } from './Onboarding'
 import logo from './logo.png'
 
 const navigation = [
@@ -35,7 +36,9 @@ export function App() {
   const [works, setWorks] = useState<Work[]>([])
   const [selected, setSelected] = useState<Work>()
   const [preset, setPreset] = useState<Work>()
-  const [preferredRuntime, setPreferredRuntime] = useState<{id:string}>()
+  const [preferredRuntime, setPreferredRuntime] = useState<{id:string;model?:string}>()
+  const [guide, setGuide] = useState(readGuide)
+  const [showGuide, setShowGuide] = useState(false)
   const [agentJob, setAgentJob] = useState<Job>()
   const [agentBusy, setAgentBusy] = useState(false)
   const [banner, setBanner] = useState<{text: string; error: boolean}>()
@@ -50,6 +53,11 @@ export function App() {
     } catch (error) { report(error) }
   }
   useEffect(() => { void refresh() }, [])
+  useEffect(()=>{
+    if (!info) return
+    if (['hardware','choose','prepare'].includes(guide.stage) ||
+        guide.stage==='welcome' && !info.models.length && !info.engine) setShowGuide(true)
+  },[!!info])
   useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem('theme', theme) }, [theme])
   useEffect(() => { localStorage.setItem('policy', policy) }, [policy])
   useEffect(() => { localStorage.setItem('sidebar', collapsed ? 'collapsed' : 'expanded') }, [collapsed])
@@ -67,10 +75,29 @@ export function App() {
   const go = (value: Page) => {setPage(value);setMenu(false)}
   const [_, title, Icon] = pages.find(item => item[0] === page)!
   const creation = page === 'image' || page === 'video' || page === 'music'
+  function updateGuide(next:Guide) {saveGuide(next);setGuide(next)}
+  function openGuide() {
+    if (guide.stage==='skipped') updateGuide({stage:'welcome',task:'chat'})
+    if (guide.stage==='launched') updateGuide({...guide,stage:'prepare'})
+    setShowGuide(true)
+  }
+  function launchGuide(task:Use, runtime:string, model:string) {
+    updateGuide({stage:'launched',task,runtime,model,prepared:!['image','video','music'].includes(task)})
+    if (task==='chat') setPreferredRuntime({id:runtime,model})
+    setShowGuide(false);go(task)
+  }
+  const runTracked:Run = async (action,data,observe) => {
+    const result = await queue.run(action,data,observe)
+    const task = action==='media' ? data.kind : action==='team-workflow' ? 'team' : action
+    if (result && guide.stage==='launched' && guide.task===task) {
+      updateGuide({...guide,stage:'completed',prepared:true});setShowGuide(true)
+    }
+    return result
+  }
   const runAgent: Run = async (action, data) => {
     setAgentBusy(true); setAgentJob(undefined)
     try {
-      const result = await queue.run(action, data, setAgentJob)
+      const result = await runTracked(action, data, setAgentJob)
       if (result?.message) notice(result.message)
       return result
     } finally {setAgentBusy(false)}
@@ -115,18 +142,18 @@ export function App() {
         {!info && !banner?.error && <div role="status" className="work-strip"><LoaderCircle className="spin" size={18}/> 正在連接本機工作程序…</div>}
         {!info && banner?.error && <button className="button" onClick={() => void refresh()}>重新連線</button>}
         {page !== 'home' && page !== 'chat' && <div className="page-title"><div className="tile-icon"><Icon size={22}/></div><h1>{title}</h1></div>}
-        {page === 'home' && <Dashboard info={info} tasks={queue.tasks} works={works} go={go}
+        {page === 'home' && <Dashboard info={info} tasks={queue.tasks} works={works} go={go} openGuide={openGuide}
           openWork={work => {setSelected(work);go('works')}}/>}
-        <div hidden={page !== 'chat'}><ChatWorkspace info={info} policy={policy} run={queue.run} cancel={queue.cancel}
+        <div hidden={page !== 'chat'}><ChatWorkspace info={info} policy={policy} run={runTracked} cancel={queue.cancel}
           report={report} notice={notice} go={go} preferredRuntime={preferredRuntime}/></div>
         {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError}/>}
         {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go} refresh={refresh}/>}
         {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run}
           report={report} notice={notice} refresh={refresh} openChat={id=>{setPreferredRuntime({id});go('chat')}}/>}
         <div hidden={page !== 'team'}><TeamWorkspace info={info && {...info, providers:info.providers.filter(item=>item.kind!=='paired')}}
-          policy={policy} run={queue.run} report={report} cancel={queue.cancel}/></div>
+          policy={policy} run={runTracked} report={report} cancel={queue.cancel}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} health={health} preset={preset} works={works}
-          tasks={queue.tasks} run={queue.run} cancel={queue.cancel} retry={queue.retry} go={go} openWork={openSavedWork}/>}
+          tasks={queue.tasks} run={runTracked} cancel={queue.cancel} retry={queue.retry} go={go} openWork={openSavedWork}/>}
         {page === 'works' && <Works info={info} revision={works} selected={selected} choose={setSelected}
           reuse={work => {setPreset(work);go(work.kind)}}/>}
         <div hidden={page !== 'agent'}><AgentWorkspace info={info} setupRun={queue.run} openModels={()=>go('library')}
@@ -135,5 +162,8 @@ export function App() {
           busy={queue.tasks.some(task => task.action === 'update-download' && activeTask(task))} run={queue.run} report={report}/></div>
       </div>
     </main>
+    {showGuide && info && <Onboarding guide={guide} update={updateGuide} close={()=>setShowGuide(false)}
+      info={info} policy={policy} run={queue.run} cancel={queue.cancel} launch={launchGuide}
+      openModels={()=>{setShowGuide(false);go('library')}}/>}
   </div>
 }

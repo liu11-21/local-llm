@@ -61,10 +61,11 @@ function Resources({info, tasks}: {info?: Info; tasks: Task[]}) {
   </section>
 }
 
-export function Dashboard({ info, tasks, works, go, openWork }: {
+export function Dashboard({ info, tasks, works, go, openWork, openGuide }: {
   info?: Info; tasks: Task[]; works: Work[];
   go: (page: typeof destinations[number][0] | 'library' | 'runtime' | 'tasks' | 'works') => void
   openWork: (work: Work) => void
+  openGuide: () => void
 }) {
   const count = tasks.filter(activeTask).length
   return <div className="home">
@@ -76,6 +77,7 @@ export function Dashboard({ info, tasks, works, go, openWork }: {
         <div className="row creation-actions">
           <button className="button primary" onClick={() => go('chat')}>開始聊天 <ArrowRight size={16}/></button>
           <button className="button" onClick={() => go('runtime')}>檢視運算環境</button>
+          <button className="button" disabled={!info} onClick={openGuide}>新手引導</button>
         </div>
       </header>
       <Resources info={info} tasks={tasks}/>
