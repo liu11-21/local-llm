@@ -1,5 +1,11 @@
 # 桌面工作台架構
 
+## 首次使用與遠端圖片
+
+- `onboarding.py` 從現有 Registry、硬體資料與已配對能力挑選候選。React 引導連續提交既有文字引擎安裝及 GGUF 下載，失敗時重新盤點已完成項目。
+- `remote_jobs.py` 建立 SQLite 第 8 版遠端任務索引，將 TaskManager 狀態與擁有者、請求雜湊及結果關聯。Host 獨占其資料設定檔後恢復舊紀錄。未完成的工作標為中斷。成功回答與作品描述可在重新分享後查詢。
+- `remote_media.py` 與 Host 共用圖片白名單、結果大小和完整性規則。Host 透過受管 ComfyUI 在本地推理槽執行。Client 對照已驗證 TLS 端點取得圖片，可續傳暫存，驗證後發布到作品庫。 [遠端圖片操作與限制](REMOTE_MEDIA.md)
+
 ## Batch 4A–4C
 
 - `desktop/src/TaskSelection.tsx` 將 Registry 的 Runtime 能力與模型顯示統一，原有 Agent、Team、聊天和媒體仍透過各自的參數契約工作。

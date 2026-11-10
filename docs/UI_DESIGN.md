@@ -1,5 +1,12 @@
 # 桌面 UI 設計
 
+## 首次使用與遠端圖片
+
+- 引導把硬體、用途、模型與準備分開。失敗時在原地提供重試，成功保存首個回答後提供下一項任務。 [推薦與準備](ui-preview/first-use-prepare.png) · [首次任務完成](ui-preview/first-use-complete.png)
+- 圖片頁保留同一個模型和運算環境選擇。遠端傳送沿用共用確認視窗，完成後作品庫顯示來源主機、尺寸、種子與工作流程。 [遠端圖片傳送確認](ui-preview/remote-image-consent.png) · [作品庫遠端來源](ui-preview/remote-image-library.png)
+
+畫面來自實際執行的 React 和 Python Worker。首次文字輸出與遠端圖片傳輸在這組畫面使用受控模型和圖片資料。 [實測與限制](TEST_REPORT.md)
+
 ## Batch 4A–4C 工作台與任務準備
 
 | 區域 | 原流程 | Batch 4 |
