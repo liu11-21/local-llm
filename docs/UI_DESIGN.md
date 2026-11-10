@@ -1,5 +1,12 @@
 # 桌面 UI 設計
 
+## Batch 3D–3E 私人遠端運算
+
+- 「連接另一台電腦」分為筆電配對與本機 Host 管理。首次啟用 Host 展開進階 TLS 欄位。Host 在線與引擎是否已載入模型各自顯示。 [深色 1280 px](ui-preview/remote-1280-dark.png) · [淺色 650 px](ui-preview/remote-650-light.png) · [Host 已啟用與長名稱](ui-preview/remote-host-active.png)
+- 「比較運算環境」按任務和模型列出相容性、需要安裝或連線、未知資源、費用及隱私限制。送出遠端聊天時會再次顯示資料目的地。
+
+Host 畫面取自實際桌面開發 Worker 的回環測試。截圖中的長名稱及模型清單為測試情境。
+
 ## Batch 3 創作與作品庫
 
 - 流程準備區顯示 ComfyUI 是否可連線及缺少的權重或節點，提供環境選擇、固定來源與授權、磁碟空間、安裝核准和進度。常用參數直接顯示，其他參數由工作流程清單列在進階設定。 [深色 1280 px](ui-preview/batch3-creation-1280-dark.png) · [淺色 650 px](ui-preview/batch3-creation-650-light.png)

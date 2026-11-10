@@ -1,5 +1,12 @@
 # 桌面工作台架構
 
+## Batch 3D–3E
+
+- `runtime_contract.py` 驗證版本化的能力紀錄，明確表示資源來源、未知資料、連線及健康狀態。現有 Registry 和 IPC 仍可供舊頁面使用。比較流程只使用本機快照與使用者已查詢的外部能力。 [能力契約](RUNTIME_CAPABILITY.md)
+- `remote_host.py` 提供受限的 HTTPS 介面，由使用者指定私人位址後才啟動。Host 啟停、建立邀請及撤銷其他裝置由本機 IPC 管理。Host 重用同一 TaskManager 和 llama.cpp 佔用槽。
+- `remote_client.py` 驗證 Host 憑證及身分，使用 Windows DPAPI 保護配對憑證。任務 ID 支援有限時間的斷線恢復。SQLite 第 5 版新增配對和每則回答的實際來源資料，保留原有對話表。 [遠端使用指南](REMOTE_RUNTIME.md)
+- SQLite 第 6 版新增創作權重驗證索引。只有固定 revision 的 SHA-256 與檔案指紋相符才顯示已驗證。ComfyUI 能辨識檔案、是否通過校驗與硬體能否完成生成分開顯示。
+
 ## Batch 3A–3C
 
 - `team_workflow.py` 依交付節點及相依成果計算 `outcome`。任務中心仍使用原有狀態機。固定工具的參數先由 `tool_registry.py` 驗證，之後隨預覽核准，並和工具結果一同存入執行紀錄。同步工具呼叫逾時後，底層執行若仍在進行，就繼續占用原本的執行槽。關閉工作台時會通知取消並短暫等待。仍需強制停止時，應由個別的子程序隔離方案提供。

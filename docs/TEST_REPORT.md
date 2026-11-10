@@ -1,5 +1,20 @@
 # 桌面工作台測試紀錄
 
+## 第三階段 Batch 3D–3E
+
+程式基準 `678d04b`，版本 `0.6.2`。
+
+| 狀態 | 範圍與證據 |
+|---|---|
+| PASS | Windows 本機 Python 共 77 項測試，73 項通過，4 項 TLS 回環案例移至乾淨的 CI 環境。本機 DPAPI、記憶體 TLS 正確與錯誤 IP 身分、SSE 重連不重複輸出、推薦政策及權重驗證失效均通過。 |
+| PASS | Windows CI 的受控 Host／Client 測試涵蓋 TLS、無授權拒絕、協定版本、配對、撤銷、配對持久化、同一任務重送、任務所有權和取消。推理使用受控的模型回應。 [第一輪 Host／Client CI](https://github.com/liu11-21/local-llm/actions/runs/42771568190) |
+| PASS | Chromium 深淺模式，1280×900、1024×768、800×600、650×720。測試啟用與停止 Host、長主機名稱、建立邀請、無效邀請、能力比較，以及既有 Agent、Team 與創作。 [實際 UI](UI_DESIGN.md#batch-3d3e-私人遠端運算) |
+| NEEDS REMOTE HOST | 兩台實體 Windows 電腦之間的 LAN／VPN、防火牆、TLS、長時間斷線和重連驗收。 |
+| NEEDS GPU | 遠端實體 GPU 上的 llama.cpp 載入、生成效能及 CPU 回退需要另行驗收。 |
+| NEEDS CLOUD AUTH | 推薦只讀取能力，Colab Enterprise 及雲端推理的付費路徑沿用既有契約，這次沒有提交測試推理。 |
+
+本機 Norton Web/Mail Shield 替換了回環服務的測試 TLS 憑證，預期的身分驗證因此拒絕連線。CI 使用未經替換的測試憑證執行實際 HTTPS 協定測試。
+
 ## 第三階段 Batch 3A–3C
 
 基準為 `d39afbf`，開發安裝包版本為 `0.6.2`。
