@@ -1,5 +1,13 @@
 # 桌面 UI 設計
 
+## E3-D 共用運算建議
+
+DeviceChoice 融入聊天、Agent、兩種 Team、圖片／影片／音樂、模型中心、運算環境與 Benchmark，不另做獨立控制台。主畫面只顯示設備、建議原因、有限證據摘要及操作；偏好、Workload、Warm／啟動／TTFT／Decode、版本、驅動、精度、Freshness 和替代來源放進進階區。沿用黑白灰與 Reduced Motion。
+
+可手動選設備、套用建議或保留既有單工作模式；這些操作本身不送出任務。Agent 計畫顯示真正已保存的 Runtime／設備，修改時撤銷待核准計畫。Team 每成員可有自己的選擇。創作不把尚未支援的遠端影音列為可用。任務中心顯示預留 RAM、Engine、裝置、父任務與實際放置是否驗證。
+
+受控 UI 包含長模型／裝置名稱、無 GPU／NPU、Benchmark 缺失／過期、離線、不確定、手動覆寫、無自動派送、鍵盤、四種尺寸與深淺色。原生 UI 驗收走共用建議→採用 Vulkan→隔離聊天→保存新執行 ID→任務證據。[深色聊天](ui-preview/device/device-chat-vulkan-real-dark.png) · [650px 淺色](ui-preview/device/device-chat-vulkan-real-light-650.png) · [實際任務證據](ui-preview/device/device-task-evidence-real-light.png)。
+
 ## E3-C Benchmark
 
 運算環境加入折疊的「進階 · 模型效能測試與歷史」。簡易操作先選模型與設備，顯示工作量和整體上限，確認後才開始。次數、記憶體和 Token 參數放在進階選項。沿用既有黑白灰、Panel、按鈕、Reduced Motion 與任務進度，沒有重做 Design System。

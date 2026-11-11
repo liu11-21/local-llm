@@ -25,6 +25,8 @@ class DispatchTarget:
     demand: ResourceDemand
     threads: int
     memory: int
+    hashes: tuple = ()
+    binary_sha256: str | None = None
 
 
 class DeviceExecution:
@@ -85,7 +87,8 @@ class DeviceExecution:
             shared_memory=memory if unified else 0,cpu_load=60 if cpu else 20,bandwidth=40 if cpu else 60 if unified and gpu else 50 if unified else 20,
             exclusive=tuple(locks),seconds=seconds,limitations=tuple(candidate["uncertainty"]))
         threads=max(1,min(8,(self.app.info()["hardware"]["cpu_threads"] or 2)//2)) if cpu else 2
-        return DispatchTarget(runtime,device,data["model"],engine,demand,threads,memory)
+        return DispatchTarget(runtime,device,data["model"],engine,demand,threads,memory,
+            tuple(sorted(candidate["identity"].get("model_hashes",{}).items())),candidate["identity"].get("executable_sha256"))
 
     def submit(self,action,data,*,target=None,**options):
         target=target or self.prepare("chat" if action=="chat" else action,data)
@@ -93,6 +96,15 @@ class DeviceExecution:
 
     @contextmanager
     def scope(self,target,task_id,cancel):
+        if target.hashes:
+            if target.engine=="llama.cpp":
+                actual={"gguf":self.app.device_recommendations.digest(self.app.model(target.model))}
+            else:
+                _,metadata=self.app.openvino.validate_model(target.model)
+                actual=metadata["hashes"]
+            if actual!=dict(target.hashes):raise ValueError("MODEL_CHANGED · 排隊後模型權重已變更，請重新選擇並確認。")
+        if target.binary_sha256 and self.app.device_recommendations.digest(self.app.engine())!=target.binary_sha256:
+            raise ValueError("ENGINE_CHANGED · 排隊後引擎已變更，請重新檢查與確認。")
         scoped=copy(self.app)
         scoped.execution_scoped=True
         scoped.execution_target=target
@@ -105,6 +117,7 @@ class DeviceExecution:
             lambda plan,state,cap,stop:local_decision(scoped.agent_engine(plan),scoped.agent_tools,plan,state,cap,stop))
         identity=uuid4().hex
         details={"runtime":target.runtime,"engine":target.engine,"model":target.model,"requested_device":target.device,
+                 "model_hashes":dict(target.hashes),"engine_sha256":target.binary_sha256,
                  "resources":target.demand.public(),"execution_device_verified":False,"actual_device":"unknown"}
         with self.app.connect() as db:
             db.execute("INSERT INTO dispatch_runs VALUES(?,?,?,?,?,?)",(identity,task_id,"running",json.dumps(details),timestamp(),None))
@@ -122,6 +135,7 @@ class DeviceExecution:
             if evidence:
                 details.update(evidence=evidence,execution_device_verified=evidence.get("verified_inference") is True,
                                actual_device=evidence.get("execution_devices") or "unknown")
+            if getattr(scoped.openvino,"last_job_memory",None):details["job_memory"]=scoped.openvino.last_job_memory
             if scoped.active:details["configured_plan"]=scoped.active[-1]
             scoped.local.stop()
             scoped.openvino.close()

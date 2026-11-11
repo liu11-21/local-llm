@@ -139,6 +139,7 @@
 .device-choice select { max-width:100%; }
 .device-suggestion,.device-alternative { padding-top:12px;margin-top:12px;border-top:1px solid var(--border); }
 .device-choice summary { cursor:pointer;margin-top:12px;font-size:var(--small); }
+.chat-stage:has(.device-choice) .messages { height:clamp(220px,calc(100dvh - 570px),760px); }
 .benchmark-options,.benchmark-metrics { display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px; }
 .benchmark-options { margin:14px 0; }
 .benchmark-options > label,.benchmark-results,.benchmark-results > *, .benchmark-comparison > * { min-width:0;overflow-wrap:anywhere; }

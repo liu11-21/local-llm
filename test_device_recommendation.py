@@ -33,6 +33,12 @@ class RecommendationTests(unittest.TestCase):
         self.assertEqual(recommend(candidates,preference="speed",objective="decode")["recommended"],"CPU")
         self.assertEqual(recommend(candidates)["candidates"][0]["evidence_level"],"backend-benchmark-limited")
 
+    def test_load_cost_can_reverse_a_warm_latency_choice(self):
+        candidates=[candidate(evidence=[evidence(summary={"mean_ms":20,"model_start_ms":50})]),
+                    candidate("GPU",evidence=[evidence(summary={"mean_ms":10,"model_start_ms":100})])]
+        self.assertEqual(recommend(candidates,objective="cold")["recommended"],"CPU")
+        self.assertEqual(recommend(candidates,objective="latency")["recommended"],"GPU")
+
     def test_incompatible_backend_or_quantization_not_ranked(self):
         result = recommend([candidate(evidence=[evidence(group="quant-a")]),candidate("GPU",evidence=[evidence(group="quant-b")])],preference="speed")
         self.assertIsNone(result["comparison"])

@@ -7,7 +7,7 @@ PREFERENCES = {"auto","speed","low-memory","energy","privacy","local-first","cos
 
 def recommend(candidates, *, preference="auto", objective="latency", usage=None):
     """Explain gates first, compare only qualified, condition-matched measurements."""
-    if preference not in PREFERENCES or objective not in ("latency","ttft","decode"):
+    if preference not in PREFERENCES or objective not in ("latency","cold","ttft","decode"):
         raise ValueError("推薦偏好或效能目標無效。")
     results = []
     for original in candidates:
@@ -45,7 +45,7 @@ def recommend(candidates, *, preference="auto", objective="latency", usage=None)
     selected = next((item for item in pool if item["availability"]=="ready"),pool[0] if pool else None)
     comparison = None
     groups = {}
-    field = {"latency":"mean_ms","ttft":"ttft_ms","decode":"decode_tokens_per_s"}[objective]
+    field = {"latency":"mean_ms","cold":"model_start_ms","ttft":"ttft_ms","decode":"decode_tokens_per_s"}[objective]
     for item in pool:
         performance = item["performance"] or {}
         if item["performance_group"] and isinstance(performance.get(field),(int,float)):

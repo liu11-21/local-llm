@@ -1,10 +1,20 @@
 # 桌面工作台架構
 
+## E3-D1–D4 智慧運算與排程
+
+benchmark_evidence.py 分開評估 Freshness／Comparability；device_recommendation.py 組合現有 Registry、Runtime、即時資源與 Benchmark，交給既有 runtime_recommendation.py 決策。沒有新增平行的推薦核心，也不自動跑 Benchmark。
+
+device_resources.ResourceDemand 在原 TaskManager 中原子准入，涵蓋裝置／Engine／Provider 鎖、共享 RAM、每張 VRAM、CPU／頻寬規劃預算、持續 ComfyUI／舊模型預留、公平性與逾時。舊 compute 仍為 1；明確選擇裝置的工作使用隔離實例，資源允許才進 device lane，Team 父節點使用無模型的 control lane。
+
+device_execution.py 複用既有 LocalEngine 與 OpenVINOAdapter，以每任務實例保存上下文及清理責任。team_dispatch.py 將依賴就緒的節點交回相同 TaskManager。Agent 的計畫、版本、工具核准不變；外部文字仍透過既有同意邊界。SQLite 12 增加 dispatch_runs，不改寫舊表，正式 Worker 以檔案鎖避免同一資料目錄的雙重排程器。
+
+同一 DeviceChoice 元件服務聊天、Agent／Team、創作、模型、Runtime 和 Benchmark。GPU 模型 blob 在本機跨程序重用發生可重現原生崩潰，已改用私有 session cache，原快取保留。[規則、真實證據及限制](DEVICE_RECOMMENDATION.md)。
+
 ## E3-C Benchmark
 
 `benchmark_core.py` 定義版本化記錄、工作量雜湊、統計與可比較性。`benchmark_service.py` 負責確認、資源預檢、SQLite 保存及任務進度。`benchmark_adapters.py` 重用既有 OpenVINOAdapter／LocalEngine，前者透過隔離 Runner 載入 `benchmark_openvino.py`，同一程序內重複推理。TaskManager 仍獨占本機 compute lane，沒有另建引擎管理器。SQLite 11 新增三張 Benchmark 表，裝置／驅動快照嵌入 Run。中斷資料不自動重跑。
 
-React BenchmarkPanel 位於運算環境進階區，只手動觸發，支援歷史、比較、刪除與匯出。[量測定義及真實資料](HARDWARE_BENCHMARK.md)。E3-D Benchmark 推薦、新鮮度及異質並行調度尚未實作，既有推薦邏輯與外部傳送同意流程仍按原契約執行。
+React BenchmarkPanel 位於運算環境進階區，只手動觸發，支援歷史、比較、刪除與匯出。[量測定義及真實資料](HARDWARE_BENCHMARK.md)。E3-D 已接入這些記錄，外部傳送同意仍按原契約執行。
 
 ## E3-A、E3-B 的資源與 OpenVINO 執行
 

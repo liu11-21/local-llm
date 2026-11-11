@@ -53,6 +53,7 @@ class ExtendedLimits(ct.Structure):
 @contextmanager
 def memory_limit(process, maximum):
     handle = None
+    metrics={"limit_bytes":maximum,"peak_commit_bytes":None,"source":"Windows Job Object" if os.name=="nt" else "unsupported"}
     if os.name=="nt":
         kernel = ct.WinDLL("kernel32",use_last_error=True)
         kernel.CreateJobObjectW.argtypes = [ct.c_void_p,ct.c_wchar_p]
@@ -71,9 +72,13 @@ def memory_limit(process, maximum):
             process.kill()
             raise RuntimeError("無法建立 OpenVINO 程序記憶體限制。")
     try:
-        yield
+        yield metrics
     finally:
         if handle:
+            kernel.QueryInformationJobObject.argtypes=[ct.c_void_p,ct.c_int,ct.c_void_p,ct.c_uint32,ct.c_void_p]
+            measured=ExtendedLimits()
+            if kernel.QueryInformationJobObject(handle,9,ct.byref(measured),ct.sizeof(measured),None):
+                metrics["peak_commit_bytes"]=measured.peak_process
             kernel.CloseHandle(handle)
 
 
@@ -84,6 +89,7 @@ class OpenVINOAdapter:
         session.lock=Lock()
         session.process=None
         session.last_evidence=None
+        session.last_job_memory=None
         return session
 
     def __init__(self, data, connect):
@@ -308,7 +314,8 @@ class OpenVINOAdapter:
         result = None
         deadline = monotonic()+timeout
         try:
-            with memory_limit(process,memory):
+            with memory_limit(process,memory) as metrics:
+                self.last_job_memory=metrics
                 process.stdin.write(json.dumps(request,ensure_ascii=True).encode()+b"\n")
                 process.stdin.close()
                 reader.start()
@@ -335,8 +342,9 @@ class OpenVINOAdapter:
                         result = event
                     else:
                         update(event)
-                if process.wait(timeout=5)!=0 or result is None:
-                    raise RuntimeError("OpenVINO 工作程序未完成。")
+                exit_code=process.wait(timeout=5)
+                if exit_code!=0 or result is None:
+                    raise RuntimeError(f"OpenVINO 工作程序未完成（exit {exit_code}）。")
         finally:
             if process.poll() is None:
                 process.kill()
@@ -386,9 +394,20 @@ class OpenVINOAdapter:
             raise ValueError("OpenVINO 編譯快取目錄不安全。")
         evidence = {"requested_device":device,"verified_inference":False,"status":"failed"}
         try:
-            result = self.execute(request,cancel,update,memory=memory)
+            if device.startswith("GPU"):
+                # This managed GPU/driver combination crashes on a second process
+                # importing a dynamic IR compiled blob. Preserve the user's cache,
+                # but compile GPU sessions in a new private directory until validated.
+                from tempfile import TemporaryDirectory
+                with TemporaryDirectory(prefix="gpu-session-",dir=self.root) as cache:
+                    request["cache"]=cache
+                    result = self.execute(request,cancel,update,memory=memory)
+                cache_policy="fresh-session-cache; persisted GPU blobs not reused"
+            else:
+                result = self.execute(request,cancel,update,memory=memory)
+                cache_policy="managed-cache"
             evidence = {**result.get("evidence",{}),"status":"completed","latency_ms":result.get("latency_ms"),
-                        "model_hashes":model["hashes"],"memory_limit":memory,"timeout_seconds":180}
+                        "model_hashes":model["hashes"],"memory_limit":memory,"timeout_seconds":180,"cache_policy":cache_policy}
             return result
         finally:
             if cancel.is_set():

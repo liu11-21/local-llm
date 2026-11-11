@@ -1,10 +1,18 @@
 # GPU／NPU 支援範圍
 
+## E3-D 推薦與多設備工作
+
+CPU、GPU、NPU 依 Backend、格式、目前裝置清單、資源與有效 Benchmark 分別判斷。OpenVINO 與 Vulkan 不混成同一 Backend。NPU 不存在或文字壓縮條件不符會拒絕；缺 Benchmark 不等於慢，沒有完整實機推理證據不能標為 NPU 加速。
+
+本機已驗證 CPU llama.cpp 與 Iris Xe OpenVINO FP32 同時有存活的原生 PID，輸出與實際 GPU.0 證據通過。CPU／Vulkan Team 有獨立子任務與最終整合。CPU／NPU、不同 GPU、共享 RAM、Provider／Engine 鎖以受控測試驗證；實體 NPU、其他廠牌及多 GPU 實機保持 NEEDS NPU／NOT RUN，AMD／Qualcomm 沒有推理 Adapter。
+
+已映射且不同的 GPU 可由資源契約並行；未映射 Vulkan 多 GPU 使用全 GPU 排他鎖，不能推測索引。共用 RAM 的 GPU／NPU 加速器採保守互斥，CPU 是否能並行還需 RAM、CPU／頻寬預算通過。HETERO 單模型算子分割仍拒絕。原生結果與 GPU blob 重用修正見 [DEVICE_RECOMMENDATION](DEVICE_RECOMMENDATION.md)。
+
 ## E3-C 的效能證據
 
 新增正式 Benchmark 與 [逐筆原始資料](evidence/benchmark/)。CPU／Intel Iris Xe 的 FP32 MatMul IR 已用兩個 Batch、Warmup 3 次及正式 10 次驗證輸出與 EXECUTION_DEVICES。GPU 經 LUID 精確對應 Windows 驅動。Qwen OpenVINO CPU 和 SmolLM2 llama.cpp CPU／Vulkan 完成真實生成與 Token 量測，但沒有完整算子放置證據，不提升成完整 verified_inference。
 
-本機未回報 NPU，狀態 NEEDS NPU。NPU 相容模型可明確選擇相容設備測試，不能從裝置列舉或 CPU Fallback 宣稱 NPU 已驗收。AMD／Qualcomm Adapter、其他 GPU、多 GPU 原生驗收均 NOT RUN。E3-D 異質推薦與並行調度尚未交付，HETERO 明確拒絕。量測限制見 [HARDWARE_BENCHMARK](HARDWARE_BENCHMARK.md)。
+本機未回報 NPU，狀態 NEEDS NPU。相容模型可明確選擇相容設備測試，不能從列舉或 CPU Fallback 宣稱 NPU 已驗收。AMD／Qualcomm Adapter、其他 GPU、多 GPU 原生驗收均 NOT RUN。量測限制見 [HARDWARE_BENCHMARK](HARDWARE_BENCHMARK.md)。
 
 ## E3-A、E3-B 的目前能力
 

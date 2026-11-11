@@ -2,7 +2,7 @@ from copy import deepcopy
 from datetime import datetime,timezone
 import unittest
 
-from benchmark_evidence import describe,evaluate
+from benchmark_evidence import describe,evaluate,hardware_identity
 
 
 def fixture(device="GPU"):
@@ -110,6 +110,10 @@ class EvidenceTests(unittest.TestCase):
         session,run,current,usage=fixture()
         run["measurements"]=run["measurements"][1:]
         self.assertFalse(self.result(session,run,current,usage)["eligible_for_ranking"])
+
+    def test_multiple_unmapped_gpus_cannot_identify_a_vulkan_index(self):
+        environment={"hardware":{"devices":[{"id":"gpu-1","kind":"gpu"},{"id":"gpu-2","kind":"gpu"}]}}
+        self.assertIsNone(hardware_identity(environment,"llama.cpp","Vulkan0"))
 
 
 if __name__=="__main__":unittest.main()

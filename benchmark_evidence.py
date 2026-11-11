@@ -20,7 +20,7 @@ def hardware_identity(environment, engine, device):
     devices = environment.get("hardware",{}).get("devices",[])
     inventory = [{"id":item.get("id"),"vendor":item.get("vendor"),"name":item.get("name"),
                   "driver":item.get("driver",{}).get("value")} for item in devices if item.get("kind")=="gpu"]
-    if engine=="llama.cpp" and device.startswith(("Vulkan","CUDA")) and inventory and all(item["id"] for item in inventory):
+    if engine=="llama.cpp" and device.startswith(("Vulkan","CUDA")) and len(inventory)==1 and all(item["id"] for item in inventory):
         return {"kind":"backend-configured","backend":engine,"device":device,
                 "inventory":sorted(inventory,key=lambda item:item["id"])}
     return None

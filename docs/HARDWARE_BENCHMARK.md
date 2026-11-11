@@ -2,6 +2,8 @@
 
 版本維持 0.6.2。Benchmark Core、引擎 Adapter、TaskManager、儲存與 React 介面分工。只接受使用者確認的工作，不在聊天、推薦或程式啟動時執行 Benchmark。Remote Benchmark 契約目前回報 unsupported，不執行遠端作業。
 
+E3-D 已直接使用既有原始資料，沒有重做 Benchmark。Freshness、工作量／採樣相容性、放置限制和新鮮資源一起決定是否可比較；Warm、TTFT、Decode、載入＋首次推理分開，不把 MatMul、不同量化或 32 Token 結果推廣到任意任務。新調度中的 Benchmark 仍取得 local:* 排他資源。[規則與整合](DEVICE_RECOMMENDATION.md)。
+
 ## 量測契約
 
 預設每個裝置在同一個已載入的模型實例中，依序執行兩個工作量。每組有首次推理 1 次、Warmup 3 次、正式量測 10 次。OpenVINO 只建立一次 CompiledModel 或 LLMPipeline，llama.cpp 只啟動一次獨立 LocalEngine。一般聊天仍維持原有隔離。
@@ -40,7 +42,7 @@ JSON 匯出包含環境、證據與完整原始量測，CSV 包含逐列數值�
 
 測試硬體為 i5-12500H 與 Intel Iris Xe，OpenVINO 2025.4.1，GPU 驅動 31.0.101.5590。正式 Tensor fixture 為 FP32 512×512 MatMul，Batch 1／8，固定權重及參考輸出，不是舊的四元素功能模型。數據僅描述這些工作量，不可推廣成 CPU／GPU 的通用排名。
 
-E3-D 的 Benchmark 新鮮度、設備推薦與異質並行調度另見 [DEVICE_RECOMMENDATION](DEVICE_RECOMMENDATION.md)，尚未交付不得視為已實作。
+E3-D 的 Benchmark 新鮮度、設備推薦與多任務並行已接入，規則與界線見 [DEVICE_RECOMMENDATION](DEVICE_RECOMMENDATION.md)。單模型 HETERO 與實體 NPU 驗收仍未開放。
 
 ### 這次驗收的 Warm 原始統計
 

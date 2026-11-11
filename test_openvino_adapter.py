@@ -114,6 +114,27 @@ class OpenVINOAdapterTests(TestCase):
         self.assertEqual(route("privacy","openvino"),"openvino")
         self.assertEqual(classify("chat",{"runtime":"openvino","chat":"1"})[0],"compute")
 
+    def test_gpu_sessions_do_not_reuse_crashing_compiled_blobs_or_remove_user_cache(self):
+        identity=self.model()
+        preserved=self.adapter.root/'compiled'/identity/'GPU'/'existing.blob'
+        preserved.parent.mkdir(parents=True)
+        preserved.write_bytes(b'preserve existing user cache')
+        caches=[]
+        def execute(request,*_args,**_kwargs):
+            directory=Path(request['cache'])
+            self.assertTrue(directory.is_dir())
+            caches.append(directory)
+            (directory/'compiled.blob').write_bytes(b'controlled blob')
+            return {'evidence':{'execution_devices':['GPU.0'],'verified_inference':True}}
+        with patch.object(self.adapter,'execute',side_effect=execute):
+            for _ in range(2):self.adapter.infer(identity,'GPU',Event(),lambda _:None,inputs=[[[1,2]]])
+        self.assertNotEqual(caches[0],caches[1])
+        self.assertFalse(any(path.exists() for path in caches))
+        self.assertEqual(preserved.read_bytes(),b'preserve existing user cache')
+        with patch.object(self.adapter,'execute',side_effect=RuntimeError('controlled failure')):
+            with self.assertRaises(RuntimeError):self.adapter.infer(identity,'GPU',Event(),lambda _:None,inputs=[[[1,2]]])
+        self.assertEqual(list(self.adapter.root.glob('gpu-session-*')),[])
+
     def test_import_is_immutable_idempotent_and_rejects_changed_weights(self):
         identity = self.model()
         source = Path(self.folder.name)/"source"

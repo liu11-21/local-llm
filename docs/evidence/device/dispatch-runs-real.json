@@ -1,0 +1,1574 @@
+[
+  {
+    "id": "e3a337bbc4af46dfb4b863be85529251",
+    "task": "2153afe1f7ee47ba81c3a72f17e66674",
+    "state": "interrupted",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "model_hashes": {
+        "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+      },
+      "engine_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown"
+    },
+    "created": "2026-11-11T15:20:20+00:00",
+    "finished": "2026-11-11T15:20:22+00:00"
+  },
+  {
+    "id": "874e13ff60c24dbd921eea71ddb7a73d",
+    "task": "576295d20b1f4e08a31ddee594bf46e6",
+    "state": "completed",
+    "details": {
+      "runtime": "openvino",
+      "engine": "openvino",
+      "model": "2be7d6055f735f29",
+      "requested_device": "GPU",
+      "model_hashes": {
+        "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be",
+        "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876"
+      },
+      "engine_sha256": null,
+      "resources": {
+        "scope": "local",
+        "device": "00000000_0001298d",
+        "engine": "openvino",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:00000000_0001298d",
+          "engine:openvino:GPU",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": true,
+      "actual_device": [
+        "GPU.0"
+      ],
+      "evidence": {
+        "requested_device": "GPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "GPU.0"
+        ],
+        "operator_allocation": [
+          {
+            "node": "FullyConnected",
+            "execution_type": "fully_connected_gpu_bf_tiled__f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "reorder_data__f32",
+            "status": "Status.OPTIMIZED_OUT"
+          },
+          {
+            "node": "Parameter",
+            "execution_type": "wait_for_events__f32",
+            "status": "Status.EXECUTED"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "backend": "OpenVINO",
+        "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+        "status": "completed",
+        "latency_ms": 1.423,
+        "model_hashes": {
+          "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+          "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+        },
+        "memory_limit": 2147483648,
+        "timeout_seconds": 180,
+        "cache_policy": "fresh-session-cache; persisted GPU blobs not reused"
+      },
+      "job_memory": {
+        "limit_bytes": 2147483648,
+        "peak_commit_bytes": 779681792,
+        "source": "Windows Job Object"
+      }
+    },
+    "created": "2026-11-11T15:20:19+00:00",
+    "finished": "2026-11-11T15:20:20+00:00"
+  },
+  {
+    "id": "d1478a135f994e10b3edee776280866c",
+    "task": "53388295e2f14927b1c461a76b5dec4d",
+    "state": "cancelled",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "model_hashes": {
+        "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+      },
+      "engine_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:20:18+00:00",
+    "finished": "2026-11-11T15:20:19+00:00"
+  },
+  {
+    "id": "4285ef715fd4456ca01551a4366a0ef3",
+    "task": "56058d8381ad4bea9db7cd99740e7fd5",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "model_hashes": {
+        "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+      },
+      "engine_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:20:16+00:00",
+    "finished": "2026-11-11T15:20:18+00:00"
+  },
+  {
+    "id": "5d4d4c8730da4f5890cd1b0a71945616",
+    "task": "ac6341c691e448ffb0a9906e0fac17fb",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "model_hashes": {
+        "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+      },
+      "engine_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:20:15+00:00",
+    "finished": "2026-11-11T15:20:16+00:00"
+  },
+  {
+    "id": "ddb81524ddd74cdc9d61d36004fa3c8e",
+    "task": "cfe8d601dc7e4dfdbcaf28257ee6c800",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "model_hashes": {
+        "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+      },
+      "engine_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2281701376,
+        "vram": [],
+        "shared_memory": 2281701376,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 4680679424,
+        "shared": true,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:20:15+00:00",
+    "finished": "2026-11-11T15:20:16+00:00"
+  },
+  {
+    "id": "293822b0028d45e4b896551e4f65978e",
+    "task": "8b8ab242aaa5402d890d1c139ce9f0e7",
+    "state": "completed",
+    "details": {
+      "runtime": "openvino",
+      "engine": "openvino",
+      "model": "2be7d6055f735f29",
+      "requested_device": "GPU",
+      "model_hashes": {
+        "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be",
+        "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876"
+      },
+      "engine_sha256": null,
+      "resources": {
+        "scope": "local",
+        "device": "00000000_0001298d",
+        "engine": "openvino",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:00000000_0001298d",
+          "engine:openvino:GPU",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": true,
+      "actual_device": [
+        "GPU.0"
+      ],
+      "evidence": {
+        "requested_device": "GPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "GPU.0"
+        ],
+        "operator_allocation": [
+          {
+            "node": "FullyConnected",
+            "execution_type": "fully_connected_gpu_bf_tiled__f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "reorder_data__f32",
+            "status": "Status.OPTIMIZED_OUT"
+          },
+          {
+            "node": "Parameter",
+            "execution_type": "wait_for_events__f32",
+            "status": "Status.EXECUTED"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "backend": "OpenVINO",
+        "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+        "status": "completed",
+        "latency_ms": 1.428,
+        "model_hashes": {
+          "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+          "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+        },
+        "memory_limit": 2147483648,
+        "timeout_seconds": 180,
+        "cache_policy": "fresh-session-cache; persisted GPU blobs not reused"
+      },
+      "job_memory": {
+        "limit_bytes": 2147483648,
+        "peak_commit_bytes": 779116544,
+        "source": "Windows Job Object"
+      }
+    },
+    "created": "2026-11-11T15:20:10+00:00",
+    "finished": "2026-11-11T15:20:11+00:00"
+  },
+  {
+    "id": "a757b02de3854cda8060013b48b730ef",
+    "task": "f601c56b150a4e00aca0a8df31f57bd2",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "model_hashes": {
+        "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+      },
+      "engine_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:20:10+00:00",
+    "finished": "2026-11-11T15:20:12+00:00"
+  },
+  {
+    "id": "030d38a3a1c94a78bba0b53d29cc8858",
+    "task": "81e7d1366978459cb957e826e82e6d6f",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "model_hashes": {
+        "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+      },
+      "engine_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 4707663872,
+        "shared": true,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:20:09+00:00",
+    "finished": "2026-11-11T15:20:10+00:00"
+  },
+  {
+    "id": "49ebc66dbb52444994afec386d122d3c",
+    "task": "082f22a5f97e4272a23cdfdf2018b6b1",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 4188184576,
+        "shared": true,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:14:35+00:00",
+    "finished": "2026-11-11T15:14:36+00:00"
+  },
+  {
+    "id": "fdb0b886381f406dbee9a4e72f640658",
+    "task": "67cfda3eaeb5477592c72eab4680354a",
+    "state": "interrupted",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown"
+    },
+    "created": "2026-11-11T15:12:04+00:00",
+    "finished": "2026-11-11T15:14:24+00:00"
+  },
+  {
+    "id": "59a0c4655a474b85a019a3bf5fd01d3d",
+    "task": "11bf2a4afd574648844eb724f07facc6",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 4237967360,
+        "shared": true,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:08:07+00:00",
+    "finished": "2026-11-11T15:08:09+00:00"
+  },
+  {
+    "id": "6c0c9c3514e5427893fe91c02969f7c5",
+    "task": "40ad7467fcb14ecd93dee7a8b777199d",
+    "state": "interrupted",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown"
+    },
+    "created": "2026-11-11T15:05:00+00:00",
+    "finished": "2026-11-11T15:05:02+00:00"
+  },
+  {
+    "id": "cb669f8ca841431bb86a762643a95dd7",
+    "task": "29cad5fc9c8d48948ed05e1df6c820a6",
+    "state": "completed",
+    "details": {
+      "runtime": "openvino",
+      "engine": "openvino",
+      "model": "2be7d6055f735f29",
+      "requested_device": "GPU",
+      "resources": {
+        "scope": "local",
+        "device": "00000000_0001298d",
+        "engine": "openvino",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:00000000_0001298d",
+          "engine:openvino:GPU",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": true,
+      "actual_device": [
+        "GPU.0"
+      ],
+      "evidence": {
+        "requested_device": "GPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "GPU.0"
+        ],
+        "operator_allocation": [
+          {
+            "node": "FullyConnected",
+            "execution_type": "fully_connected_gpu_bf_tiled__f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "reorder_data__f32",
+            "status": "Status.OPTIMIZED_OUT"
+          },
+          {
+            "node": "Parameter",
+            "execution_type": "wait_for_events__f32",
+            "status": "Status.EXECUTED"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "backend": "OpenVINO",
+        "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+        "status": "completed",
+        "latency_ms": 1.372,
+        "model_hashes": {
+          "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+          "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+        },
+        "memory_limit": 2147483648,
+        "timeout_seconds": 180,
+        "cache_policy": "fresh-session-cache; persisted GPU blobs not reused"
+      },
+      "job_memory": {
+        "limit_bytes": 2147483648,
+        "peak_commit_bytes": 780013568,
+        "source": "Windows Job Object"
+      }
+    },
+    "created": "2026-11-11T15:04:59+00:00",
+    "finished": "2026-11-11T15:05:00+00:00"
+  },
+  {
+    "id": "617f1c5dc65649179f805fb87e90c4bb",
+    "task": "db0b83acc9f2482089ba1b1f2f342b6c",
+    "state": "cancelled",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:04:58+00:00",
+    "finished": "2026-11-11T15:04:59+00:00"
+  },
+  {
+    "id": "06376115de0d4891851df5b6c5fbca28",
+    "task": "bff22ff3134b4349aa578547ab87dd16",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:04:56+00:00",
+    "finished": "2026-11-11T15:04:57+00:00"
+  },
+  {
+    "id": "674cccd507a8413586a31d2cac254551",
+    "task": "639d3890061645569423b0b24b66c584",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2281701376,
+        "vram": [],
+        "shared_memory": 2281701376,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 4690104320,
+        "shared": true,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:04:54+00:00",
+    "finished": "2026-11-11T15:04:56+00:00"
+  },
+  {
+    "id": "e4818229f8f24ff581af9897ecba2c00",
+    "task": "c834648ce92d4fa793e7f1e80dbfb339",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:04:54+00:00",
+    "finished": "2026-11-11T15:04:56+00:00"
+  },
+  {
+    "id": "acb0b264f98340cd874e7a6a7a14ecf5",
+    "task": "d5e0b1da155747ea832afb264cd2ae77",
+    "state": "completed",
+    "details": {
+      "runtime": "openvino",
+      "engine": "openvino",
+      "model": "2be7d6055f735f29",
+      "requested_device": "GPU",
+      "resources": {
+        "scope": "local",
+        "device": "00000000_0001298d",
+        "engine": "openvino",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:00000000_0001298d",
+          "engine:openvino:GPU",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": true,
+      "actual_device": [
+        "GPU.0"
+      ],
+      "evidence": {
+        "requested_device": "GPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "GPU.0"
+        ],
+        "operator_allocation": [
+          {
+            "node": "FullyConnected",
+            "execution_type": "fully_connected_gpu_bf_tiled__f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "reorder_data__f32",
+            "status": "Status.OPTIMIZED_OUT"
+          },
+          {
+            "node": "Parameter",
+            "execution_type": "wait_for_events__f32",
+            "status": "Status.EXECUTED"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "backend": "OpenVINO",
+        "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+        "status": "completed",
+        "latency_ms": 1.334,
+        "model_hashes": {
+          "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+          "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+        },
+        "memory_limit": 2147483648,
+        "timeout_seconds": 180,
+        "cache_policy": "fresh-session-cache; persisted GPU blobs not reused"
+      },
+      "job_memory": {
+        "limit_bytes": 2147483648,
+        "peak_commit_bytes": 779608064,
+        "source": "Windows Job Object"
+      }
+    },
+    "created": "2026-11-11T15:04:49+00:00",
+    "finished": "2026-11-11T15:04:49+00:00"
+  },
+  {
+    "id": "e25fe3dc5a38414e83bb0ed54c91346c",
+    "task": "f38ad9cff86245fbbb7817d7d6f52ac4",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:04:48+00:00",
+    "finished": "2026-11-11T15:04:51+00:00"
+  },
+  {
+    "id": "08b0ab9e406d4c81a93b539c3fcf9bf3",
+    "task": "d1cda03e8a5b47b38da2873ec8c61be4",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 4575084544,
+        "shared": true,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:04:47+00:00",
+    "finished": "2026-11-11T15:04:48+00:00"
+  },
+  {
+    "id": "93e72512cb334f479c04876085f19884",
+    "task": "569b002ab2d14b1d97f3fbc95de5e370",
+    "state": "completed",
+    "details": {
+      "runtime": "openvino",
+      "engine": "openvino",
+      "model": "2be7d6055f735f29",
+      "requested_device": "GPU",
+      "resources": {
+        "scope": "local",
+        "device": "00000000_0001298d",
+        "engine": "openvino",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:00000000_0001298d",
+          "engine:openvino:GPU",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": true,
+      "actual_device": [
+        "GPU.0"
+      ],
+      "evidence": {
+        "requested_device": "GPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "GPU.0"
+        ],
+        "operator_allocation": [
+          {
+            "node": "FullyConnected",
+            "execution_type": "fully_connected_gpu_bf_tiled__f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "reorder_data__f32",
+            "status": "Status.OPTIMIZED_OUT"
+          },
+          {
+            "node": "Parameter",
+            "execution_type": "wait_for_events__f32",
+            "status": "Status.EXECUTED"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "backend": "OpenVINO",
+        "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+        "status": "completed",
+        "latency_ms": 1.436,
+        "model_hashes": {
+          "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+          "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+        },
+        "memory_limit": 2147483648,
+        "timeout_seconds": 180,
+        "cache_policy": "fresh-session-cache; persisted GPU blobs not reused"
+      },
+      "job_memory": {
+        "limit_bytes": 2147483648,
+        "peak_commit_bytes": 779755520,
+        "source": "Windows Job Object"
+      }
+    },
+    "created": "2026-11-11T15:00:26+00:00",
+    "finished": "2026-11-11T15:00:27+00:00"
+  },
+  {
+    "id": "f786c86381064b2eb91dff6e844f290c",
+    "task": "044fc16b183343589cf45e96c30792b2",
+    "state": "cancelled",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:00:25+00:00",
+    "finished": "2026-11-11T15:00:26+00:00"
+  },
+  {
+    "id": "f347a990537b4913b91b9cd80cea53de",
+    "task": "63c2c209b45d4fe7881789be2bb00dc0",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:00:23+00:00",
+    "finished": "2026-11-11T15:00:25+00:00"
+  },
+  {
+    "id": "595398fa44c54dd7a56b8ce5bd4a2fdc",
+    "task": "1153234066df4523b2294e276117584b",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2281701376,
+        "vram": [],
+        "shared_memory": 2281701376,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 4773122048,
+        "shared": true,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:00:22+00:00",
+    "finished": "2026-11-11T15:00:23+00:00"
+  },
+  {
+    "id": "a35b8867237841f0a7107fd667129309",
+    "task": "4552ec7da1df4f55a46e1bccb79a0f21",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:00:21+00:00",
+    "finished": "2026-11-11T15:00:23+00:00"
+  },
+  {
+    "id": "39a87518d301420b978ac5eb5d2809af",
+    "task": "00d16d7774f944358bc1bcb6037319a8",
+    "state": "completed",
+    "details": {
+      "runtime": "openvino",
+      "engine": "openvino",
+      "model": "2be7d6055f735f29",
+      "requested_device": "GPU",
+      "resources": {
+        "scope": "local",
+        "device": "00000000_0001298d",
+        "engine": "openvino",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:00000000_0001298d",
+          "engine:openvino:GPU",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": true,
+      "actual_device": [
+        "GPU.0"
+      ],
+      "evidence": {
+        "requested_device": "GPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "GPU.0"
+        ],
+        "operator_allocation": [
+          {
+            "node": "FullyConnected",
+            "execution_type": "fully_connected_gpu_bf_tiled__f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "reorder_data__f32",
+            "status": "Status.OPTIMIZED_OUT"
+          },
+          {
+            "node": "Parameter",
+            "execution_type": "wait_for_events__f32",
+            "status": "Status.EXECUTED"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "backend": "OpenVINO",
+        "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+        "status": "completed",
+        "latency_ms": 1.145,
+        "model_hashes": {
+          "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+          "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+        },
+        "memory_limit": 2147483648,
+        "timeout_seconds": 180,
+        "cache_policy": "fresh-session-cache; persisted GPU blobs not reused"
+      },
+      "job_memory": {
+        "limit_bytes": 2147483648,
+        "peak_commit_bytes": 780054528,
+        "source": "Windows Job Object"
+      }
+    },
+    "created": "2026-11-11T15:00:16+00:00",
+    "finished": "2026-11-11T15:00:17+00:00"
+  },
+  {
+    "id": "721415593e194cafa98e92ae15ec240f",
+    "task": "8c6adf38d0724148979ddd0631fa1036",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "CPU",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:CPU",
+        "engine": "llama.cpp",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:llama.cpp:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:00:16+00:00",
+    "finished": "2026-11-11T15:00:18+00:00"
+  },
+  {
+    "id": "e65cf63f19514042bcd64dd217e4efa1",
+    "task": "39fd5b6ac4494cf0aa18ff3e9184577d",
+    "state": "completed",
+    "details": {
+      "runtime": "local",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "requested_device": "Vulkan0",
+      "resources": {
+        "scope": "local",
+        "device": "llama.cpp:Vulkan0",
+        "engine": "llama.cpp",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:*",
+          "engine:llama.cpp:Vulkan0",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "configured_plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 4741353472,
+        "shared": true,
+        "mmap_args": []
+      }
+    },
+    "created": "2026-11-11T15:00:15+00:00",
+    "finished": "2026-11-11T15:00:16+00:00"
+  },
+  {
+    "id": "7a3ee03908e34d98915cb8c5d686a17d",
+    "task": "db061f0781054969935f00b3d7673e5f",
+    "state": "failed",
+    "details": {
+      "runtime": "openvino",
+      "engine": "openvino",
+      "model": "2be7d6055f735f29",
+      "requested_device": "GPU",
+      "resources": {
+        "scope": "local",
+        "device": "00000000_0001298d",
+        "engine": "openvino",
+        "ram": 2147483648,
+        "vram": [],
+        "shared_memory": 2147483648,
+        "cpu_load": 20,
+        "bandwidth": 60,
+        "exclusive": [
+          "gpu:00000000_0001298d",
+          "engine:openvino:GPU",
+          "unified:accelerator"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "execution_device_verified": false,
+      "actual_device": "unknown",
+      "evidence": {
+        "requested_device": "GPU",
+        "verified_inference": false,
+        "status": "failed"
+      },
+      "job_memory": {
+        "limit_bytes": 2147483648,
+        "peak_commit_bytes": 777285632,
+        "source": "Windows Job Object"
+      }
+    },
+    "created": "2026-11-11T14:55:11+00:00",
+    "finished": "2026-11-11T14:55:53+00:00"
+  }
+]

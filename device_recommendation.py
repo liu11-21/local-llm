@@ -53,7 +53,9 @@ class DeviceRecommendations:
         hardware = info.get("hardware_capabilities") or {"devices":[]}
         native = {}
         if engine=="openvino":
-            native = dict(self.app.openvino.detected.get("identities",{}).get(device,{}))
+            checked=self.app.openvino.detected.get("checked_at",0)
+            current_probe=type(checked) is int and 0<=time()-checked<=60
+            native = dict(self.app.openvino.detected.get("identities",{}).get(device,{})) if current_probe else {}
             raw = native.get("properties",{}).get("DEVICE_LUID")
             mapping = {"state":"unknown","windows_id":None,"driver":None}
             if raw and len(raw)==16:
@@ -62,9 +64,12 @@ class DeviceRecommendations:
                     luid = f"{int.from_bytes(value[4:],'little'):08x}_{int.from_bytes(value[:4],'little'):08x}"
                     matches = [item for item in hardware["devices"] if item["id"]==luid]
                     if len(matches)==1:
-                        mapping = {"state":"verified","windows_id":luid,"driver":matches[0]["driver"]["value"]}
+                        driver=matches[0]["driver"]
+                        driver_checked=driver.get("checked_at",0)
+                        driver_value=driver["value"] if type(driver_checked) is int and 0<=time()-driver_checked<=90 else None
+                        mapping = {"state":"verified","windows_id":luid,"driver":driver_value}
                 except ValueError:pass
-            native.update(mapping=mapping,backend_version=self.app.openvino.detected.get("version") if self.app.openvino.detected["state"]=="reported" else None)
+            native.update(mapping=mapping,backend_version=self.app.openvino.detected.get("version") if current_probe and self.app.openvino.detected["state"]=="reported" else None)
         elif engine=="llama.cpp":
             executable = engine_path(self.app.data)
             if executable:
@@ -75,7 +80,9 @@ class DeviceRecommendations:
                     saved = next((line.strip() for line in lines if line.strip()),None)
                     with self.lock:self.cache[("version",digest)] = saved
                 native.update(backend_version=saved,executable_sha256=digest)
-        environment = {"environment":native,"hardware":hardware,"cpu":platform.processor(),"machine":platform.machine()}
+        inventory_at=hardware.get("inventory_at",0)
+        identity_hardware=hardware if type(inventory_at) is int and 0<=time()-inventory_at<=90 else {"devices":[]}
+        environment = {"environment":native,"hardware":identity_hardware,"cpu":platform.processor(),"machine":platform.machine()}
         return {**(descriptor or {}),"engine":engine,"device":device,"device_identity":hardware_identity(environment,engine,device),
                 "backend_version":native.get("backend_version"),"executable_sha256":native.get("executable_sha256"),
                 "driver":native.get("mapping",{}).get("driver"),"mapping":native.get("mapping",{}),
@@ -155,6 +162,8 @@ class DeviceRecommendations:
                     reasons.append("Runtime 健康狀態不允許接收任務。")
                 elif health=="busy":risks.append("設備正在工作，可能排隊。")
                 required = descriptor["ram"] if descriptor else None
+                if required is not None and device.startswith(("GPU","Vulkan","CUDA","NPU")):
+                    required=max(required,2*1024**3)  # reserve native compiler/driver workspace as well as weights
                 vram_required = None
                 if media:
                     if local:
@@ -171,6 +180,11 @@ class DeviceRecommendations:
                         available,executable="incompatible",False;reasons.append("遠端影片／音樂尚未實作，或圖片能力未就緒。")
                 incompatible = available=="incompatible"
                 ram = record["resources"]["ram_available"]
+                total_ram=record["resources"]["ram_total"]["value"]
+                if local and required is not None and not media and (required>8*1024**3 or total_ram is not None and required+256*1024**2>total_ram):
+                    available,executable="incompatible",False
+                    incompatible=True
+                    reasons.append("需求超過隔離執行的 8 GiB 上限或系統總 RAM；可保留既有單工作模式或選擇較小模型。")
                 if required is not None and fresh_measure(ram):
                     if ram["value"]<required:
                         available,executable="uncertain",False;risks.append("目前可用 RAM 低於需求估計，可等候釋放或改選較小模型。")
@@ -179,6 +193,8 @@ class DeviceRecommendations:
                     unknown.append("需求或可用 RAM 尚未可靠確認。")
                     if available=="ready":available="uncertain"
                 current = self.identity(engine,device,info,descriptor) if descriptor else {}
+                if engine=="openvino" and not current.get("backend_version"):
+                    unknown.append("裝置／版本查詢尚未更新，請到運算環境按「檢查 OpenVINO 裝置」。")
                 mapping = current.get("mapping",{})
                 matched = next((item for item in hardware["devices"] if item["id"]==mapping.get("windows_id")),None)
                 memory_type = matched.get("memory_type") if matched else "unknown"
@@ -204,6 +220,12 @@ class DeviceRecommendations:
                         if entry["eligible_for_ranking"]:
                             samples=[sample for sample in run["measurements"] if sample["phase"]=="measured" and sample["workload"]==profile]
                             performance=dict(entry["summary"])
+                            preparation=run["environment"].get("preparation",{})
+                            loading=[preparation[key] for key in ("read_model_ms","compile_ms","pipeline_load_ms") if isinstance(preparation.get(key),(int,float))]
+                            performance["load_ms"]=sum(loading) if loading else None
+                            cold=next((sample for sample in run["measurements"] if sample.get("session_cold") and sample["workload"]==profile),None)
+                            performance["model_start_ms"]=sum(loading)+cold["latency_ms"] if loading and cold else None
+                            entry["limitations"].append("Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。")
                             for metric in ("ttft_ms","decode_tokens_per_s","peak_ram_bytes"):
                                 values=[sample[metric] for sample in samples if sample.get(metric) is not None]
                                 performance[metric]=(max(values) if metric=="peak_ram_bytes" else mean(values)) if values else None

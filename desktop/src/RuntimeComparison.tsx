@@ -35,7 +35,7 @@ export function RuntimeComparison({info, policy}: {info?:Info; policy:string}) {
         <button className="button" disabled={waiting}>{waiting?'比較中…':'比較能力'}</button>
       </form>
       {results?.map(result=><article className="remote-peer section-note pre" key={result.id}>
-        <b>{result.label} · {result.recommended?'推薦':labels[result.state]}</b>
+        <b>{result.label} · {labels[result.state]}</b>
         {[...result.reasons,...result.risks,...result.unknown].map(text=><p className="small" key={text}>{text}</p>)}
       </article>)}
       {error && <p role="alert" className="creation-error pre">{error}</p>}

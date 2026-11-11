@@ -162,7 +162,8 @@ class TaskManager:
                 # Let old blocked work drain resources rather than starve through endless backfill.
                 older=[other for other in self.tasks.values() if other.public["state"]=="queued" and other.demand and task.demand
                        and other.queued_at<task.queued_at and monotonic()-other.queued_at>30 and
-                       (conflicts(other.demand,task.demand) or other.demand.scope==task.demand.scope=="local" and other.demand.ram>0)]
+                       (conflicts(other.demand,task.demand) or other.demand.scope==task.demand.scope=="local" and other.demand.ram>0
+                        and any(claim.scope=="local" for _,claim in holders))]
                 if older and task.public["action"] not in ("comfy-stop","engine-stop"):
                     allowed,reason=False,"QUEUE_FAIRNESS · 等候較早的資源任務。"
                 if not allowed:

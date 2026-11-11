@@ -28,7 +28,7 @@ from catalog import model_files, model_source, pinned_model, search_models
 from colab_runtime import ColabAdapter
 from comfy_runtime import PROFILES, install, install_directory, installed
 from desktop_agent import create_plan, messages_for_plan
-from download_recovery import owned, recover_downloads
+from download_recovery import exclusive,owned,recover_downloads
 from downloads import check_gguf, download_model
 from engine import LocalEngine
 from engine_health import EngineHealth
@@ -1439,7 +1439,19 @@ def main():
         from hardware_providers import probe
         print(json.dumps(probe(),ensure_ascii=True))
         return
-    worker = Desktop(args.data)
+    directory=args.data.resolve()
+    directory.mkdir(parents=True,exist_ok=True)
+    try:
+        with exclusive(directory/".workspace.lock"):
+            worker_loop(directory)
+    except ValueError as error:
+        if "另一個工作台" not in str(error):raise
+        sys.stdout.buffer.write(json.dumps({"ok":False,"error":"此資料夾已有執行中的工作台。請使用原視窗，或關閉後再重試。"},ensure_ascii=True).encode()+b"\n")
+        sys.stdout.buffer.flush()
+
+
+def worker_loop(directory):
+    worker = Desktop(directory)
     try:
         while raw := sys.stdin.buffer.readline(MAX_LINE + 1):
             if len(raw) > MAX_LINE:

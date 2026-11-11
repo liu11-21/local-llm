@@ -1,5 +1,32 @@
 # 桌面工作台測試紀錄
 
+## E3-D1–D5 智慧運算完整交付
+
+基準 40ea060，版本 0.6.2。D1 9559ef8、D2 1f24df4、D3 b75dd5f、D4 14493a9，D5 為原生驗收、回歸修正、文件及安裝包。規則見 [DEVICE_RECOMMENDATION](DEVICE_RECOMMENDATION.md)，資料見 [原生驗收](evidence/device/acceptance-real.json)、[完整推薦](evidence/device/recommendation-real.json)、[實際執行](evidence/device/dispatch-runs-real.json)。
+
+| 狀態 | 具體驗收與界線 |
+|---|---|
+| PASS | Freshness／Comparability 分開；權重、Backend／binary、Driver、裝置、量化、精度、Batch／採樣／EOS、工作量、時間、缺列、Partial、未知放置、CPU Fallback 與 NPU 未實測均有測試。時間只是更新建議，未自動重跑。 |
+| PASS | 同模型／條件群組才比較 Warm、TTFT、Decode 或模型啟動；缺失不當零。偏好與隱私、未知費用、離線、UMA／獨立 VRAM、過期取樣、NPU 不相容及總容量檢查有受控案例。啟動成本可改變 Warm 延遲的選擇。 |
+| PASS | 同一 TaskManager 測試 CPU／GPU、不同 GPU、CPU／受控 NPU、RAM／VRAM 不足、共用頻寬、同 Engine／Provider、未知 GPU 全域鎖、ComfyUI 預留、取消、逾時、關閉及恢復。受控並行不是實體 NPU 加速。 |
+| PASS | Team child Task 的獨立模型／輸入、並行草稿、依賴整合、父取消傳遞、未授權遠端成員不執行。Agent 外部工具資料須計畫層級同意，金鑰遮蔽與一次核准仍生效。排隊後模型變更拒絕。 |
+| PASS | 正式 Worker OS 檔案鎖測試，第二個 Worker 無法重置活躍資料，第一個仍可服務，關閉後鎖可重新取得。SQLite 12 保留舊對話、Agent、Team、Benchmark、作品及遠端資料。 |
+| PASS | 原生流程 A：既有真實 SmolLM2 同條件 Benchmark → 使用者確認 Vulkan → TaskManager → 新隔離程序 → 非空回答及執行證據。此推薦限固定 32 Token 參考，Vulkan 配置層數不是完整算子分配。 |
+| PASS | 原生流程 B：CPU llama.cpp 與 Intel GPU OpenVINO 同時有兩個存活 PID，含觀察時間；兩工作完成，FP32 MatMul 參考輸出相符，GPU.0 推理證據保存。不是只看 queued／running 標籤。 |
+| PASS | 原生流程 C：無 NPU 且 Qwen 文字模型 npu_candidate=false，強制要求 NPU 被拒絕，沒有新增 CPU Fallback 工作或下載替代模型。 |
+| PASS | 真實 OpenVINO CPU Agent 核准計畫後完成；CPU／Vulkan Team 獨立節點與最後整合完成。小型模型的語意品質不由此執行驗收評分。 |
+| PASS | 真實取消後程序與 Scope 清理，後續 GPU 工作成功；應用關閉中止原生程序，任務為 interrupted，沒有殘留 Scope。 |
+| PASS | 本機 GPU blob 重用缺陷已定位及修正。兩個新快取皆成功、兩次跨程序重用皆 0xC0000005，8 GiB 上限下峰值約 0.78 GB。現採私有 session cache，重啟／恢復成功，不刪舊快取。[原始故障重現](evidence/device/gpu-cache-diagnostic.json) 的 FAIL 是修正前診斷，非目前正常流程驗收結果。 |
+| PASS | TypeScript／Vite 建置與完整 Chromium 回歸，保留既有 bundle 大小提醒。共用 Picker 四尺寸、深淺色、長名稱、缺失／過期／未知證據、離線、手動覆寫、無自動派送、鍵盤及 Reduced Motion。既有 Agent／Team、Onboarding、遠端圖片、作品與 Benchmark 流程通過。 |
+| PASS | 真實 React 共用推薦→採用 Vulkan→聊天→此次新 Dispatch ID→非空畫面回答→任務證據；深色、650px 淺色與實際證據畫面位於 ui-preview/device。 |
+| NEEDS NPU | Intel NPU 實體推理／多設備並行、AMD／Qualcomm Adapter 尚無實體驗收，不以模擬或列舉代替。 |
+| NOT RUN | 其他廠牌 GPU、多 GPU 實機；未知 Vulkan 映射仍保守互斥，HETERO 單模型分割拒絕。CPU／頻寬屬規劃預算，未宣稱 OS 級百分比隔離；可靠程序 VRAM／功耗／溫度不足時未知。 |
+| NEEDS REMOTE HOST | 雙實體 Windows 的 GPU 文字／圖片與 LAN／VPN 驗收未取得硬體。既有回環 TLS、配對與來源同意回歸保留。 |
+| NEEDS CLOUD AUTH | 只有受控文字 Provider／同意測試，未啟用付費雲端或自動外傳。 |
+| NOT RUN | 正式 Release、Authenticode、防毒申訴與 main 變更，本輪僅開發分支安裝包。 |
+
+本機最終 Python、Windows CI、安裝包提交與校驗值在本輪建置結束後補入本節，避免引用 E3-C 安裝包當成新成果。
+
 ## E3-C1–C3 Benchmark
 
 基準 7ed3a75，版本維持 0.6.2。Core 33917d9、真實推理及證據 62d8c23，介面接續獨立提交。E3-D1／D2、E4／E5 未交付。[方法與完整統計](HARDWARE_BENCHMARK.md) · [原始資料](evidence/benchmark/)。

@@ -1,10 +1,20 @@
 # 共用任務準備
 
+## E3-D 的推薦與確認
+
+DeviceChoice 讀取相同推薦 RPC，不傳送 Prompt，也不啟動 Benchmark。使用者可看條件、替代來源與完整證據，手動選擇設備後仍須開始任務。外部來源沿用 TaskPreparation 的目的地、內容與費用確認，未知費用不視為免費。
+
+TaskManager 原子檢查 ResourceDemand，先全部取得裝置／Provider／Engine 鎖、RAM／VRAM 與規劃預算，再啟動隔離的既有引擎。暫時不足會排隊，可取消；模型或引擎在排隊後改變時拒絕。Benchmark 與既有單工作流程仍全域排他，ComfyUI 保留持續預留。停止服務可解除預留，不被隊頭公平性阻塞。
+
+Team 父任務不持有模型資源，依賴就緒的節點成為 child Task，由同一佇列執行。每節點保存獨立輸入、結果及工具證據，再供主模型整合。父取消會傳到子任務。Agent 的計畫版本與逐次工具核准保持，等待核准時釋放程序，恢復時重新准入。
+
+SQLite 12 增加 dispatch_runs，保存已確認權重與引擎雜湊、指定與回報設備、Job 記憶體限制／峰值及狀態。取消、失敗、逾時與關閉都清理原生程序後才釋放資源；重開只標 interrupted，不自動重送。[完整資源契約](DEVICE_RECOMMENDATION.md)。
+
 ## E3-C Benchmark 工作
 
 確認模型、裝置、固定工作量、次數、時間與程序記憶體上限後，先建立 queued Session，再交給現有 TaskManager 的 compute lane。排隊取消仍留下可追蹤紀錄；執行時逐列保存。Benchmark 與聊天／Agent／Team 依序執行，沒有為測試強制中斷其他工作。取得 lane 後可釋放閒置文字模型，ComfyUI 服務尚在運行時拒絕測試，讓使用者自行停止。
 
-Benchmark 不列為自動重試工作。取消、逾時或 Backend 失敗保留已完成的列；重新開啟程式把未完成 Session／Run 標為 interrupted。記憶體／時間 Budget、引擎缺失與不支援裝置會產生明確失敗，不自動改用 CPU。Remote Benchmark 為 unsupported。E3-D CPU／GPU／NPU 的獨立 lane、共享 RAM 預留與並行策略仍待實作。
+Benchmark 不列為自動重試工作。取消、逾時或 Backend 失敗保留已完成的列，重開標為 interrupted。引擎缺失及不支援裝置不自動改用 CPU。Remote Benchmark 仍 unsupported；E3-D 多任務調度已實作，但 Benchmark 本身不與其他本機推理並行。
 
 OpenVINO 透過現有 TaskManager 執行安裝、裝置查詢、模型匯入及推理。安裝需確認固定版本套件和空間，模型由使用者從既有 IR 資料夾匯入。聊天只列出含完整 Tokenizer 的模型，使用本機政策，不增加外部傳送確認。OpenVINO 與 llama.cpp／ComfyUI 共用單一 compute 槽，獨立安裝走原 network 槽。
 

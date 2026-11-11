@@ -1,0 +1,538 @@
+{
+  "schema": 1,
+  "preference": "speed",
+  "objective": "latency",
+  "usage": {
+    "workload": "short",
+    "workload_sha256": "6959b27802b607ddda4c107be1f59a350ea7c8e652e5cfb225a5f4ac2e236cb0",
+    "parameters": {
+      "context": 2048,
+      "max_tokens": 32,
+      "memory_mib": 4096,
+      "batch": 1,
+      "temperature": 0,
+      "do_sample": false,
+      "ignore_eos": true
+    },
+    "reference_only": true
+  },
+  "recommended": "local|llama.cpp|Vulkan0",
+  "comparison": {
+    "scope": "僅限指定模型與固定工作量、參數及 Backend。",
+    "objective": "latency",
+    "ordered_candidates": [
+      "local|llama.cpp|Vulkan0",
+      "local|llama.cpp|CPU"
+    ],
+    "condition_key": "52ebdd831e71ddaabaee59529b9ea851cbdd95707b4cf925700389d2afbf7959"
+  },
+  "candidates": [
+    {
+      "id": "local|llama.cpp|CPU",
+      "runtime": "local",
+      "device": "CPU",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "label": "本機 CPU／GPU · CPU",
+      "availability": "ready",
+      "executable": true,
+      "network": false,
+      "cost": "no-api-fee",
+      "needs_consent": false,
+      "reasons": [
+        "可用 RAM 達到估計，仍需由 Backend 實際載入驗證。"
+      ],
+      "risks": [],
+      "uncertainty": [
+        "Backend 測試完成不等於已驗證執行裝置或完整算子分配。",
+        "完整算子分配未驗證。",
+        "未提供語意品質或參考輸出正確性判準。",
+        "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+      ],
+      "resource": {
+        "ram_estimate": 937124408,
+        "vram_estimate": null,
+        "memory_type": "unknown",
+        "physical_device": null,
+        "ram_available": {
+          "value": 5777395712,
+          "unit": "bytes",
+          "source": "detected",
+          "checked_at": 1794410409,
+          "status": "available",
+          "evidence": "detected"
+        },
+        "shared_memory_included_in_ram": true
+      },
+      "identity": {
+        "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+        "model_hashes": {
+          "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+        },
+        "quantization": "encoded-in-GGUF-hash",
+        "format": "GGUF",
+        "bytes": 105454432,
+        "kind": "text",
+        "ram": 937124408,
+        "engine": "llama.cpp",
+        "device": "CPU",
+        "device_identity": {
+          "kind": "cpu",
+          "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+          "machine": "AMD64"
+        },
+        "backend_version": "version: 0.7.0-dev (build 11810, commit e3797b184)",
+        "executable_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+        "driver": null,
+        "mapping": {},
+        "precision": "GGUF-native",
+        "resources": {
+          "ram_available": {
+            "value": 5777395712,
+            "unit": "bytes",
+            "source": "detected",
+            "checked_at": 1794410409,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "vram_available": null
+        }
+      },
+      "evidence": [
+        {
+          "schema": 1,
+          "session": "46cb984291564b70827ed5a51bf97773",
+          "run": "374c81ef3d934acc9734dfd3b50c9e06",
+          "device": "CPU",
+          "freshness": "current",
+          "comparability": "partially_comparable",
+          "eligible_for_ranking": true,
+          "changed": [],
+          "stale_reasons": [],
+          "missing": [],
+          "differences": [],
+          "limitations": [
+            "Backend 測試完成不等於已驗證執行裝置或完整算子分配。",
+            "完整算子分配未驗證。",
+            "未提供語意品質或參考輸出正確性判準。",
+            "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+          ],
+          "age_days": 0.10361361122793622,
+          "age_advisory_days": 30,
+          "benchmark_completed": true,
+          "output_correct": null,
+          "execution_device_verified": false,
+          "full_operator_allocation_verified": false,
+          "backend_configured": true,
+          "cpu_fallback": false,
+          "mapping": {
+            "state": "unknown"
+          },
+          "summary": {
+            "count": 10,
+            "mean_ms": 623.699339999439,
+            "stddev_ms": 194.47434593232612,
+            "p50_ms": 480.8950999977242,
+            "p95_ms": 877.8541599975142,
+            "requests_per_second": 1.6033366333222343
+          },
+          "precision": "GGUF-native",
+          "memory": {
+            "peak_ram_bytes": 250015744,
+            "peak_vram_bytes": null,
+            "current": {
+              "ram_available": {
+                "value": 5777395712,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794410409,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_available": null
+            },
+            "verified_minimum_requirement": false
+          },
+          "condition_key": "52ebdd831e71ddaabaee59529b9ea851cbdd95707b4cf925700389d2afbf7959",
+          "performance": {
+            "count": 10,
+            "mean_ms": 623.699339999439,
+            "stddev_ms": 194.47434593232612,
+            "p50_ms": 480.8950999977242,
+            "p95_ms": 877.8541599975142,
+            "requests_per_second": 1.6033366333222343,
+            "load_ms": 539.2072999966331,
+            "model_start_ms": 1002.6694999978645,
+            "ttft_ms": null,
+            "decode_tokens_per_s": 209.9322626031292,
+            "peak_ram_bytes": 250015744
+          }
+        }
+      ],
+      "performance": {
+        "count": 10,
+        "mean_ms": 623.699339999439,
+        "stddev_ms": 194.47434593232612,
+        "p50_ms": 480.8950999977242,
+        "p95_ms": 877.8541599975142,
+        "requests_per_second": 1.6033366333222343,
+        "load_ms": 539.2072999966331,
+        "model_start_ms": 1002.6694999978645,
+        "ttft_ms": null,
+        "decode_tokens_per_s": 209.9322626031292,
+        "peak_ram_bytes": 250015744
+      },
+      "performance_group": "52ebdd831e71ddaabaee59529b9ea851cbdd95707b4cf925700389d2afbf7959",
+      "confidence": "limited",
+      "evidence_level": "backend-benchmark-limited",
+      "recommended": false
+    },
+    {
+      "id": "local|llama.cpp|Vulkan0",
+      "runtime": "local",
+      "device": "Vulkan0",
+      "engine": "llama.cpp",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "label": "本機 CPU／GPU · Vulkan0",
+      "availability": "ready",
+      "executable": true,
+      "network": false,
+      "cost": "no-api-fee",
+      "needs_consent": false,
+      "reasons": [
+        "可用 RAM 達到估計，仍需由 Backend 實際載入驗證。",
+        "在同一固定 Benchmark 條件下，此指標較佳；不能代表其他提示詞或輸出長度。"
+      ],
+      "risks": [],
+      "uncertainty": [
+        "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+        "只有 Backend 裝置與 GPU 清單身分，尚未確認 Windows 實體裝置映射。",
+        "Backend 測試完成不等於已驗證執行裝置或完整算子分配。",
+        "完整算子分配未驗證。",
+        "未提供語意品質或參考輸出正確性判準。",
+        "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+      ],
+      "resource": {
+        "ram_estimate": 2147483648,
+        "vram_estimate": null,
+        "memory_type": "unknown",
+        "physical_device": null,
+        "ram_available": {
+          "value": 5777395712,
+          "unit": "bytes",
+          "source": "detected",
+          "checked_at": 1794410409,
+          "status": "available",
+          "evidence": "detected"
+        },
+        "shared_memory_included_in_ram": true
+      },
+      "identity": {
+        "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+        "model_hashes": {
+          "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+        },
+        "quantization": "encoded-in-GGUF-hash",
+        "format": "GGUF",
+        "bytes": 105454432,
+        "kind": "text",
+        "ram": 937124408,
+        "engine": "llama.cpp",
+        "device": "Vulkan0",
+        "device_identity": {
+          "kind": "backend-configured",
+          "backend": "llama.cpp",
+          "device": "Vulkan0",
+          "inventory": [
+            {
+              "id": "00000000_0001298d",
+              "vendor": "Intel",
+              "name": "Intel(R) Iris(R) Xe Graphics",
+              "driver": "31.0.101.5590"
+            }
+          ]
+        },
+        "backend_version": "version: 0.7.0-dev (build 11810, commit e3797b184)",
+        "executable_sha256": "61a8a85870453176e4a4e2dd7a2c3435a1592c7845cfb0d7172f95904eef9183",
+        "driver": null,
+        "mapping": {},
+        "precision": "GGUF-native",
+        "resources": {
+          "ram_available": {
+            "value": 5777395712,
+            "unit": "bytes",
+            "source": "detected",
+            "checked_at": 1794410409,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "vram_available": null
+        }
+      },
+      "evidence": [
+        {
+          "schema": 1,
+          "session": "46cb984291564b70827ed5a51bf97773",
+          "run": "0fb8caa3360c48608aa125e358d5c6c3",
+          "device": "Vulkan0",
+          "freshness": "current",
+          "comparability": "partially_comparable",
+          "eligible_for_ranking": true,
+          "changed": [],
+          "stale_reasons": [],
+          "missing": [],
+          "differences": [],
+          "limitations": [
+            "只有 Backend 裝置與 GPU 清單身分，尚未確認 Windows 實體裝置映射。",
+            "Backend 測試完成不等於已驗證執行裝置或完整算子分配。",
+            "完整算子分配未驗證。",
+            "未提供語意品質或參考輸出正確性判準。",
+            "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+          ],
+          "age_days": 0.10361362729359556,
+          "age_advisory_days": 30,
+          "benchmark_completed": true,
+          "output_correct": null,
+          "execution_device_verified": false,
+          "full_operator_allocation_verified": false,
+          "backend_configured": true,
+          "cpu_fallback": false,
+          "mapping": {
+            "state": "unknown"
+          },
+          "summary": {
+            "count": 10,
+            "mean_ms": 321.349580000242,
+            "stddev_ms": 4.58748179300852,
+            "p50_ms": 320.7712500006892,
+            "p95_ms": 328.4944999984873,
+            "requests_per_second": 3.111875858058526
+          },
+          "precision": "GGUF-native",
+          "memory": {
+            "peak_ram_bytes": 309260288,
+            "peak_vram_bytes": null,
+            "current": {
+              "ram_available": {
+                "value": 5777395712,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794410409,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_available": null
+            },
+            "verified_minimum_requirement": false
+          },
+          "condition_key": "52ebdd831e71ddaabaee59529b9ea851cbdd95707b4cf925700389d2afbf7959",
+          "performance": {
+            "count": 10,
+            "mean_ms": 321.349580000242,
+            "stddev_ms": 4.58748179300852,
+            "p50_ms": 320.7712500006892,
+            "p95_ms": 328.4944999984873,
+            "requests_per_second": 3.111875858058526,
+            "load_ms": 533.6698999963119,
+            "model_start_ms": 930.672999995295,
+            "ttft_ms": null,
+            "decode_tokens_per_s": 126.14605392389583,
+            "peak_ram_bytes": 309260288
+          }
+        }
+      ],
+      "performance": {
+        "count": 10,
+        "mean_ms": 321.349580000242,
+        "stddev_ms": 4.58748179300852,
+        "p50_ms": 320.7712500006892,
+        "p95_ms": 328.4944999984873,
+        "requests_per_second": 3.111875858058526,
+        "load_ms": 533.6698999963119,
+        "model_start_ms": 930.672999995295,
+        "ttft_ms": null,
+        "decode_tokens_per_s": 126.14605392389583,
+        "peak_ram_bytes": 309260288
+      },
+      "performance_group": "52ebdd831e71ddaabaee59529b9ea851cbdd95707b4cf925700389d2afbf7959",
+      "confidence": "limited",
+      "evidence_level": "backend-benchmark-limited",
+      "recommended": true
+    },
+    {
+      "id": "openvino|openvino|CPU",
+      "runtime": "openvino",
+      "device": "CPU",
+      "engine": "openvino",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "label": "本機 OpenVINO · CPU",
+      "availability": "incompatible",
+      "executable": false,
+      "network": false,
+      "cost": "no-api-fee",
+      "needs_consent": false,
+      "reasons": [
+        "模型未安裝或格式不適用此 Backend，不會自動轉換或下載。"
+      ],
+      "risks": [],
+      "uncertainty": [
+        "需求或可用 RAM 尚未可靠確認。",
+        "裝置／版本查詢尚未更新，請到運算環境按「檢查 OpenVINO 裝置」。",
+        "沒有此模型與工作量的 Benchmark，缺少資料不代表較慢。"
+      ],
+      "resource": {
+        "ram_estimate": null,
+        "vram_estimate": null,
+        "memory_type": "unknown",
+        "physical_device": null,
+        "ram_available": {
+          "value": 5777395712,
+          "unit": "bytes",
+          "source": "detected",
+          "checked_at": 1794410409,
+          "status": "available",
+          "evidence": "detected"
+        },
+        "shared_memory_included_in_ram": true
+      },
+      "identity": {
+        "resources": {
+          "ram_available": {
+            "value": 5777395712,
+            "unit": "bytes",
+            "source": "detected",
+            "checked_at": 1794410409,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "vram_available": null
+        }
+      },
+      "evidence": [],
+      "performance": null,
+      "performance_group": null,
+      "confidence": "unknown",
+      "evidence_level": "capability-only",
+      "recommended": false
+    },
+    {
+      "id": "openvino|openvino|GPU",
+      "runtime": "openvino",
+      "device": "GPU",
+      "engine": "openvino",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "label": "本機 OpenVINO · GPU",
+      "availability": "incompatible",
+      "executable": false,
+      "network": false,
+      "cost": "no-api-fee",
+      "needs_consent": false,
+      "reasons": [
+        "模型未安裝或格式不適用此 Backend，不會自動轉換或下載。"
+      ],
+      "risks": [],
+      "uncertainty": [
+        "需求或可用 RAM 尚未可靠確認。",
+        "裝置／版本查詢尚未更新，請到運算環境按「檢查 OpenVINO 裝置」。",
+        "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+        "沒有此模型與工作量的 Benchmark，缺少資料不代表較慢。"
+      ],
+      "resource": {
+        "ram_estimate": null,
+        "vram_estimate": null,
+        "memory_type": "unknown",
+        "physical_device": null,
+        "ram_available": {
+          "value": 5777395712,
+          "unit": "bytes",
+          "source": "detected",
+          "checked_at": 1794410409,
+          "status": "available",
+          "evidence": "detected"
+        },
+        "shared_memory_included_in_ram": true
+      },
+      "identity": {
+        "resources": {
+          "ram_available": {
+            "value": 5777395712,
+            "unit": "bytes",
+            "source": "detected",
+            "checked_at": 1794410409,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "vram_available": null
+        }
+      },
+      "evidence": [],
+      "performance": null,
+      "performance_group": null,
+      "confidence": "unknown",
+      "evidence_level": "capability-only",
+      "recommended": false
+    },
+    {
+      "id": "colab|Google Cloud|remote",
+      "runtime": "colab",
+      "device": "remote",
+      "engine": "Google Cloud",
+      "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "label": "Colab Enterprise · remote",
+      "availability": "incompatible",
+      "executable": false,
+      "network": true,
+      "cost": "may-charge",
+      "needs_consent": true,
+      "reasons": [
+        "此 Runtime 尚未支援這個任務。",
+        "端點離線或能力已過期，請重新連線。",
+        "端點未列出此模型。",
+        "外部 API 需要手動運算政策及此次資料傳送確認。",
+        "Runtime 健康狀態不允許接收任務。",
+        "只提供建議，實際傳送仍需此次任務的目的地與費用確認。"
+      ],
+      "risks": [],
+      "uncertainty": [
+        "沒有此模型與工作量的 Benchmark，缺少資料不代表較慢。"
+      ],
+      "resource": {
+        "ram_estimate": null,
+        "vram_estimate": null,
+        "memory_type": "unknown",
+        "physical_device": null,
+        "ram_available": {
+          "value": null,
+          "unit": "unknown",
+          "source": "unknown",
+          "checked_at": null,
+          "status": "unknown",
+          "evidence": "unknown"
+        },
+        "shared_memory_included_in_ram": true
+      },
+      "identity": {
+        "resources": {
+          "ram_available": {
+            "value": null,
+            "unit": "unknown",
+            "source": "unknown",
+            "checked_at": null,
+            "status": "unknown",
+            "evidence": "unknown"
+          },
+          "vram_available": null
+        }
+      },
+      "evidence": [],
+      "performance": null,
+      "performance_group": null,
+      "confidence": "unknown",
+      "evidence_level": "capability-only",
+      "recommended": false
+    }
+  ],
+  "automatic_dispatch": false,
+  "benchmark_started": false,
+  "explanation": "推薦後由使用者選擇並確認；未比較的候選沒有被視為較慢。"
+}
