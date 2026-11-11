@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
-from threading import Lock, Thread
+from threading import Event, Lock, Thread
 from time import monotonic, time
 import uuid
 
@@ -19,7 +19,7 @@ def reading(value=None, source="detected", status=None):
             "status":status or ("available" if value is not None else "unknown")}
 
 
-def windows_inventory():
+def windows_inventory(cancel=None):
     """CIM exposes typed PnP/driver records, independent of localized UI text."""
     executable = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32/WindowsPowerShell/v1.0/powershell.exe"
     script = r"""
@@ -38,10 +38,22 @@ def windows_inventory():
         class=$device.PNPClass;problem=$device.ConfigManagerErrorCode;driver=$driver.DriverVersion}
     }) | ConvertTo-Json -Compress
     """
-    result = subprocess.run([str(executable),"-NoProfile","-NonInteractive","-Command",script],
-                            capture_output=True,timeout=20,check=True,
-                            creationflags=subprocess.CREATE_NO_WINDOW)
-    raw = result.stdout.decode("utf-8-sig").strip()
+    with subprocess.Popen([str(executable),"-NoProfile","-NonInteractive","-Command",script],
+                          stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+                          creationflags=subprocess.CREATE_NO_WINDOW) as process:
+        deadline = monotonic()+20
+        while True:
+            try:
+                raw, _ = process.communicate(timeout=0.25)
+                break
+            except subprocess.TimeoutExpired:
+                if monotonic()>=deadline or cancel is not None and cancel.is_set():
+                    process.kill()
+                    process.communicate()
+                    raise OSError("Windows inventory unavailable") from None
+        if process.returncode:
+            raise OSError("Windows inventory unavailable")
+    raw = raw.decode("utf-8-sig").strip()
     rows = json.loads(raw) if raw else []
     return rows if isinstance(rows,list) else [rows]
 
@@ -191,8 +203,10 @@ def npu_devices(rows):
 
 
 class HardwareMonitor:
-    def __init__(self, inventory=windows_inventory, adapters=dxgi_adapters, counters=WindowsCounters, *, windows=None):
-        self.inventory, self.adapters, self.counter_factory = inventory,adapters,counters
+    def __init__(self, inventory=None, adapters=dxgi_adapters, counters=WindowsCounters, *, windows=None):
+        self.stop = Event()
+        self.inventory = inventory if inventory is not None else lambda:windows_inventory(self.stop)
+        self.adapters, self.counter_factory = adapters,counters
         self.windows = os.name == "nt" if windows is None else windows
         self.devices = []
         self.inventory_at = None
@@ -287,6 +301,9 @@ class HardwareMonitor:
     def close(self):
         with self.lock:
             self.closed = True
+            self.stop.set()
             if self.counters:
                 self.counters.close()
                 self.counters = None
+        if self.refresh_thread:
+            self.refresh_thread.join(timeout=1)

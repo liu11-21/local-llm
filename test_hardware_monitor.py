@@ -1,6 +1,7 @@
 from copy import deepcopy
 from unittest import TestCase
 from unittest.mock import Mock, patch
+from threading import Event
 
 from hardware_contract import validate_hardware
 from hardware_monitor import HardwareMonitor, counter_values, npu_devices, reading
@@ -9,6 +10,18 @@ from runtime_contract import capability, validate
 
 
 class HardwareMonitorTests(TestCase):
+    def test_close_cancels_background_inventory_without_waiting_for_its_deadline(self):
+        started = Event()
+        def inventory():
+            started.set()
+            monitor.stop.wait(3)
+            return []
+        monitor = HardwareMonitor(inventory=inventory,adapters=lambda:[],counters=Mock(),windows=True)
+        monitor.snapshot()
+        self.assertTrue(started.wait(2))
+        monitor.close()
+        self.assertFalse(monitor.refresh_thread.is_alive())
+
     def monitor(self, *, rows=(), devices=None):
         adapter = {"id":"00000000_00000001","name":"Test GPU","vendor":"Intel","kind":"gpu",
                    "vram_total":reading(128),"shared_limit":reading(4096)}
