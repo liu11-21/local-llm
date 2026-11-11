@@ -34,6 +34,7 @@ from engine import LocalEngine
 from engine_health import EngineHealth
 from hardware import ResourceMonitor, detect_hardware, estimate_ram
 from hardware_monitor import HardwareMonitor
+from openvino_adapter import OpenVINOAdapter
 from resource_contract import gpu_memory
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
@@ -44,7 +45,7 @@ from remote_host import ANSWER_LIMIT, Host
 from remote_media import ClientMedia, IMAGE_WORKFLOWS, REMOTE_IMAGE_LIMIT, await_image, descriptor, fetch_image, image_input, validate_artifact
 from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import POLICIES, Providers, route
-from runtime_contract import colab_capability, external_capability, fresh, local_capability, observed, task_health
+from runtime_contract import capability, colab_capability, external_capability, fresh, local_capability, observed, task_health
 from runtime_recommendation import TASK_FORMAT, compare
 from onboarding import onboarding_plan
 from task_manager import TaskManager, timestamp
@@ -60,7 +61,8 @@ ENGINE_LICENSE_HASH = "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0
 MAX_LINE = 256 * 1024
 WORKSPACE_VERSION = "0.6.2"
 ACTIONS = {"chat", "download", "team", "team-workflow", "comfy-start", "comfy-stop", "media", "engine-start",
-           "engine-stop", "engine-install", "comfy-install", "media-install", "agent", "update-download", "remote-fetch-work"}
+           "engine-stop", "engine-install", "comfy-install", "media-install", "agent", "update-download", "remote-fetch-work",
+           "openvino-install","openvino-remove","openvino-detect","openvino-import","openvino-infer"}
 
 
 def chat_id(data):
@@ -170,6 +172,7 @@ class Desktop(Workspace):
         self.remote_clients = RemoteClients(self.connect)
         self.client_media = ClientMedia(self.connect)
         self.remote_tls = ManagedTLS(self.connect, self.remote_host)
+        self.openvino = OpenVINOAdapter(self.data,self.connect)
 
     @contextmanager
     def connect(self):
@@ -358,7 +361,16 @@ class Desktop(Workspace):
 
     def runtime_capabilities(self, info):
         active = sum(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
-        return [local_capability(info, self.engine_health(), active),
+        adapter = self.openvino.status()
+        local = local_capability(info, self.engine_health(), active)
+        return [local,
+                capability("openvino","本機 OpenVINO","local","OpenVINO",connected=True,
+                           health="busy" if adapter["busy"] else "ready" if adapter["installed"] else "setup",
+                           tasks=["chat"],formats=["OpenVINO IR"],engines=["OpenVINO"] if adapter["installed"] else [],
+                           models=[model["id"] for model in adapter["models"] if model["kind"]=="text"],
+                           network=False,cost="no-api-fee",source="openvino-adapter",hardware=info.get("hardware_capabilities"),
+                           resources=local["resources"],model_ram={model["id"]:model["bytes"]+512*1024**2
+                                                                for model in adapter["models"] if model["kind"]=="text"}),
                 *(item.get("capability") or external_capability(item) for item in info["providers"]),
                 colab_capability(info["colab_ready"])]
 
@@ -411,6 +423,12 @@ class Desktop(Workspace):
                         if runtime == "local" else record["model_ram"].get(model))
             match = compare(record, task, model, policy=policy, ram=estimate)
             matches.append(match)
+            if runtime=="openvino":
+                if task!="chat" or not self.openvino.installed():
+                    blockers.append("此功能需要已安裝的 OpenVINO 文字推理 Adapter。")
+                if model not in record["models"]:
+                    blockers.append("請匯入完整的 OpenVINO 文字模型與 Tokenizer。")
+                continue
             if runtime == "local":
                 if not info["engine"]:
                     blockers.append("需要安裝本機文字引擎。")
@@ -770,6 +788,26 @@ class Desktop(Workspace):
         return text if member["runtime"] == "local" else text.replace(model.token, "[已遮蔽金鑰]")
 
     def perform(self, action, data, cancel, update):
+        if action.startswith("openvino-"):
+            if action in ("openvino-install","openvino-remove") and data.get("confirmed") is not True:
+                raise ValueError("請先確認 OpenVINO Runtime 的安裝或移除。")
+            if action=="openvino-install":
+                return self.openvino.install(cancel,update)
+            if action=="openvino-remove":
+                return self.openvino.remove()
+            if action=="openvino-detect":
+                return self.openvino.detect(cancel,update)
+            if action=="openvino-import":
+                return self.openvino.import_model(field(data,"directory",1000),cancel,update)
+            if action=="openvino-infer":
+                if self.local.running() or self.active:
+                    self.stop_local()
+                if self.comfy.running():
+                    raise ValueError("請先停止 ComfyUI，再執行 OpenVINO。")
+                result = self.openvino.infer(field(data,"model",16),field(data,"device",16),cancel,
+                                            lambda event:update(message="OpenVINO 已載入模型。") if event.get("event")=="loaded" else None,
+                                            inputs=data.get("inputs"))
+                return {"message":"OpenVINO 推理已完成，執行證據已保存。","inference":result}
         if action == "remote-host-media":
             return self.host_image(data,cancel,update)
         if action == "remote-fetch-work":
@@ -843,7 +881,14 @@ class Desktop(Workspace):
             known_pair = isinstance(runtime, str) and runtime in self.remote_clients.items
             chosen = route(data.get("policy", "auto"), runtime, data.get("consent") is True, paired=known_pair)
             paired = self.remote_clients.items.get(chosen)
-            if chosen != "local":
+            if chosen=="openvino":
+                provider = None
+                plan = None
+                if self.local.running() or self.active:
+                    self.stop_local()
+                if self.comfy.running():
+                    raise ValueError("請先停止 ComfyUI，再使用 OpenVINO。")
+            elif chosen != "local":
                 provider = paired or self.providers.get(chosen)
                 plan = None
             else:
@@ -860,7 +905,18 @@ class Desktop(Workspace):
                          "omitted_turns": (original - len(messages)) // 2}
             update(message="正在生成回答…", answer="", usage=usage)
             answer = ""
-            if chosen == "local":
+            if chosen=="openvino":
+                directory, descriptor = self.openvino.validate_model(model)
+                if descriptor["kind"]!="text":
+                    raise ValueError("此模型沒有完整文字 Tokenizer，請從運算環境執行張量推理。")
+                def receive(event):
+                    nonlocal answer
+                    if event.get("event")=="token":
+                        answer += event["text"]
+                        update(answer=answer)
+                self.openvino.infer(model,data.get("device","CPU"),cancel,receive,messages=messages,max_tokens=budget)
+                stream = (fragment for fragment in ())
+            elif chosen == "local":
                 stream = self.local.stream(messages, max_tokens=budget, temperature=temperature, cancel=cancel)
             elif paired:
                 stream = paired.stream(model, messages, budget, temperature, cancel, update)
@@ -871,13 +927,13 @@ class Desktop(Workspace):
                     if cancel.is_set():
                         return None
                     answer += token
-                    if chosen == "local":
+                    if chosen in ("local","openvino"):
                         update(answer=answer)
                     else:
                         update(answer=answer.replace(provider.token, "[已遮蔽金鑰]"))
             if cancel.is_set():
                 return None
-            if chosen != "local":
+            if chosen not in ("local","openvino"):
                 answer = answer.replace(provider.token, "[已遮蔽金鑰]")
             if not answer.strip():
                 raise RuntimeError("模型沒有傳回可顯示的文字。")
@@ -893,7 +949,7 @@ class Desktop(Workspace):
                     db.executemany("INSERT INTO messages VALUES(?,?,?)",
                                    [(chat, "user", prompt), (chat, "assistant", answer)])
                 message = db.execute("SELECT max(rowid) FROM messages WHERE chat=?", (chat,)).fetchone()[0]
-                provider_label = "Local LLM" if chosen == "local" else getattr(provider, "label", "OpenAI-compatible")
+                provider_label = "OpenVINO" if chosen=="openvino" else "Local LLM" if chosen == "local" else getattr(provider, "label", "OpenAI-compatible")
                 if not isinstance(provider_label, str):
                     provider_label = "OpenAI-compatible"
                 db.execute("INSERT OR REPLACE INTO chat_runtime VALUES(?,?,?,?,?)",
@@ -943,6 +999,21 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op=="openvino-status":
+            return self.openvino.status()
+        if op=="openvino-install-plan":
+            return self.openvino.install_plan()
+        if op=="openvino-runs":
+            with self.connect() as db:
+                return [{"id":identity,"model":model,"details":json.loads(details),"created":created}
+                        for identity,model,details,created in db.execute(
+                            "SELECT id,model,details,created FROM engine_runs ORDER BY rowid DESC LIMIT 20")]
+        if op=="openvino-clear-runs":
+            if data.get("confirmed") is not True:
+                raise ValueError("請先確認清除 OpenVINO 執行紀錄。")
+            with self.connect() as db:
+                db.execute("DELETE FROM engine_runs WHERE engine='openvino'")
+            return None
         if op == "runtime-models-refresh":
             runtime = field(data, "runtime", 32)
             if runtime == "local":
@@ -1097,6 +1168,13 @@ class Desktop(Workspace):
             info["registry"] = workspace_registry(info, self.models, ENGINE_VERSION, sources)
             info["hardware_capabilities"] = self.hardware_monitor.snapshot()
             info["registry"]["hardware"] = info["hardware_capabilities"]
+            info["openvino"] = self.openvino.status()
+            if info["openvino"]["installed"]:
+                info["registry"]["engines"].append({"id":"openvino","label":"OpenVINO","version":info["openvino"]["version"],
+                                                   "installed":True,"running":info["openvino"]["busy"],"formats":["OpenVINO IR"],
+                                                   "tasks":["chat","tensor"],"hardware":info["openvino"]["devices"]})
+                info["registry"]["runtimes"].append({"id":"openvino","label":"本機 OpenVINO","kind":"local-adapter", "ready":True,
+                                                    "tasks":["chat"],"models":[model["id"] for model in info["openvino"]["models"] if model["kind"]=="text"]})
             info["recoverable_downloads"] = recover_downloads(self.download_cache, self.models, pinned_model)
             info["recent_model"] = recent[0] if recent else None
             return info
@@ -1107,6 +1185,8 @@ class Desktop(Workspace):
                 paired = self.remote_clients.items.get(id)
                 if id == "local":
                     self.hardware_cache = None
+                elif id=="openvino":
+                    pass
                 elif op == "runtime-capability-refresh":
                     (paired or self.providers.get(id)).discover()
                 elif paired:
@@ -1217,6 +1297,7 @@ class Desktop(Workspace):
         raise ValueError("未支援的操作。")
 
     def close(self):
+        self.openvino.close()
         self.hardware_monitor.close()
         self.remote_host.stop()
         self.scheduler.close()

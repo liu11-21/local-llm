@@ -29,7 +29,8 @@ export function RuntimePicker({info, task, value, change, refresh, disabled, ari
 export function TaskModelPicker({info, runtime, model, change, disabled, ariaLabel = '模型'}: {
   info?: Info; runtime: string; model: string; change: (model: string) => void; disabled?: boolean; ariaLabel?: string
 }) {
-  const models = runtime === 'local' ? info?.models : info?.providers.find(item => item.id === runtime)?.models
+  const models = runtime === 'local' ? info?.models : runtime==='openvino' ?
+    info?.openvino?.models.filter(item=>item.kind==='text').map(item=>item.id) : info?.providers.find(item => item.id === runtime)?.models
   return <SelectModels ariaLabel={ariaLabel} models={models ?? []} value={model}
     registry={runtime === 'local' ? info?.registry.models : undefined} disabled={disabled} change={change}/>
 }

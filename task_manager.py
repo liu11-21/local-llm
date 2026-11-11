@@ -10,7 +10,7 @@ from comfy_runtime import PROFILES
 from downloads import model_filename
 
 ACTIVE = {"queued", "running", "paused"}
-RETRYABLE = {"download", "engine-install", "comfy-install", "media-install", "update-download"}
+RETRYABLE = {"download", "engine-install", "comfy-install", "media-install", "update-download", "openvino-install"}
 CAPACITY = {"compute": 1, "network": 2, "remote": 2}
 RESOURCES = {"compute": ["local-compute"], "network": ["network", "disk"], "remote": ["network", "external-runtime"]}
 
@@ -44,7 +44,7 @@ def classify(action, data):
         runtime = data.get("runtime", "local")
         runtime = runtime if isinstance(runtime, str) else "local"
         chat = data.get("chat")
-        return ("compute" if runtime == "local" else "remote", runtime,
+        return ("compute" if runtime in ("local","openvino") else "remote", runtime,
                 f"chat:{chat}" if isinstance(chat, str) else None, "")
     if action in ("media","remote-fetch-work") and isinstance(data.get("runtime"),str) and data["runtime"]!="local":
         runtime = data["runtime"]

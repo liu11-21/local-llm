@@ -38,7 +38,7 @@ class RemoteMediaTests(unittest.TestCase):
             worker = Desktop(root)
             try:
                 with worker.connect() as db:
-                    self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],9)
+                    self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],10)
                     self.assertEqual(db.execute("SELECT title FROM chats").fetchone()[0],"existing chat")
                     self.assertEqual(json.loads(db.execute("SELECT details FROM creations").fetchone()[0])["prompt"],"old prompt")
             finally:
@@ -69,7 +69,7 @@ class RemoteMediaTests(unittest.TestCase):
                     worker.remote_image({"runtime":host,"request":job},Event(),lambda **_:None,fetch_only=True)
                 with worker.connect() as db:
                     details = json.loads(db.execute("SELECT details FROM creations").fetchone()[0])
-                    self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],9)
+                    self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],10)
                     self.assertEqual(db.execute("SELECT COUNT(*) FROM remote_jobs").fetchone()[0],0)
                 self.assertEqual(details["prompt"],"private prompt")
                 self.assertEqual(details["options"]["negative"],"private exclusions")

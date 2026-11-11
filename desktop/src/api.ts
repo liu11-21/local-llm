@@ -53,6 +53,9 @@ export type Registry = {
   media_models?: MediaModel[];
 }
 export type Info = {
+  openvino?:{installed:boolean;version:string;devices:string[];detection:string;busy:boolean;
+    models:{id:string;label:string;kind:'text'|'tensor';format:string;bytes:number;architecture:string;context:number|null;
+      npu_candidate?:boolean;quantization?:string}[]};
   hardware_capabilities?:HardwareCapabilities;
   dedicated_vram_available?: number | null;
   models: string[]; model_folder: string; output_folder: string; engine: boolean;
@@ -78,7 +81,7 @@ export type Job = {
   id: string; state: string; message: string; answer?: string; received?: number; total?: number; plan?: Plan; plan_id?: string;
   team_run_id?: string;
   members?: string[]; steps?: string[]; usage?: Usage;
-  result?: { message?: string; answer?: string; folder?: string; name?: string; file?: string; plan?: Plan; usage?: Usage; drafts?: {name: string; text: string}[] };
+  result?: { message?: string; answer?: string; folder?: string; name?: string; file?: string; plan?: Plan; usage?: Usage; inference?:Params; drafts?: {name: string; text: string}[] };
 }
 type Reply<T> = { ok: true; value: T } | { ok: false; error: string }
 

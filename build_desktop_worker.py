@@ -17,6 +17,8 @@ def main():
         [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir", "--console", "--noupx",
          "--name", "LocalLLMWorker", "--icon", str(ROOT / "logo.ico"),
          "--add-data", f"{ROOT / 'third_party' / 'llama.cpp-b11810-LICENSE'}:third_party",
+         "--add-data", f"{ROOT / 'openvino-packages.lock.json'}:.",
+         "--add-data", f"{ROOT / 'openvino_runner.py'}:.",
          "--exclude-module", "tkinter", "--distpath", str(BUILD / "desktop-worker"),
          "--workpath", str(BUILD / "desktop-pyinstaller"), "--specpath", str(BUILD),
          str(ROOT / "desktop_worker.py")],

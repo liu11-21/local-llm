@@ -8,6 +8,7 @@ import { ColabWorkspace } from './ColabWorkspace'
 import { RemoteWorkspace } from './RemoteWorkspace'
 import { RuntimeComparison } from './RuntimeComparison'
 import { HardwarePanel } from './HardwarePanel'
+import { OpenVINOSetup } from './OpenVINOSetup'
 
 function Health({status}: {status?: EngineStatus}) {
   if (!status) return <p className="muted small">正在查詢引擎健康狀態…</p>
@@ -18,10 +19,11 @@ function Health({status}: {status?: EngineStatus}) {
   </div>
 }
 
-export function RuntimeWorkspace({info, health, policy, tasks, run, report, notice, refresh, openChat}: {
+export function RuntimeWorkspace({info, health, policy, tasks, run, report, notice, refresh, openChat, cancel}: {
   info?: Info; health?: EngineHealth; policy: string; tasks: Task[]; run: Run; report: (error: unknown) => void
   notice: (message: string) => void; refresh: () => Promise<void>
   openChat: (id: string) => void
+  cancel:(id:string)=>void
 }) {
   const models = info?.models ?? []
   const [chosen, setLocal] = useState('')
@@ -60,6 +62,7 @@ export function RuntimeWorkspace({info, health, policy, tasks, run, report, noti
           </Panel>
           <RuntimeComparison info={info} policy={policy}/>
           {mode==='local' && <HardwarePanel/>}
+          {mode==='local' && <OpenVINOSetup info={info} tasks={tasks} run={run} cancel={cancel} openChat={openChat}/>}
           {mode==='local' && <div className="dashboard"><Panel title="本機文字引擎" description={activeText || (info?.engine ? 'llama.cpp 已安裝，等待載入模型。' : '首次使用需要下載官方 llama.cpp。')}>
             <Health status={health?.llama}/>
             {info?.engine ? <><SelectModels models={models} value={local} change={setLocal} registry={info?.registry.models}/><div className="row section-note"><button className="button primary" disabled={engineBusy || !local} onClick={()=>run('engine-start',{model:local,mode:'auto',context:2048})}>啟動模型</button><button className="button" disabled={engineBusy || !activeText} onClick={()=>run('engine-stop',{})}>停止模型</button></div></> :

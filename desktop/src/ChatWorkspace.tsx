@@ -51,6 +51,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const [budget, setBudget] = useState(512)
   const [temperature, setTemperature] = useState(0.4)
   const [mode, setMode] = useState('auto')
+  const [openvinoDevice,setOpenvinoDevice] = useState('CPU')
   const [title, setTitle] = useState<string>()
   const [opening, setOpening] = useState(false)
   const locked = useRef(false)
@@ -59,9 +60,11 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const stick = useRef(true)
   const provider = info?.providers.find(item => item.id === runtime)
   const prepare = useTaskPreparation()
-  const models = runtime === 'local' ? info?.models ?? [] : provider?.models ?? []
+  const models = runtime === 'local' ? info?.models ?? [] : runtime==='openvino' ?
+    info?.openvino?.models.filter(item=>item.kind==='text').map(item=>item.id) ?? [] : provider?.models ?? []
   const model = models.includes(selectedModel) ? selectedModel : models[0] || ''
-  const canSend = !pending && !opening && !!model && (runtime === 'local' ? !!info?.engine : !!provider?.connected)
+  const canSend = !pending && !opening && !!model && (runtime === 'local' ? !!info?.engine :
+    runtime==='openvino' ? !!info?.openvino?.installed : !!provider?.connected)
   const current = chats.find(([id]) => id === chat)
 
   async function refreshChats() { setChats(await rpc<Chat[]>('chats')) }
@@ -99,7 +102,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
       setPending({text, regenerate}); setJob(undefined); setUsage(undefined); stick.current = true
       if (!regenerate) setPrompt('')
       const result = await run('chat', { chat, prompt:text, model, runtime, policy, consent, context, mode,
-        max_tokens:budget, temperature, regenerate }, setJob)
+        max_tokens:runtime==='openvino' ? Math.min(budget,512) : budget, temperature, regenerate,
+        device:openvinoDevice }, setJob)
       if (result?.answer) {
         const rows = await rpc<Message[]>('history', {chat,with_runtime:true})
         setPending(undefined); setJob(undefined); setMessages(rows)
@@ -185,6 +189,10 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
             <label>上下文<select value={context} onChange={e => setContext(+e.target.value)}>{[2048,4096,8192].map(value => <option key={value}>{value}</option>)}</select></label>
             <label>本機裝置<select value={mode} onChange={e => setMode(e.target.value)}><option value="auto">自動分層</option><option value="cpu">只使用 CPU</option></select></label>
           </>}
+          {runtime==='openvino' && <label>OpenVINO 執行裝置<select value={openvinoDevice} onChange={event=>setOpenvinoDevice(event.target.value)}>
+            {[...new Set(['CPU',...(info?.openvino?.devices ?? [])])].map(device=><option key={device}
+              disabled={device.startsWith('NPU') && !info?.openvino?.models.find(item=>item.id===model)?.npu_candidate}>{device}</option>)}
+          </select></label>}
         </div></details>
         <form className="composer" onSubmit={event => {event.preventDefault(); void generate(false)}}>
           <textarea aria-label="訊息" placeholder="輸入訊息…" value={prompt} maxLength={12000} onChange={e => setPrompt(e.target.value)}
@@ -192,6 +200,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
           {pending ? <button type="button" className="button" title="停止生成" disabled={!job} onClick={() => job && cancel(job.id)}><Square size={17}/>停止</button> :
             <button type="submit" className="button primary" disabled={!canSend || !prompt.trim()}><ArrowUp size={18}/>送出</button>}
         </form>
+        {runtime==='openvino' && <p className="small muted">OpenVINO IR · 輸入上限 1024 Token，每次最多輸出 512 Token。指定裝置的實際算子分配待驗證，生成採固定貪婪解碼。</p>}
         <p className="small muted">{tokens ? <>輸入 {tokens.input} / {tokens.context} Token · 最多輸出 {tokens.max_output}{tokens.omitted_turns > 0 && ' · 略過較早 ' + tokens.omitted_turns + ' 輪'}</> :
           <>{runtime === 'local' ? '上下文上限 ' + context + ' Token' : '端點未回報上下文用量'} · Ctrl + Enter 送出</>} · 目前支援文字輸入</p>
       </footer>

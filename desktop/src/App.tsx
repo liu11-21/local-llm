@@ -156,6 +156,7 @@ export function App() {
         {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError}/>}
         {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go} refresh={refresh}/>}
         {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run}
+          cancel={queue.cancel}
           report={report} notice={notice} refresh={refresh} openChat={id=>{setPreferredRuntime({id});go('chat')}}/>}
         <div hidden={page !== 'team'}><TeamWorkspace info={info && {...info, providers:info.providers.filter(item=>item.kind!=='paired')}}
           policy={policy} run={runTracked} report={report} cancel={queue.cancel} refreshRuntime={refreshRuntime}/></div>

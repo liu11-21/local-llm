@@ -10,6 +10,7 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
     reasons, risks, unknown = [], [], []
     incompatible = install = connect = False
     local = record["kind"] == "local"
+    openvino = record["provider"] == "OpenVINO"
     network = record["network"] is True
     cost = record["cost"]
     if task not in record["tasks"]:
@@ -38,12 +39,12 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
         install = local
         risks.append("此環境尚未完成設定。")
     if local and task in record["tasks"]:
-        engine = "ComfyUI" if task in ("image", "video", "music") else "llama.cpp"
+        engine = "OpenVINO" if openvino else "ComfyUI" if task in ("image", "video", "music") else "llama.cpp"
         if engine not in record["engines"]:
             install = True
             reasons.append(f"需要安裝 {engine}。")
     if model and task in record["tasks"]:
-        format = TASK_FORMAT[task]
+        format = "OpenVINO IR" if openvino else TASK_FORMAT[task]
         # External model IDs do not establish an underlying weight format.
         if format and record["formats"] and format not in record["formats"]:
             incompatible = True
