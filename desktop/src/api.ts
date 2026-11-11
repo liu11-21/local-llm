@@ -69,6 +69,8 @@ export type Chat = [string, string]
 export type Message = { role: string; content: string; runtime?: string; model?: string; provider?: string }
 export type TaskState = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted'
 export type Task = {
+  parent_id?:string;resource_request?:{device:string;engine:string;ram:number;exclusive:string[]};
+  execution?:{requested_device:string;actual_device:string|string[];execution_device_verified:boolean};
   remote_request?: string;
   id: string; action: string; kind: string; title?: string; state: TaskState; message: string;
   created: string; started?: string | null; finished?: string | null; runtime?: string;

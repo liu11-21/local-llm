@@ -166,7 +166,7 @@ export function App() {
           policy={policy} refreshRuntime={refreshRuntime} report={report}/>}
         {page === 'works' && <Works info={info} revision={works} selected={selected} choose={setSelected}
           reuse={work => {setPreset(work);go(work.kind)}}/>}
-        <div hidden={page !== 'agent'}><AgentWorkspace info={info} setupRun={queue.run} openModels={()=>go('library')}
+        <div hidden={page !== 'agent'}><AgentWorkspace info={info} policy={policy} setupRun={queue.run} openModels={()=>go('library')}
           busy={agentBusy} job={agentJob} run={runAgent} report={report} cancel={queue.cancel}/></div>
         <div hidden={page !== 'settings'}><SettingsWorkspace theme={theme} setTheme={setTheme} policy={policy} setPolicy={setPolicy}
           busy={queue.tasks.some(task => task.action === 'update-download' && activeTask(task))} run={queue.run} report={report}/></div>

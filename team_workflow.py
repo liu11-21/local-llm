@@ -66,7 +66,11 @@ def profile(data, registry):
     arguments = {tool: arguments.get(tool, {}) for tool in tools}
     for tool, args in arguments.items():
         registry.authorize(tool, args, tools)
+    execution=data.get("execution")
+    if execution is not None and (not isinstance(execution,dict) or execution.get("confirmed") is not True):
+        raise ValueError("團隊成員的裝置選擇需要確認。")
     return {"id": key(data.get("id")), "role": role, "tools": tools.copy(),
+            "execution":({"device":field(execution,"device",32),"confirmed":True,"seconds":number(execution,"seconds",600,15,600)} if execution else None),
             "tool_arguments": arguments,
             "name": field(data, "name", 60), "system": field(data, "system", 1200, optional=True) or ROLES[role][1],
             "goal": field(data, "goal", 1200, optional=True), "model": field(data, "model", 200, optional=True),
@@ -144,7 +148,7 @@ def specification(data, registry):
     lead, mode = key(data.get("lead")), field(data, "mode", 20)
     if len(ids) != len(members) or lead not in ids or mode not in MODES:
         raise ValueError("團隊成員、協調者或工作模式無效。")
-    if any(member["runtime"] != "local" for member in members) and any(member["tools"] for member in members):
+    if any(member["runtime"] not in ("local","openvino") for member in members) and any(member["tools"] for member in members):
         raise ValueError("有外部運算的工作流程不能啟用本機工具，以免工具資料隨草稿外傳。")
     final = key(data.get("final")) if mode == "custom" else "final"
     raw = data.get("nodes") if mode == "custom" else default_graph(mode, members, lead)

@@ -7,6 +7,7 @@ import { activeTask, TaskProgress, type Run } from './taskQueue'
 import { Empty, Panel, gb } from './ui'
 import { RuntimePicker } from './TaskSelection'
 import { useTaskPreparation } from './TaskPreparation'
+import {DeviceChoice} from './DeviceRecommendation'
 
 const titles = { image: '圖片', video: '影片', music: '音樂' }
 const icons = { image: Image, video: Film, music: Music2 }
@@ -311,6 +312,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
         <label>運算環境<RuntimePicker info={info} task={kind} value={runtime} disabled={!!busy || kind!=='image'}
           change={value=>{setRuntime(value);setId('')}} refresh={refreshRuntime}/></label>
       </div>
+      <DeviceChoice info={info} task={kind} runtime={runtime} model={workflow?.id ?? ''} policy={policy} disabled={!!busy}/>
       <form onSubmit={async event => {
         event.preventDefault()
         if (!workflow || busy || !ready || !prompt.trim()) return

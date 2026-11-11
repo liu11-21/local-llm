@@ -3,6 +3,7 @@ import { ArrowDownToLine, Check, LoaderCircle, Search, X } from 'lucide-react'
 import { rpc, type Info, type Plan, type Task } from './api'
 import { activeTask, type Run } from './taskQueue'
 import { Empty, Estimate, Panel, gb } from './ui'
+import {DeviceChoice} from './DeviceRecommendation'
 
 const verification = {verified: '下載時已核對來源與 SHA-256', known: '已知來源 · 無上游校驗值', imported: '手動匯入', unknown: '來源未知'}
 
@@ -32,6 +33,7 @@ export function ModelLibrary({ info, tasks, run, report, go, refresh }: {
           <div className="dashboard"><Panel title="本機模型" description={info?.model_folder || '正在讀取資料夾'}>
             {!models.length && <Empty>尚未安裝 GGUF。可以從下方推薦或 Hugging Face 搜尋下載。</Empty>}
             {(info?.registry.models ?? []).map(entry => <div key={entry.id}>
+              <details><summary>模型運算建議 · {entry.label}</summary><DeviceChoice info={info} task="chat" runtime="local" model={entry.id}/></details>
               <div className="list-row"><span><b>{entry.label}</b><small>{[entry.format, entry.quantization, gb(entry.bytes)].filter(Boolean).join(" · ")}</small>
                 <small>{verification[entry.verification]}</small></span>
                 <button className="button" disabled={!info?.engine || reading} onClick={async()=>{setReading(true);try{setPlan(await rpc('plan',{model:entry.id}))}catch(e){report(e)}finally{setReading(false)}}}>估算</button></div>

@@ -259,7 +259,7 @@ def local_decision(engine, registry, plan, current, cap, deadline):
                           "arguments": json.dumps(item["arguments"], ensure_ascii=False)}}]},
                         {"role": "tool", "tool_call_id": item["native_id"],
                          "content": json.dumps(item["output"], ensure_ascii=False)}])
-        if engine.prompt_tokens(messages, tools=tools) + cap <= 4096:
+        if engine.prompt_tokens(messages, tools=tools) + cap <= getattr(engine,"context_limit",4096):
             break
         if not observations:
             raise ValueError("AGENT_CONTEXT · 任務超出模型上下文，請縮短描述或減少工具。")

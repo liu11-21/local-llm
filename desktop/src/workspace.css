@@ -132,6 +132,13 @@
 .benchmark-section { margin:18px 0; }
 .benchmark-section > summary { padding:14px 0;cursor:pointer; }
 .benchmark-results { scroll-margin-top:75px; }
+.device-choice { min-width:0;border:1px solid var(--border);border-radius:10px;padding:14px;margin:12px 0;overflow-wrap:anywhere; }
+.device-choice .row { flex-wrap:wrap; }
+.device-options { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:12px; }
+.device-options > label { min-width:0; }
+.device-choice select { max-width:100%; }
+.device-suggestion,.device-alternative { padding-top:12px;margin-top:12px;border-top:1px solid var(--border); }
+.device-choice summary { cursor:pointer;margin-top:12px;font-size:var(--small); }
 .benchmark-options,.benchmark-metrics { display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px; }
 .benchmark-options { margin:14px 0; }
 .benchmark-options > label,.benchmark-results,.benchmark-results > *, .benchmark-comparison > * { min-width:0;overflow-wrap:anywhere; }

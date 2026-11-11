@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { rpc, type Info, type Task } from './api'
 import { activeTask, TaskProgress, type Run } from './taskQueue'
 import { Panel, gb } from './ui'
+import {DeviceChoice} from './DeviceRecommendation'
 
 type Model = {id:string;label:string;engine:string;kind:string;npu_candidate?:boolean}
 type Plan = {models:Model[];devices:Record<string,string[]>}
@@ -117,6 +118,7 @@ export function BenchmarkPanel({info,tasks,run,cancel}:{info?:Info;tasks:Task[];
         <label>測試模型<select aria-label="測試模型" value={model ? `${model.engine}:${model.id}` : ''} disabled={pending} onChange={event=>setChosen(event.target.value)}>
           {plan.models.map(item=><option key={`${item.engine}:${item.id}`} value={`${item.engine}:${item.id}`}>{item.label} · {item.engine}</option>)}
         </select></label>
+        <DeviceChoice info={info} task="benchmark" runtime={model?.engine==='openvino' ? 'openvino' : 'local'} model={model?.id ?? ''}/>
         {!available.length && <p className="small">尚未取得可用裝置。請先按上方「檢查 OpenVINO 裝置」。</p>}
         <fieldset className="benchmark-devices"><legend>明確選擇測試裝置</legend>{available.map(device=><label key={device}>
           <input type="checkbox" checked={devices.includes(device)} disabled={pending || device.startsWith('NPU') && model?.kind==='text' && !model.npu_candidate}

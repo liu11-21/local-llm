@@ -41,6 +41,9 @@ from device_recommendation import DeviceRecommendations
 from device_execution import DeviceExecution,DispatchTarget
 from openvino_adapter import memory_limit
 from load_plan import block_count
+from device_resources import ResourceDemand
+from text_backend import TextBackend
+from team_dispatch import run_team as run_scheduled_team,run_node as run_team_node
 from resource_contract import gpu_memory
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
@@ -138,7 +141,7 @@ class Desktop(Workspace):
         self.agent_tools = agent_tools(self)
         self.agent_runtime = AgentRuntime(self.agent_plans, self.agent_tools, self.prepare_agent,
                                          lambda plan, state, cap, stop: local_decision(
-                                             self.local, self.agent_tools, plan, state, cap, stop))
+                                             self.agent_engine(plan), self.agent_tools, plan, state, cap, stop))
         self.update_candidate = None
         self.update_state = {"state": "idle"}
         self.media_checks = {}
@@ -356,10 +359,22 @@ class Desktop(Workspace):
 
     def prepare_agent(self, plan, cancel, update):
         try:
-            self.prepare({"model": plan["model"], "context": 4096, "native_tools": plan["mode"] == "native"}, cancel, update)
+            runtime=plan.get("runtime","local")
+            if runtime=="local":
+                self.prepare({"model": plan["model"], "context": 4096, "native_tools": plan["mode"] == "native"}, cancel, update)
+            elif runtime=="openvino":self.openvino.validate_model(plan["model"])
+            else:
+                route(plan.get("policy","manual"),runtime,plan.get("external_grant") is True,paired=runtime in self.remote_clients.items)
+                self.remote_clients.items.get(runtime) or self.providers.get(runtime)
         except Exception:
             cancel.check()
             raise
+
+    def agent_engine(self,plan,update=lambda **_:None):
+        runtime=plan.get("runtime","local")
+        if runtime=="local":return self.local
+        target=getattr(self,"execution_target",None)
+        return TextBackend(self,runtime,plan["model"],target.device if target else "CPU",target,update)
 
     def agent_plan_status(self, plan_id):
         plan = self.agent_plans.get(plan_id)
@@ -385,7 +400,7 @@ class Desktop(Workspace):
         return [local,
                 capability("openvino","本機 OpenVINO","local","OpenVINO",connected=True,
                            health="busy" if adapter["busy"] else "ready" if adapter["installed"] else "setup",
-                           tasks=["chat"],formats=["OpenVINO IR"],engines=["OpenVINO"] if adapter["installed"] else [],
+                           tasks=["chat","agent","team"],formats=["OpenVINO IR"],engines=["OpenVINO"] if adapter["installed"] else [],
                            models=[model["id"] for model in adapter["models"] if model["kind"]=="text"],
                            network=False,cost="no-api-fee",source="openvino-adapter",hardware=info.get("hardware_capabilities"),
                            resources=local["resources"],model_ram={model["id"]:model["bytes"]+512*1024**2
@@ -435,7 +450,7 @@ class Desktop(Workspace):
         for target in targets:
             runtime, model = field(target, "runtime", 32), field(target, "model", 200)
             record = records.get(runtime)
-            if record is None or task not in record["tasks"] or (task == "team" and record["kind"] == "remote-host"):
+            if record is None or task not in record["tasks"] and not (task in ("agent","team") and "chat" in record["tasks"]):
                 blockers.append("所選運算環境不支援這個任務。")
                 continue
             estimate = (next((item["ram"] for item in info["registry"]["models"] if item["id"] == model), None)
@@ -443,7 +458,7 @@ class Desktop(Workspace):
             match = compare(record, task, model, policy=policy, ram=estimate)
             matches.append(match)
             if runtime=="openvino":
-                if task!="chat" or not self.openvino.installed():
+                if task not in ("chat","agent","team") or not self.openvino.installed():
                     blockers.append("此功能需要已安裝的 OpenVINO 文字推理 Adapter。")
                 if model not in record["models"]:
                     blockers.append("請匯入完整的 OpenVINO 文字模型與 Tokenizer。")
@@ -718,12 +733,13 @@ class Desktop(Workspace):
         deadline.check()
         messages, evidence = prepared
         self.prepare_agent(plan, deadline, update)
-        budget = min(320, plan["limits"]["tokens"])
-        if self.local.prompt_tokens(messages) + budget > 4096:
+        engine=self.agent_engine(plan,update)
+        budget = min(320, plan["limits"]["tokens"],getattr(engine,"context_limit",4096)//4)
+        if engine.prompt_tokens(messages) + budget > getattr(engine,"context_limit",4096):
             raise ValueError("代理人任務超出模型上下文長度，請縮短描述或減少工具。")
         report(plan["steps"][-1])
         answer = ""
-        with closing(self.local.stream(messages, max_tokens=budget, temperature=0.2, cancel=deadline)) as stream:
+        with closing(engine.stream(messages, max_tokens=budget, temperature=0.2, cancel=deadline)) as stream:
             for fragment in stream:
                 deadline.check()
                 answer += fragment
@@ -750,12 +766,14 @@ class Desktop(Workspace):
             raise ValueError("請先停止本機 ComfyUI，釋放記憶體後再執行團隊流程。")
         external = set()
         for member in spec["members"]:
-            chosen = route(data.get("policy", "auto"), member["runtime"], data.get("consent") is True)
+            chosen = route(data.get("policy", "auto"), member["runtime"], data.get("consent") is True,paired=member["runtime"] in self.remote_clients.items)
             if chosen == "local":
                 self.model(member["model"])
+            elif chosen=="openvino":self.openvino.validate_model(member["model"])
             else:
-                provider = self.providers.get(chosen)
-                if member["model"] not in provider.models:
+                provider = self.remote_clients.items.get(chosen) or self.providers.get(chosen)
+                models=provider.capability()["models"] if chosen in self.remote_clients.items else provider.models
+                if member["model"] not in models:
                     raise ValueError("請重新選擇已連線端點上的團隊模型。")
                 external.add(chosen)
         if any(member["tools"] for member in spec["members"]) and data.get("confirm_tools") is not True:
@@ -764,18 +782,37 @@ class Desktop(Workspace):
         spec["external_grants"] = sorted(external)
         run_id = self.team_store.create_run(spec, prompt)
         try:
-            return self.scheduler.submit("team-workflow", {"id": run_id}, team_run_id=run_id)
+            scheduled=any(member.get("execution") or member["runtime"]=="openvino" or member["runtime"] in self.remote_clients.items for member in spec["members"])
+            return self.scheduler.submit("team-workflow", {"id": run_id,"_scheduled_team":scheduled}, team_run_id=run_id,
+                **({"demand":ResourceDemand(scope="control",exclusive=(),seconds=min(900,spec["seconds"]+30))} if scheduled else {}))
         except Exception as error:
             with self.team_store.edit(run_id) as run:
                 run.update(state="failed", error=str(error)[:360])
             raise
+
+    def submit_device_team(self,data):
+        members=data.get("members")
+        lead=data.get("lead",0)
+        if not isinstance(members,list) or not 2<=len(members)<=6 or type(lead) is not int or not 0<=lead<len(members):
+            raise ValueError("請選擇有效的團隊成員與主模型。")
+        profiles=[{"id":f"m{index}","name":f"成員 {index+1}","role":"coordinator" if index==lead else "analyst",
+                   "system":"","goal":"","model":field(member,"model",200),"runtime":field(member,"runtime",32),
+                   "execution":member.get("execution"),"tools":[],"tokens":384,"steps":6} for index,member in enumerate(members)]
+        team={"name":"多模型整合","mode":"parallel","lead":f"m{lead}","members":profiles,"expected":"整合成一份可用回答","seconds":600}
+        if data.get("serial") is True:
+            nodes=[{"id":f"draft{index}","agent":f"m{index}","label":f"成員 {index+1}","task":"獨立分析共同任務。",
+                    "deps":[f"draft{index-1}"] if index else [],"partial":True} for index in range(len(members))]
+            team.update(mode="custom",final="final",nodes=[*nodes,{"id":"final","agent":f"m{lead}","label":"整合回答",
+                "task":"比較各成員草稿並整合成一份回答。","deps":[item["id"] for item in nodes],"partial":True}])
+        return self.submit_team_workflow({**data,"team":team})
 
     def ask_team_agent(self, member, node, dependencies, prompt, expected, deadline, update):
         if member["runtime"] == "local":
             self.prepare({"model": member["model"], "context": 4096}, deadline, update)
             model = self.local
         else:
-            model = self.providers.get(member["runtime"])
+            target=getattr(self,"execution_target",None)
+            model = TextBackend(self,member["runtime"],member["model"],target.device if target else "CPU",target,update)
         span = 2400
         while True:
             deadline.check()
@@ -787,12 +824,12 @@ class Desktop(Workspace):
                          "tool_facts": node["evidence"], "dependencies": [
                              {"node": dep["id"], "label": dep["label"], "text": dep["text"][:span]}
                              for dep in dependencies]}, ensure_ascii=False)}]
-            if member["runtime"] != "local" or model.prompt_tokens(messages) + member["tokens"] <= 4096:
+            if model.prompt_tokens(messages) + member["tokens"] <= getattr(model,"context_limit",4096):
                 break
             if not dependencies or span <= 100:
                 raise ValueError("TEAM_CONTEXT · 節點資料超過本機模型上下文。")
             span //= 2
-        if member["runtime"] == "local":
+        if member["runtime"] in ("local","openvino") or isinstance(model,TextBackend):
             stream = model.stream(messages, max_tokens=member["tokens"], temperature=.3, cancel=deadline)
         else:
             stream = model.stream(member["model"], messages, member["tokens"], .3, deadline)
@@ -804,7 +841,7 @@ class Desktop(Workspace):
                 if len(text) > 20000:
                     raise ValueError("TEAM_OUTPUT_LIMIT · 模型回應過大。")
         deadline.check()
-        return text if member["runtime"] == "local" else text.replace(model.token, "[已遮蔽金鑰]")
+        return text if member["runtime"] == "local" or isinstance(model,TextBackend) else text.replace(model.token, "[已遮蔽金鑰]")
 
     def perform(self, action, data, cancel, update):
         target=data.get("_dispatch")
@@ -813,6 +850,7 @@ class Desktop(Workspace):
                 result=scoped.perform(action,data,cancel,update)
             update(execution=execution)
             return {**(result or {}),"execution":execution}
+        if action=="team-node":return run_team_node(self,data,cancel,update)
         if action=="benchmark":
             return self.benchmarks.run(data,cancel,update)
         if action.startswith("openvino-"):
@@ -867,6 +905,8 @@ class Desktop(Workspace):
         if action == "agent":
             return self.execute_agent(data["id"], cancel, update)
         if action == "team-workflow":
+            if data.get("_scheduled_team"):
+                return run_scheduled_team(self,data["id"],cancel,update,data.get("_task_id"))
             return run_team_workflow(self.team_store, data["id"], self.agent_tools,
                                      lambda member, node, deps, prompt, expected, deadline:
                                          self.ask_team_agent(member, node, deps, prompt, expected, deadline, update),
@@ -1158,7 +1198,14 @@ class Desktop(Workspace):
             return install_plan(self.data, field(data, "kind", 12), field(data, "profile", 40), records)
         if op == "agent-plan":
             plan = create_plan(data, self.agent_tools)
-            self.model(plan["model"])
+            check=self.task_preflight({"task":"agent","targets":[{"runtime":plan["runtime"],"model":plan["model"]}],"policy":plan["policy"]})
+            if check["blockers"]:raise ValueError(" ".join(check["blockers"]))
+            if plan["runtime"] not in ("local","openvino"):
+                route(plan["policy"],plan["runtime"],plan["external_grant"],paired=plan["runtime"] in self.remote_clients.items)
+            if plan["runtime"]=="openvino" and not plan["execution"]:
+                plan["execution"]={"device":"CPU","confirmed":True}
+            if plan["execution"]:
+                self.device_execution.prepare("agent",{**plan,"context":4096 if plan["runtime"]=="local" else 1024})
             return self.agent_plans.create(plan, data.get("previous"), data.get("version"))
         if op == "agent-plan-get":
             return self.agent_plan_status(data.get("id"))
@@ -1218,6 +1265,9 @@ class Desktop(Workspace):
                 recent = db.execute("SELECT value FROM settings WHERE key='recent_model'").fetchone()
                 sources = {name.casefold(): json.loads(details) for name, details in db.execute("SELECT * FROM model_sources")}
             info["registry"] = workspace_registry(info, self.models, ENGINE_VERSION, sources)
+            for runtime in info["registry"]["runtimes"]:
+                if "chat" in runtime["tasks"]:
+                    runtime["tasks"]=list(dict.fromkeys([*runtime["tasks"],"agent","team"]))
             info["hardware_capabilities"] = self.hardware_monitor.snapshot()
             info["registry"]["hardware"] = info["hardware_capabilities"]
             info["openvino"] = self.openvino.status()
@@ -1226,7 +1276,7 @@ class Desktop(Workspace):
                                                    "installed":True,"running":info["openvino"]["busy"],"formats":["OpenVINO IR"],
                                                    "tasks":["chat","tensor"],"hardware":info["openvino"]["devices"]})
                 info["registry"]["runtimes"].append({"id":"openvino","label":"本機 OpenVINO","kind":"local-adapter", "ready":True,
-                                                    "tasks":["chat"],"models":[model["id"] for model in info["openvino"]["models"] if model["kind"]=="text"]})
+                                                    "tasks":["chat","agent","team"],"models":[model["id"] for model in info["openvino"]["models"] if model["kind"]=="text"]})
             info["recoverable_downloads"] = recover_downloads(self.download_cache, self.models, pinned_model)
             info["recent_model"] = recent[0] if recent else None
             return info
@@ -1302,9 +1352,21 @@ class Desktop(Workspace):
                 plan = self.agent_plans.get(data.get("id"))
                 self.check_agent_contracts(plan)
                 plan_id = plan["id"]
+                runtime=plan.get("runtime","local")
+                if plan.get("execution"):
+                    target=self.device_execution.prepare("agent",{**plan,"context":4096 if runtime=="local" else 1024})
+                    return self.device_execution.submit(action,{"id":plan_id},target=target,plan_id=plan_id,plan_version=data.get("version"))
+                if runtime not in ("local","openvino"):
+                    route(plan.get("policy","manual"),runtime,plan.get("external_grant") is True,paired=runtime in self.remote_clients.items)
+                    return self.scheduler.submit(action,{"id":plan_id,"runtime":runtime},plan_id=plan_id,plan_version=data.get("version"),
+                        demand=ResourceDemand(scope="remote",device=runtime,engine="OpenAI-compatible",exclusive=("remote:"+runtime,)))
                 return self.scheduler.submit(action, {"id": plan_id}, plan_id=plan_id, plan_version=data.get("version"))
             if action == "team-workflow":
                 return self.submit_team_workflow(data)
+            if action=="team" and isinstance(data.get("members"),list) and any(
+                    isinstance(member,dict) and (member.get("execution") or member.get("runtime")=="openvino" or member.get("runtime") in self.remote_clients.items)
+                    for member in data["members"]):
+                return self.submit_device_team(data)
             return self.launch(action, data)
         if op in ("job", "cancel"):
             return self.scheduler.snapshot(field(data, "id", 32), cancel=op == "cancel")

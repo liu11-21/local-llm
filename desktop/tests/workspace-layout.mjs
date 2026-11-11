@@ -7,6 +7,7 @@ import { chromium } from 'playwright-core'
 import { createServer } from 'vite'
 import { exerciseWorkflows } from './workflow-ui.mjs'
 import { exerciseBenchmarks } from './benchmark-ui.mjs'
+import {exerciseDevices} from './device-ui.mjs'
 
 const desktop = fileURLToPath(new URL('../', import.meta.url))
 const root = await realpath(tmpdir())
@@ -391,6 +392,7 @@ try {
   assert.equal(await page.getByRole('dialog',{name:'確認資料傳送'}).count(),0)
   console.log('PASS controlled OpenVINO Runtime selection, compute scheduling, local privacy and saved chat')
   await exerciseBenchmarks(page,navigate)
+  await exerciseDevices(page,navigate)
   assert.deepEqual(exceptions, [])
 } finally {
   if (browser) await browser.close()

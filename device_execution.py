@@ -13,7 +13,7 @@ from engine import LocalEngine
 from engine_health import EngineHealth
 from hardware import detect_hardware
 from resource_contract import fresh_measure
-from task_manager import timestamp
+from task_manager import PauseTask,timestamp
 
 
 @dataclass(frozen=True)
@@ -30,6 +30,7 @@ class DispatchTarget:
 class DeviceExecution:
     def __init__(self,app):
         self.app,self.lock,self.scopes = app,Lock(),{}
+        self.new_local=LocalEngine
         with app.connect() as db:
             db.execute("CREATE TABLE IF NOT EXISTS dispatch_runs(id TEXT PRIMARY KEY,task TEXT,state TEXT,details TEXT,created TEXT,finished TEXT)")
             db.execute("UPDATE dispatch_runs SET state='interrupted',finished=? WHERE state='running'",(timestamp(),))
@@ -88,20 +89,20 @@ class DeviceExecution:
 
     def submit(self,action,data,*,target=None,**options):
         target=target or self.prepare("chat" if action=="chat" else action,data)
-        return self.app.scheduler.submit(action,{**data,"_dispatch":target},demand=target.demand,**options)
+        return self.app.scheduler.submit(action,{**data,"runtime":target.runtime,"_dispatch":target},demand=target.demand,**options)
 
     @contextmanager
     def scope(self,target,task_id,cancel):
         scoped=copy(self.app)
         scoped.execution_scoped=True
         scoped.execution_target=target
-        scoped.local=LocalEngine()
+        scoped.local=self.new_local()
         scoped.active,scoped.active_native=None,False
         scoped.llama_health=EngineHealth(scoped.local.running,scoped.local.health_probe)
         scoped.openvino=self.app.openvino.session()
         scoped.session_guards=ExitStack()
         scoped.agent_runtime=AgentRuntime(scoped.agent_plans,scoped.agent_tools,scoped.prepare_agent,
-            lambda plan,state,cap,stop:local_decision(scoped.local,scoped.agent_tools,plan,state,cap,stop))
+            lambda plan,state,cap,stop:local_decision(scoped.agent_engine(plan),scoped.agent_tools,plan,state,cap,stop))
         identity=uuid4().hex
         details={"runtime":target.runtime,"engine":target.engine,"model":target.model,"requested_device":target.device,
                  "resources":target.demand.public(),"execution_device_verified":False,"actual_device":"unknown"}
@@ -112,6 +113,9 @@ class DeviceExecution:
         try:
             yield scoped,details
             state="completed"
+        except PauseTask:
+            state="paused"
+            raise
         finally:
             if cancel.is_set():state="interrupted" if self.app.scheduler.closed else "cancelled"
             evidence=getattr(scoped.openvino,"last_evidence",None)

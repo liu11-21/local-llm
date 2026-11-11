@@ -5,7 +5,7 @@ from time import time
 from benchmark_core import fingerprint
 
 AGE_ADVISORY_DAYS = 30
-INFERENCE_PARAMETERS = ("context","max_tokens","memory_mib")
+INFERENCE_PARAMETERS = ("context","max_tokens","memory_mib","batch","temperature","do_sample","ignore_eos")
 
 
 def hardware_identity(environment, engine, device):
@@ -29,9 +29,10 @@ def hardware_identity(environment, engine, device):
 def describe(session, run):
     config,environment = session["config"],run["environment"]
     native = environment.get("environment",{})
+    parameters={"batch":1,"temperature":0,"do_sample":False,"ignore_eos":True,**config.get("parameters",{})}
     return {"model":session["model"],"model_hashes":config.get("model_hashes"),
             "format":config.get("format") or ("OpenVINO IR" if session["engine"]=="openvino" else "GGUF"),
-            "quantization":config.get("quantization"),"parameters":config.get("parameters",{}),
+            "quantization":config.get("quantization"),"parameters":parameters,
             "workloads":config.get("workloads",[]),"engine":session["engine"],
             "backend_version":native.get("backend_version"),"executable_sha256":native.get("executable_sha256"),
             "device":run["device"],"device_identity":hardware_identity(environment,session["engine"],run["device"]),
@@ -100,7 +101,9 @@ def evaluate(session, run, current, usage, *, now=None, advisory_days=AGE_ADVISO
         differences.append("precision")
     samples = [item for item in run.get("measurements",[]) if item.get("workload")==workload and item.get("phase")=="measured"]
     iterations = previous["parameters"].get("iterations")
-    valid_samples = bool(samples and type(iterations) is int and len(samples)==iterations)
+    valid_samples = bool(samples and type(iterations) is int and len(samples)==iterations and
+        sum(item.get("workload")==workload and item.get("phase")=="first" for item in run.get("measurements",[]))==1 and
+        sum(item.get("workload")==workload and item.get("phase")=="warmup" for item in run.get("measurements",[]))==previous["parameters"].get("warmup",0))
     if not valid_samples:
         limits.append("指定工作量缺少完整正式量測。")
     evidence = run.get("evidence") or {}
@@ -137,6 +140,9 @@ def evaluate(session, run, current, usage, *, now=None, advisory_days=AGE_ADVISO
             "benchmark_completed":complete,"output_correct":output_correct,"execution_device_verified":placement,
             "full_operator_allocation_verified":full_allocation,"backend_configured":True,"cpu_fallback":cpu_fallback,
             "mapping":previous["mapping"],"summary":summary,"precision":previous["precision"],
+            "memory":{"peak_ram_bytes":max((sample.get("peak_ram_bytes") or 0 for sample in samples),default=0) or None,
+                      "peak_vram_bytes":run["environment"].get("peak_vram_bytes"),"current":current.get("resources"),
+                      "verified_minimum_requirement":False},
             "condition_key":fingerprint({"hashes":previous["model_hashes"],"engine":previous["engine"],
                 "version":previous["backend_version"],"precision":previous["precision"],"workload":old_workload,
                 "parameters":{key:previous["parameters"].get(key) for key in INFERENCE_PARAMETERS}})}

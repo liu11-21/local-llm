@@ -7,6 +7,7 @@ import type { RootContent } from 'hast'
 import { rpc, type Chat, type Info, type Job, type Message, type Usage } from './api'
 import { PreparationNotice, RuntimePicker, TaskModelPicker, TextSetup } from './TaskSelection'
 import { TaskFit, useTaskPreparation } from './TaskPreparation'
+import {DeviceChoice} from './DeviceRecommendation'
 import type { Run } from './taskQueue'
 
 const highlighter = createLowlight(common)
@@ -51,6 +52,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const [budget, setBudget] = useState(512)
   const [temperature, setTemperature] = useState(0.4)
   const [mode, setMode] = useState('auto')
+  const [device,setDevice]=useState('')
   const [openvinoDevice,setOpenvinoDevice] = useState('CPU')
   const [title, setTitle] = useState<string>()
   const [opening, setOpening] = useState(false)
@@ -70,7 +72,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   async function refreshChats() { setChats(await rpc<Chat[]>('chats')) }
   useEffect(() => { void refreshChats().catch(report) }, [])
   useEffect(() => {
-    if (preferredRuntime && !locked.current) {setRuntime(preferredRuntime.id);setModel(preferredRuntime.model ?? '')}
+    if (preferredRuntime && !locked.current) {setRuntime(preferredRuntime.id);setModel(preferredRuntime.model ?? '');setDevice('')}
   }, [preferredRuntime])
   useEffect(() => {
     if (scroll.current && stick.current) scroll.current.scrollTop = scroll.current.scrollHeight
@@ -103,7 +105,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
       if (!regenerate) setPrompt('')
       const result = await run('chat', { chat, prompt:text, model, runtime, policy, consent, context, mode,
         max_tokens:runtime==='openvino' ? Math.min(budget,512) : budget, temperature, regenerate,
-        device:openvinoDevice }, setJob)
+        device:openvinoDevice,...(device && ['local','openvino'].includes(runtime) ? {execution:{device,confirmed:true}} : {}) }, setJob)
       if (result?.answer) {
         const rows = await rpc<Message[]>('history', {chat,with_runtime:true})
         setPending(undefined); setJob(undefined); setMessages(rows)
@@ -154,9 +156,11 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         <div className="chat-controls">
           <label>模型<TaskModelPicker info={info} runtime={runtime} model={model} change={setModel} disabled={!!pending}/></label>
           <label>運算環境<RuntimePicker info={info} task="chat" value={runtime} disabled={!!pending}
-            refresh={refreshRuntime} change={value => {setRuntime(value);setModel('')}}/></label>
+            refresh={refreshRuntime} change={value => {setRuntime(value);setModel('');setDevice('')}}/></label>
         </div>
         <TaskFit key={`${runtime}:${model}:${policy}`} task="chat" runtime={runtime} model={model} policy={policy}/>
+        <DeviceChoice info={info} task="chat" runtime={runtime} model={model} policy={policy} device={device} onDevice={setDevice}
+          onRuntime={value=>{setRuntime(value);setDevice('')}} disabled={!!pending}/>
         {runtime === 'local' && <TextSetup info={info} run={run} cancel={cancel} openModels={()=>go('library')}/>}
         {runtime !== 'local' && runtime!=='openvino' && !provider?.connected && <PreparationNotice title="需要重新連線">
           <button className="button section-note" onClick={()=>go('runtime')}>檢查運算環境</button>

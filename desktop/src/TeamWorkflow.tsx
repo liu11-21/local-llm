@@ -4,9 +4,10 @@ import type { Run } from './taskQueue'
 import { Empty, Panel } from './ui'
 import { RuntimePicker, TaskModelPicker } from './TaskSelection'
 import { useTaskPreparation } from './TaskPreparation'
+import {DeviceChoice} from './DeviceRecommendation'
 
 type Member = {id: string; name: string; role: string; system: string; goal: string;
-  model: string; runtime: string; tools: string[]; tool_arguments?: {[key: string]: {[parameter: string]: string}}; tokens: number; steps: number}
+  model: string; runtime: string; execution?:{device:string;confirmed:boolean}|null; tools: string[]; tool_arguments?: {[key: string]: {[parameter: string]: string}}; tokens: number; steps: number}
 type Node = {id: string; agent: string; label: string; task: string; deps: string[]; partial: boolean;
   state?: string; text?: string; error?: string; evidence?: unknown[]; finished?: string}
 type Team = {id?: string; name: string; mode: string; lead: string; expected: string; members: Member[];
@@ -101,6 +102,7 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel, refres
     setPreview(undefined)
   }
   const modelOptions = (member: Member) => member.runtime==='local' ? info?.models || [] :
+    member.runtime==='openvino' ? info?.openvino?.models.filter(item=>item.kind==='text').map(item=>item.id) || [] :
     info?.providers.find(provider => provider.id===member.runtime)?.models || []
   const payload = () => {
     if (!team) throw Error('請先選擇團隊。')
@@ -170,10 +172,12 @@ export function TeamWorkflow({visible, info, policy, run, report, cancel, refres
             }}>移除</button>}</div>
           <div className="team-flow-fields">
             <label>運算環境<RuntimePicker info={info} task="team" ariaLabel={'角色 '+(index+1)+' 運算環境'}
-              value={member.runtime} disabled={busy} refresh={refreshRuntime} change={value=>editMember(member.id,{runtime:value,model:''})}/></label>
+              value={member.runtime} disabled={busy} refresh={refreshRuntime} change={value=>editMember(member.id,{runtime:value,model:'',execution:null})}/></label>
             <label>模型<TaskModelPicker ariaLabel={'角色 '+(index+1)+' 模型'} info={info} runtime={member.runtime}
               model={member.model} disabled={busy} change={value=>editMember(member.id,{model:value})}/></label>
           </div>
+          <DeviceChoice info={info} task="team" runtime={member.runtime} model={member.model} policy={policy} disabled={busy}
+            device={member.execution?.device ?? ''} onDevice={device=>editMember(member.id,{execution:device ? {device,confirmed:true} : null})}/>
           <details><summary>角色設定 · {member.id}</summary>
             <div className="team-flow-fields">
               <label>角色<select disabled={busy} value={member.role} onChange={e=>{

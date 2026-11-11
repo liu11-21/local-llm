@@ -10,6 +10,7 @@ import { RuntimeComparison } from './RuntimeComparison'
 import { HardwarePanel } from './HardwarePanel'
 import { OpenVINOSetup } from './OpenVINOSetup'
 import { BenchmarkPanel } from './BenchmarkPanel'
+import {DeviceChoice} from './DeviceRecommendation'
 
 function Health({status}: {status?: EngineStatus}) {
   if (!status) return <p className="muted small">正在查詢引擎健康狀態…</p>
@@ -63,6 +64,7 @@ export function RuntimeWorkspace({info, health, policy, tasks, run, report, noti
           </Panel>
           <RuntimeComparison info={info} policy={policy}/>
           {mode==='local' && <HardwarePanel/>}
+          {mode==='local' && <DeviceChoice info={info} task="chat" runtime="local" model={local} policy={policy}/>}
           {mode==='local' && <OpenVINOSetup info={info} tasks={tasks} run={run} cancel={cancel} openChat={openChat}/>}
           {mode==='local' && <BenchmarkPanel info={info} tasks={tasks} run={run} cancel={cancel}/>}
           {mode==='local' && <div className="dashboard"><Panel title="本機文字引擎" description={activeText || (info?.engine ? 'llama.cpp 已安裝，等待載入模型。' : '首次使用需要下載官方 llama.cpp。')}>

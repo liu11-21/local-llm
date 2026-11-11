@@ -17,22 +17,26 @@ def create_plan(data, registry):
         raise ValueError("請選擇有效的代理人角色與工具。")
     if any(not isinstance(tool, str) for tool in tools) or len(set(tools)) != len(tools):
         raise ValueError("代理人包含不支援或重複的工具。")
-    if data.get("runtime", "local") != "local":
-        raise ValueError("代理人工具工作流程目前只在本機執行。")
+    runtime=field(data,"runtime",32,optional=True) or "local"
     mode = data.get("mode", "simple")
     if mode not in ("simple", "structured", "native"):
         raise ValueError("代理人模式無效。")
+    if runtime!="local" and mode=="native":raise ValueError("原生工具協定目前僅支援 llama.cpp；其他 Runtime 請使用簡易或結構化模式。")
     definitions = [registry.definition(tool, tools)[0] for tool in tools]
     if mode == "simple" and any(tool.input_schema["required"] for tool in definitions):
         raise ValueError("簡易模式只支援不需要參數的工具。")
-    steps = ([tool.description for tool in definitions] + ["使用指定的本機模型整理回答"]) if mode == "simple" else [
+    steps = ([tool.description for tool in definitions] + ["使用指定的模型整理回答"]) if mode == "simple" else [
         "由模型在允許清單內選擇工具", "驗證參數及本次工具權限", "讀取工具結果，繼續下一步或完成"]
     execution_limits = limits(data.get("limits", {}))
     if mode == "simple" and len(tools) > execution_limits["calls"]:
         raise ValueError("已選的工具數超過本次執行上限。")
     return {
         "role": ROLES[role],
-        "runtime": "local",
+        "runtime": runtime,
+        "policy":data.get("policy","local"),
+        "external_grant":runtime not in ("local","openvino") and data.get("consent") is True,
+        "execution":({"device":field(data["execution"],"device",32),"confirmed":True,"seconds":data["execution"].get("seconds",600)}
+                     if isinstance(data.get("execution"),dict) and data["execution"].get("confirmed") is True else None),
         "model": field(data, "model", 180),
         "prompt": field(data, "prompt", 2400),
         "tools": tools.copy(),

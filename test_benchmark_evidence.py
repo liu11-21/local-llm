@@ -12,9 +12,9 @@ def fixture(device="GPU"):
     run = {"id":"run","device":device,"state":"completed","environment":{"cpu":"CPU-id","machine":"AMD64",
         "environment":{"backend_version":"2025.4.1","mapping":{"state":"verified","windows_id":"gpu-luid","driver":"1"}},
         "preparation":{"requested_precision":"f32"}},"evidence":{"verified_inference":True,"execution_devices":[device],"fallback":"none-reported"},
-        "measurements":[{"phase":"measured","workload":"short","latency_ms":10,"output_correct":True} for _ in range(2)],
+        "measurements":[{"phase":"first","workload":"short","latency_ms":10}]+[{"phase":"measured","workload":"short","latency_ms":10,"output_correct":True} for _ in range(2)],
         "summary":{"short":{"mean_ms":10,"count":2}}}
-    usage = {"workload":"short","workload_sha256":"workload-hash","parameters":session["config"]["parameters"].copy()}
+    usage = {"workload":"short","workload_sha256":"workload-hash","parameters":describe(session,run)["parameters"].copy()}
     return session,run,describe(session,run),usage
 
 
@@ -70,7 +70,7 @@ class EvidenceTests(unittest.TestCase):
             session,run,current,usage = fixture()
             if mode=="partial":session["state"]="partial"
             if mode=="samples":run["measurements"].pop()
-            if mode=="output":run["measurements"][0]["output_correct"]=False
+            if mode=="output":run["measurements"][1]["output_correct"]=False
             self.assertFalse(self.result(session,run,current,usage)["eligible_for_ranking"])
 
     def test_missing_identity_is_unknown_not_slow(self):
@@ -101,6 +101,15 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(result["freshness"],"stale")
         self.assertEqual(result["changed"],[])
         self.assertIn("age-advisory",result["stale_reasons"])
+
+    def test_batch_sampling_and_missing_first_run_are_not_equivalent(self):
+        for key,value in (("batch",8),("temperature",.8),("ignore_eos",False),("do_sample",True)):
+            session,run,current,usage=fixture()
+            usage["parameters"][key]=value
+            self.assertFalse(self.result(session,run,current,usage)["eligible_for_ranking"])
+        session,run,current,usage=fixture()
+        run["measurements"]=run["measurements"][1:]
+        self.assertFalse(self.result(session,run,current,usage)["eligible_for_ranking"])
 
 
 if __name__=="__main__":unittest.main()

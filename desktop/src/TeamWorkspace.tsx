@@ -6,6 +6,7 @@ import { Empty, Panel } from './ui'
 import { RuntimePicker, TaskModelPicker } from './TaskSelection'
 import { useTaskPreparation } from './TaskPreparation'
 import { TeamWorkflow } from './TeamWorkflow'
+import {DeviceChoice} from './DeviceRecommendation'
 
 export function TeamWorkspace({info, policy, run, report, cancel, refreshRuntime}: {
   info?: Info; policy: string; run: Run; report: (error: unknown) => void; cancel: (id: string) => void
@@ -14,6 +15,7 @@ export function TeamWorkspace({info, policy, run, report, cancel, refreshRuntime
   const [workflow, setWorkflow] = useState(false)
   const [team, setTeam] = useState<string[]>(['', ''])
   const [teamRuntimes, setTeamRuntimes] = useState<string[]>(['local', 'local'])
+  const [devices,setDevices]=useState<string[]>(['',''])
   const [lead, setLead] = useState(0)
   const [teamPrompt, setTeamPrompt] = useState('')
   const [serial, setSerial] = useState(false)
@@ -24,7 +26,7 @@ export function TeamWorkspace({info, policy, run, report, cancel, refreshRuntime
   const runTeam = async () => {
     setBusy(true)
     try {
-      const members = team.map((model,i) => ({runtime: teamRuntimes[i],model}))
+      const members = team.map((model,i) => ({runtime: teamRuntimes[i],model,...(devices[i] && ['local','openvino'].includes(teamRuntimes[i]) ? {execution:{device:devices[i],confirmed:true}} : {})}))
       const preparation = await prepare('team',members,policy,teamRuntimes[lead] === 'local' ? '共同任務' : '共同任務與成員草稿')
       if (preparation === 'cancelled') return
       setTeamResult(undefined); setJob(undefined)
@@ -45,14 +47,16 @@ export function TeamWorkspace({info, policy, run, report, cancel, refreshRuntime
               <div className="team-member-title"><strong>成員 {i+1}</strong>{i===lead && <span className="tag">主模型</span>}</div>
               <div className="team-member-actions">
                 {lead!==i && <button className="button" disabled={busy} onClick={()=>setLead(i)}>設為主模型</button>}
-                {team.length>2 && <button className="icon" aria-label={`移除成員 ${i+1}`} disabled={busy} onClick={()=>{setTeam(t=>t.filter((_,j)=>j!==i));setTeamRuntimes(t=>t.filter((_,j)=>j!==i));setLead(l=>l>=i?Math.max(0,l-1):l)}}><X size={16}/></button>}
+                {team.length>2 && <button className="icon" aria-label={`移除成員 ${i+1}`} disabled={busy} onClick={()=>{setTeam(t=>t.filter((_,j)=>j!==i));setTeamRuntimes(t=>t.filter((_,j)=>j!==i));setDevices(t=>t.filter((_,j)=>j!==i));setLead(l=>l>=i?Math.max(0,l-1):l)}}><X size={16}/></button>}
               </div>
               <label>運算環境<RuntimePicker info={info} task="team" ariaLabel={`成員 ${i+1} 運算環境`} disabled={busy}
                 value={teamRuntimes[i]} refresh={refreshRuntime} change={value=>{
-                  setTeamRuntimes(t=>t.map((old,j)=>j===i?value:old));setTeam(t=>t.map((old,j)=>j===i?'':old))
+                  setTeamRuntimes(t=>t.map((old,j)=>j===i?value:old));setTeam(t=>t.map((old,j)=>j===i?'':old));setDevices(t=>t.map((old,j)=>j===i?'':old))
                 }}/></label>
               <label>模型<TaskModelPicker ariaLabel={`成員 ${i+1} 模型`} info={info} runtime={teamRuntimes[i]}
                 model={m} disabled={busy} change={v=>setTeam(t=>t.map((old,j)=>j===i?v:old))}/></label>
+              <DeviceChoice info={info} task="team" runtime={teamRuntimes[i]} model={m} policy={policy} disabled={busy} device={devices[i] ?? ''}
+                onDevice={device=>setDevices(current=>team.map((_,j)=>j===i ? device : current[j] ?? ''))}/>
               {job?.members?.[i] && <p className="team-member-status muted small" role="status">{job.members[i]}</p>}
             </div>)}
             <div className="row section-note"><button className="button" disabled={busy || team.length>=6} onClick={()=>{setTeam(t=>[...t,'']);setTeamRuntimes(t=>[...t,'local'])}}><Plus size={16}/>成員</button><label className="check"><input type="checkbox" checked={serial} onChange={e=>setSerial(e.target.checked)}/>強制依序執行本機模型</label></div>

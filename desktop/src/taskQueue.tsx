@@ -4,6 +4,7 @@ import { Empty, Panel } from './ui'
 
 const labels: Record<string, string> = {
   benchmark:'模型效能測試',
+  'team-node':'團隊成員節點',
   'openvino-install':'安裝 OpenVINO','openvino-remove':'移除 OpenVINO','openvino-detect':'檢查 OpenVINO 裝置',
   'openvino-import':'匯入 OpenVINO IR','openvino-infer':'OpenVINO 張量推理',
   'remote-host-chat': '遠端裝置文字推理',
@@ -90,7 +91,11 @@ export function TaskCenter({ tasks, cancel, retry, compact, loadError }: {
         <small>{task.message}</small>
         {!compact && task.history_warning && <small>{task.history_warning}</small>}
         {!compact && task.remote_request && <small className="pre">遠端任務 ID {task.remote_request}</small>}
-        {!compact && <small>{new Date(task.created).toLocaleString()} · {task.runtime === 'local' || !task.runtime ? '本機' : '外部運算'}</small>}
+        {!compact && <small>{new Date(task.created).toLocaleString()} · {['local','openvino'].includes(task.runtime || 'local') ? '本機' : '外部運算'}</small>}
+        {!compact && task.resource_request && <small className="pre">{task.resource_request.engine} · {task.resource_request.device} · 預留 RAM {(task.resource_request.ram/1024**3).toFixed(2)} GiB</small>}
+        {!compact && task.execution && <small className="pre">指定 {task.execution.requested_device} · 實際 {Array.isArray(task.execution.actual_device) ? task.execution.actual_device.join('、') : task.execution.actual_device} ·
+          {task.execution.execution_device_verified ? '裝置已驗證' : '裝置分配未完整驗證'}</small>}
+        {!compact && task.parent_id && <small>父任務 {task.parent_id}</small>}
         {activeTask(task) && <TaskProgress received={task.received} total={task.total}/>}
       </span>
       <span className={`tag task-${task.state}`}>{states[task.state] || task.state}</span>

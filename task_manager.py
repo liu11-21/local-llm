@@ -90,6 +90,7 @@ class TaskManager:
         if demand is not None and not isinstance(demand,ResourceDemand):raise ValueError("排程資源契約無效。")
         if demand:
             lane="device" if demand.scope=="local" else "control" if demand.scope=="control" else "remote"
+            runtime=payload.get("runtime",runtime)
         elif lane=="compute":demand=ResourceDemand()
         elif lane=="remote":demand=ResourceDemand(scope="remote",device=runtime,exclusive=("remote:"+runtime,))
         with self.lock:

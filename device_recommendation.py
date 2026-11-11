@@ -96,10 +96,11 @@ class DeviceRecommendations:
         candidates = []
         profile = data.get("workload")
         selected = next((workload for workload in TEXT_WORKLOADS if workload["id"]==profile),None)
-        params = {"context":data.get("context",2048),"max_tokens":data.get("max_tokens",512),"memory_mib":data.get("memory_mib",4096)}
+        params = {"context":data.get("context",2048),"max_tokens":data.get("max_tokens",512),"memory_mib":data.get("memory_mib",4096),
+                  "batch":data.get("batch",1),"temperature":data.get("temperature",.4),"do_sample":data.get("temperature",.4)>0,"ignore_eos":False}
         usage = {"workload":profile,"workload_sha256":fingerprint(selected) if selected else data.get("workload_sha256"),"parameters":params}
         if data.get("reference") is True and selected:
-            usage["parameters"] = {"context":2048,"max_tokens":32,"memory_mib":4096}
+            usage["parameters"] = {"context":2048,"max_tokens":32,"memory_mib":4096,"batch":1,"temperature":0,"do_sample":False,"ignore_eos":True}
             usage["reference_only"] = True
         descriptors = {}
         for record in records:
@@ -144,6 +145,9 @@ class DeviceRecommendations:
                     available,executable="incompatible",False;reasons.append("端點未列出此模型。")
                 if network and data.get("policy") in ("local","privacy"):
                     available,executable="incompatible",False;reasons.append("目前政策限制本機運算。")
+                elif network and record["kind"]!="remote-host" and data.get("policy","auto")!="manual":
+                    if available!="incompatible":available="needs-setup"
+                    executable=False;reasons.append("外部 API 需要手動運算政策及此次資料傳送確認。")
                 health = task_health(record,"chat" if task in ("agent","team","benchmark","tensor") else task)
                 if health in ("offline","unhealthy"):
                     executable=False
@@ -159,10 +163,11 @@ class DeviceRecommendations:
                         if not info.get("comfy_installed"):
                             available,executable="needs-setup",False;reasons.append("ComfyUI 尚未安裝。")
                         # Readiness checks nodes and managed weights, not mere filenames.
-                        readiness = self.app.media_readiness({"kind":task,"workflow":model}) if model else {"state":"unavailable"}
+                        try:readiness = self.app.media_readiness({"kind":task,"workflow":model}) if model else {"state":"unavailable"}
+                        except (ValueError,RuntimeError,OSError):readiness={"state":"unavailable"}
                         if readiness["state"]!="ready":
                             available,executable="needs-setup",False;reasons.append("創作權重、節點或服務需要準備，請使用既有一鍵安裝。")
-                    elif task!="image" or record.get("media",{}).get("image",{}).get("state")!="ready":
+                    elif task!="image" or record.get("media",{}).get("image",{}).get("state")!="ready" or model not in record.get("media",{}).get("image",{}).get("workflows",[]):
                         available,executable="incompatible",False;reasons.append("遠端影片／音樂尚未實作，或圖片能力未就緒。")
                 incompatible = available=="incompatible"
                 ram = record["resources"]["ram_available"]
@@ -170,7 +175,9 @@ class DeviceRecommendations:
                     if ram["value"]<required:
                         available,executable="uncertain",False;risks.append("目前可用 RAM 低於需求估計，可等候釋放或改選較小模型。")
                     else:reasons.append("可用 RAM 達到估計，仍需由 Backend 實際載入驗證。")
-                elif local:unknown.append("需求或可用 RAM 尚未可靠確認。")
+                elif local:
+                    unknown.append("需求或可用 RAM 尚未可靠確認。")
+                    if available=="ready":available="uncertain"
                 current = self.identity(engine,device,info,descriptor) if descriptor else {}
                 mapping = current.get("mapping",{})
                 matched = next((item for item in hardware["devices"] if item["id"]==mapping.get("windows_id")),None)
@@ -179,9 +186,12 @@ class DeviceRecommendations:
                     vram_required = descriptor["bytes"]+512*1024**2 if descriptor else None
                     if vram_required and fresh_measure(matched["vram_available"]) and matched["vram_available"]["value"]<vram_required:
                         available,executable="uncertain",False;risks.append("所選單張 GPU 的可用專用顯存低於估計。")
-                    elif not fresh_measure(matched["vram_available"]):unknown.append("此 GPU 的可用顯存讀值過期或未知。")
+                    elif not fresh_measure(matched["vram_available"]):
+                        unknown.append("此 GPU 的可用顯存讀值過期或未知。")
+                        if available=="ready":available="uncertain"
                 elif device!="CPU" and local and not media:
                     unknown.append("統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。")
+                current["resources"]={"ram_available":ram,"vram_available":matched.get("vram_available") if matched else None}
                 entries = []
                 for session in history:
                     if session["engine"]!=engine:continue

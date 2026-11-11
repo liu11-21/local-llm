@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { rpc, type Info, type Job, type Params } from './api'
 import { gb } from './ui'
 import { RuntimePicker, TaskModelPicker, TextSetup } from './TaskSelection'
+import {DeviceChoice} from './DeviceRecommendation'
 import { useTaskPreparation } from './TaskPreparation'
 import type { Run } from './taskQueue'
 
 type PlanEvent = {kind: string; at: string; tool?: string; message?: string; code?: string; step?: number; arguments?: Params}
-type AgentPlan = { id: string; version: number; role: string; model: string; prompt: string; steps: string[];
+type AgentPlan = { id: string; version: number; role: string; model: string; prompt: string; steps: string[];runtime?:string;execution?:{device:string};
   state: string; tools: string[]; mode?: string; task_id?: string; error?: string; answer?: string; review_calls?: boolean;
   pending?: {id: string; tool: string; arguments: Params; decision?: boolean};
   events: PlanEvent[]; evidence: {tool: string; output: unknown}[] }
@@ -59,8 +60,9 @@ function Evidence({evidence}: {evidence?: Record<string, unknown>}) {
   </>
 }
 
-export function AgentWorkspace({ info, busy, job, run, report, cancel, setupRun, openModels }: {
+export function AgentWorkspace({ info, busy, job, run, report, cancel, setupRun, openModels,policy='auto' }: {
   info?: Info
+  policy?:string
   setupRun: Run
   openModels: () => void
   busy: boolean
@@ -70,7 +72,9 @@ export function AgentWorkspace({ info, busy, job, run, report, cancel, setupRun,
   cancel: (id: string) => void
 }) {
   const prepare = useTaskPreparation()
-  const models = info?.models ?? []
+  const [runtime,setRuntime]=useState('local')
+  const [device,setDevice]=useState('')
+  const models = runtime==='local' ? info?.models ?? [] : runtime==='openvino' ? info?.openvino?.models.filter(item=>item.kind==='text').map(item=>item.id) ?? [] : info?.providers.find(item=>item.id===runtime)?.models ?? []
   const [role, setRole] = useState('general')
   const [model, setModel] = useState('')
   const [prompt, setPrompt] = useState('')
@@ -115,8 +119,10 @@ export function AgentWorkspace({ info, busy, job, run, report, cancel, setupRun,
     setPlanning(true)
     const previous = plan?.state === 'awaiting_approval' ? plan : undefined
     try {
-      if (await prepare('agent',[{runtime:'local',model:selectedModel}],'local') === 'cancelled') return
+      const preparation=await prepare('agent',[{runtime,model:selectedModel}],policy,'提示詞、工具結果與相關觀測')
+      if (preparation === 'cancelled') return
       setPlan(await rpc('agent-plan', {role, model:selectedModel, prompt, tools, mode, review_calls:review,
+        runtime,policy,consent:preparation==='confirmed',...(device && ['local','openvino'].includes(runtime) ? {execution:{device,confirmed:true}} : {}),
         limits:bounds, previous:previous?.id, version:previous?.version}))
       void refreshHistory()
     }
@@ -166,16 +172,20 @@ export function AgentWorkspace({ info, busy, job, run, report, cancel, setupRun,
         if (e.target.value === 'simple') setTools(current => current.filter(key =>
           !definitions.find(tool => tool.id === key)?.input_schema.required.length))
       }}><option value="simple">簡易模式</option><option value="structured">多步驟 · 結構化輸出</option>
-        <option value="native">多步驟 · 原生工具調用（實驗）</option></select></label>
+        <option value="native" disabled={runtime!=='local'}>多步驟 · 原生工具調用（實驗）</option></select></label>
       <label>角色<select disabled={disabled} value={role} onChange={e => { setRole(e.target.value); invalidatePlan() }}>
         <option value="general">一般助理</option><option value="research">研究整理</option>
         <option value="technical">技術分析</option>
       </select></label>
       <div className="chat-controls">
-        <label>模型<TaskModelPicker ariaLabel="本機模型" info={info} runtime="local" disabled={disabled || !models.length}
+        <label>模型<TaskModelPicker ariaLabel={runtime==='local' ? '本機模型' : '代理人模型'} info={info} runtime={runtime} disabled={disabled || !models.length}
           model={selectedModel} change={value => { setModel(value); invalidatePlan() }}/></label>
-        <label>運算環境<RuntimePicker info={info} task="agent" value="local" disabled change={()=>{}}/></label>
+        <label>運算環境<RuntimePicker info={info} task="agent" value={runtime} disabled={disabled} change={value=>{
+          setRuntime(value);setModel('');setDevice('');if(value!=='local' && mode==='native')setMode('simple');invalidatePlan()
+        }}/></label>
       </div>
+      <DeviceChoice info={info} task="agent" runtime={runtime} model={selectedModel} policy={policy} disabled={disabled} device={device}
+        onDevice={value=>{setDevice(value);invalidatePlan()}}/>
       <TextSetup info={info} run={setupRun} cancel={cancel} openModels={openModels}/>
       {mode !== 'simple' && <p className="small section-note">目前選定模型的工具能力未驗證。可嘗試結構化輸出；若無法遵循格式，可切換簡易模式。</p>}
       <label>任務描述<textarea disabled={disabled} value={prompt} maxLength={2400}
@@ -192,10 +202,10 @@ export function AgentWorkspace({ info, busy, job, run, report, cancel, setupRun,
           <label key={key}>{label}<input type="number" min={min} max={max} disabled={disabled} value={bounds[key] ?? fallback}
             onChange={e => {invalidatePlan(); setBounds(current => ({...current, [key]:Number(e.target.value)}))}}/></label>)}</div>
       </details>}
-      <button className="button section-note" disabled={disabled || !info?.engine || !selectedModel || !prompt.trim()}
+      <button className="button section-note" disabled={disabled || runtime==='local' && !info?.engine || !selectedModel || !prompt.trim()}
         onClick={preview}>{planning ? '準備中…' : '預覽執行計畫'}</button>
       {plan?.state === 'awaiting_approval' && <section className="estimate"><div><strong>待核准 · {plan.role}</strong>
-        <p>{plan.model} · 版本 {plan.version}</p><ol>{plan.steps.map((step, index) => <li key={step}>{index + 1}. {step}</li>)}</ol>
+        <p>{plan.model} · {plan.runtime || 'local'} · {plan.execution?.device || '既有單工作模式'} · 版本 {plan.version}</p><ol>{plan.steps.map((step, index) => <li key={step}>{index + 1}. {step}</li>)}</ol>
         <p>{plan.tools.length ? plan.tools.map(tool => toolNames[tool] || tool).join('、') : '不使用工具'} · {plan.review_calls ? '逐次核准' : '核准後可在清單內使用'}</p>
         <div className="row section-note"><button className="button primary" disabled={disabled} onClick={execute}>核准並執行</button>
           <button className="button" disabled={disabled} onClick={invalidatePlan}>撤銷計畫</button>
