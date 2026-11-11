@@ -62,3 +62,14 @@ E3-D 的 Benchmark 新鮮度、設備推薦與異質並行調度另見 [DEVICE_R
 完整 Cold 讀取／編譯／首次推理、TTFT、原生 Decode／Prefill、精確 Token 數、RAM 峰值與算子資訊均保存於同目錄的 JSON。llama.cpp 實際版本為 0.7.0-dev build 11810，commit e3797b184，本次正確執行檔可運作，先前其他路徑的應用程式控管阻擋不能代替這次的結果。
 
 安全驗收 PASS，取消後保留 1 筆、15 秒逾時後保留 6 筆原始量測，兩次子程序都已清理，之後重新執行測試成功。NEEDS NPU，NEEDS REMOTE HOST，其他廠牌 GPU 與跨硬體驗收 NOT RUN。這台 Iris Xe 的 GPU 身分以 LUID 對應成功，FP32 IR 的 EXECUTION_DEVICES 為 GPU.0。
+
+| 文字模型 | 裝置 | 工作量 | 原生 TTFT 平均 ms | Decode 平均 token/s |
+|---|---|---|---|---|
+| Qwen OV | CPU | short | 22.047 | 73.980 |
+| Qwen OV | CPU | long | 30.415 | 76.120 |
+| SmolLM2 GGUF | CPU | short | 不可取得 | 209.932 |
+| SmolLM2 GGUF | CPU | long | 不可取得 | 191.255 |
+| SmolLM2 GGUF | Vulkan0 | short | 不可取得 | 126.146 |
+| SmolLM2 GGUF | Vulkan0 | long | 不可取得 | 124.429 |
+
+每次生成均為 32 Token。首段文字 Callback 時間另外保存，沒有替代原生 TTFT。整體生成時間包含 Prefill，不能只看 Decode 速率判斷整個請求耗時。Windows 開發安裝包與 CI 來源核對見 [測試報告](TEST_REPORT.md)。

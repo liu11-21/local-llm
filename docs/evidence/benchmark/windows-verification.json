@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "run": 43025479340,
+  "artifact": 13857685529,
+  "commit": "79e5415ff1db2028934ccd84dc848de39ed715b4",
+  "version": "0.6.2",
+  "artifact_digest": "sha256:1d83976cdf7203e33ab0ae251fe65aa67accad27d019b8c20519211b7d981fc7",
+  "downloaded_archive_sha256": "1d83976cdf7203e33ab0ae251fe65aa67accad27d019b8c20519211b7d981fc7",
+  "exe_sha256": "2be2225c39f7fcb53a7206d3e8d8c824f6a7b01e9c9bb8da1f6045fbc16b576c",
+  "build_json_commit_version_and_exe_hash_match": true,
+  "sha256sums_match": true,
+  "official_release": false,
+  "authenticode": "NotSigned",
+  "python_ci": {"tests": 131, "initial_pass": 130, "initial_skipped_packaged": 1, "packaged_after_build_pass": 1},
+  "controlled_ui": "PASS including Benchmark and previous workflows",
+  "installer_smoke": "PASS"
+}

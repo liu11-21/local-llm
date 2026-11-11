@@ -18,7 +18,11 @@
 | NEEDS REMOTE HOST | 遠端 Benchmark 契約目前 unsupported，實體雙機未測。 |
 | NOT RUN | 正式 Release、簽章、防毒申訴與付費雲端。本次只產出開發分支安裝包。 |
 
-Windows CI 與安裝包 SHA-256 將在本輪工作流程完成後補上對應提交，避免將舊版安裝包當成本輪成果。
+**Windows CI PASS**，[工作流程 43025479340](https://github.com/liu11-21/local-llm/actions/runs/43025479340) 對應應用程式提交 `79e5415ff1db2028934ccd84dc848de39ed715b4`。131 項測試先通過 130 項，僅尚未建置的 PackagedWorker 略過；建置後該項另外通過。本機略過的 TLS 案例均在乾淨 runner 執行。Worker 封裝、完整 Chromium 回歸、Tauri Windows x64 安裝包、安裝／啟動／卸載 Smoke 均通過。
+
+[開發安裝包 Artifact](https://github.com/liu11-21/local-llm/actions/runs/43025479340/artifacts/13857685529) 保留 14 天，解壓後執行 `Local LLM Workspace_0.6.2_x64-setup.exe`。13,131,795 bytes，未簽章，沒有建立正式 Release。EXE SHA-256 為 `2be2225c39f7fcb53a7206d3e8d8c824f6a7b01e9c9bb8da1f6045fbc16b576c`。
+
+已下載核對 GitHub Artifact Digest、BUILD.json 的提交／版本／EXE 雜湊與 SHA256SUMS.txt。證據見 [BUILD](evidence/benchmark/windows-build.json) 與 [下載驗證](evidence/benchmark/windows-verification.json)。本輪最後的文件／截圖提交不改變安裝包程式碼，安裝包來源以此處固定 SHA 為準。
 
 ## E3-A、E3-B 的資源與 OpenVINO Adapter
 
