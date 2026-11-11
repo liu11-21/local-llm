@@ -37,6 +37,7 @@ from hardware_monitor import HardwareMonitor
 from openvino_adapter import OpenVINOAdapter
 from benchmark_service import BenchmarkService
 from benchmark_core import comparable
+from device_recommendation import DeviceRecommendations
 from resource_contract import gpu_memory
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
@@ -176,6 +177,7 @@ class Desktop(Workspace):
         self.remote_tls = ManagedTLS(self.connect, self.remote_host)
         self.openvino = OpenVINOAdapter(self.data,self.connect)
         self.benchmarks = BenchmarkService(self)
+        self.device_recommendations = DeviceRecommendations(self)
 
     @contextmanager
     def connect(self):
@@ -1004,6 +1006,8 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op=="runtime-recommend":
+            return self.device_recommendations.query(data)
         if op=="benchmark-plan":
             return self.benchmarks.plan()
         if op=="benchmark-list":

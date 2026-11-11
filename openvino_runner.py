@@ -25,7 +25,13 @@ def main():
     core = ov.Core()
     available = list(core.available_devices)
     if request["op"]=="detect":
-        emit({"event":"result","devices":available,"version":ov.__version__})
+        import importlib.util
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location("managed_benchmark",Path(__file__).with_name("benchmark_openvino.py"))
+        helper = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(helper)
+        identities = {device:helper.device_properties(core,device,[]) for device in available}
+        emit({"event":"result","devices":available,"version":ov.__version__,"identities":identities})
         return
     device = request["device"]
     if device not in available:

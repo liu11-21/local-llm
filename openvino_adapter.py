@@ -348,7 +348,8 @@ class OpenVINOAdapter:
         except Exception:
             self.detected = {"state":"failed","devices":[],"version":VERSION}
             raise
-        self.detected = {"state":"reported","devices":result["devices"],"version":result["version"],"checked_at":int(time())}
+        self.detected = {"state":"reported","devices":result["devices"],"version":result["version"],"checked_at":int(time()),
+                         "identities":result.get("identities",{})}
         return {"message":"已更新獨立 OpenVINO 環境的可用裝置。"}
 
     def infer(self, identity, device, cancel, update, *, inputs=None, messages=None, max_tokens=128):

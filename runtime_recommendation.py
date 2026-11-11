@@ -2,6 +2,77 @@
 from runtime_contract import fresh, task_health
 from resource_contract import fresh_measure, gpu_memory, memory_explanation, reading
 
+PREFERENCES = {"auto","speed","low-memory","energy","privacy","local-first","cost"}
+
+
+def recommend(candidates, *, preference="auto", objective="latency", usage=None):
+    """Explain gates first, compare only qualified, condition-matched measurements."""
+    if preference not in PREFERENCES or objective not in ("latency","ttft","decode"):
+        raise ValueError("推薦偏好或效能目標無效。")
+    results = []
+    for original in candidates:
+        item = {**original,"reasons":list(original.get("reasons",[])),"uncertainty":list(original.get("uncertainty",[])),
+                "risks":list(original.get("risks",[])),"performance":None,"performance_group":None,
+                "confidence":"unknown","evidence_level":"capability-only","recommended":False}
+        if preference=="privacy" and item["network"]:
+            item.update(availability="incompatible",executable=False)
+            item["reasons"].append("隱私優先只允許本機，不傳送提示詞或工具結果。")
+        if preference=="cost" and item["network"] and item["cost"]!="no-api-fee":
+            item.update(availability="incompatible",executable=False)
+            item["reasons"].append("節省費用排除可能計費或費用未知的端點。")
+        if preference=="energy":
+            item["uncertainty"].append("沒有可靠功耗資料，無法判定哪個設備最省電。")
+        evidence = [entry for entry in item.get("evidence",[]) if entry["eligible_for_ranking"]]
+        if evidence:
+            entry = evidence[0]  # newest first, never cherry-pick the fastest run
+            item.update(performance=entry.get("performance") or entry["summary"],performance_group=entry["condition_key"],
+                        evidence_level="verified-benchmark" if entry["execution_device_verified"] else "backend-benchmark-limited",
+                        confidence="limited" if entry["comparability"]!="equivalent" else "measured")
+            item["uncertainty"].extend(entry["limitations"])
+        elif item.get("evidence"):
+            item["uncertainty"].append("歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。")
+        else:
+            item["uncertainty"].append("沒有此模型與工作量的 Benchmark，缺少資料不代表較慢。")
+        if item["network"]:
+            item["reasons"].append("只提供建議，實際傳送仍需此次任務的目的地與費用確認。")
+        if item["cost"]=="unknown":
+            item["uncertainty"].append("費用未知，不視為免費。")
+        results.append(item)
+    ready = [item for item in results if item["executable"] and item["availability"] in ("ready","uncertain")]
+    # Default suggestions are local compatibility choices, not invented speed rankings.
+    local = [item for item in ready if not item["network"]]
+    pool = local or ready
+    selected = next((item for item in pool if item["availability"]=="ready"),pool[0] if pool else None)
+    comparison = None
+    groups = {}
+    field = {"latency":"mean_ms","ttft":"ttft_ms","decode":"decode_tokens_per_s"}[objective]
+    for item in pool:
+        performance = item["performance"] or {}
+        if item["performance_group"] and isinstance(performance.get(field),(int,float)):
+            groups.setdefault(item["performance_group"],[]).append(item)
+    groups = [items for items in groups.values() if len(items)>1]
+    if preference in ("auto","speed") and len(groups)==1:
+        ordered = sorted(groups[0],key=lambda item:item["performance"][field],reverse=objective=="decode")
+        selected = ordered[0]
+        comparison = {"scope":"僅限指定模型與固定工作量、參數及 Backend。","objective":objective,
+                      "ordered_candidates":[item["id"] for item in ordered],"condition_key":selected["performance_group"]}
+        selected["reasons"].append("在同一固定 Benchmark 條件下，此指標較佳；不能代表其他提示詞或輸出長度。")
+    if preference=="low-memory":
+        measured = [item for item in pool if item["performance"] and item["performance"].get("peak_ram_bytes") is not None]
+        if len(measured)>1 and len({item["performance_group"] for item in measured})==1:
+            selected = min(measured,key=lambda item:item["performance"]["peak_ram_bytes"])
+            selected["reasons"].append("相同 Benchmark 條件下，已量測的程序 RAM 工作集峰值較小；VRAM 未知時不推論總記憶體。")
+        else:
+            for item in pool:item["uncertainty"].append("缺少可比較的記憶體實測，僅檢查需求估計與容量。")
+    if selected:
+        selected["recommended"] = True
+        if comparison is None:
+            selected["reasons"].append("依相容性、可用性與本機優先提供建議，目前無法確定哪個設備最快。")
+    return {"schema":1,"preference":preference,"objective":objective,"usage":usage,
+            "recommended":selected["id"] if selected else None,"comparison":comparison,"candidates":results,
+            "automatic_dispatch":False,"benchmark_started":False,
+            "explanation":"推薦後由使用者選擇並確認；未比較的候選沒有被視為較慢。"}
+
 TASK_FORMAT = {"chat": "GGUF", "agent": "GGUF", "team": "GGUF", "image": "safetensors",
                "video": "safetensors", "music": "safetensors", "notebook": None}
 
