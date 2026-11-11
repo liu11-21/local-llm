@@ -303,7 +303,7 @@ class HardwareMonitor:
                     if used is not None and used > total:
                         used = None
                     item.update(utilization=reading(counter_values(values.get("engines",[]),device["id"],engines=True)),
-                                vram_used=reading(used),vram_available=reading(total-used if used is not None else None),
+                                vram_used=reading(used),vram_available=reading(total-used if used is not None else None,"estimated"),
                                 shared_used=reading(counter_values(values.get("shared",[]),device["id"])))
                 devices.append(item)
             measured_at = int(time())

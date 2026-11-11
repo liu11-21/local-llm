@@ -10,6 +10,18 @@ from runtime_contract import capability, validate
 
 
 class HardwareMonitorTests(TestCase):
+    def test_conflicting_driver_usage_stays_unknown_and_free_memory_is_an_estimate(self):
+        monitor,counter = self.monitor()
+        counter.sample.return_value["dedicated"] = [("luid_0x0_0x1_phys_0",256)]
+        gpu = monitor.snapshot()["devices"][0]
+        self.assertIsNone(gpu["vram_available"]["value"])
+        self.assertIsNone(gpu["vram_used"]["value"])
+        monitor.cached = None
+        counter.sample.return_value["dedicated"] = [("luid_0x0_0x1_phys_0",64)]
+        gpu = monitor.snapshot()["devices"][0]
+        self.assertEqual(gpu["vram_available"]["source"],"estimated")
+        self.assertEqual(gpu["vram_available"]["unit"],"bytes")
+
     def test_close_cancels_background_inventory_without_waiting_for_its_deadline(self):
         started = Event()
         def inventory():

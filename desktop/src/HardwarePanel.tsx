@@ -37,7 +37,7 @@ export function HardwarePanel() {
         <div><dt>使用率</dt><dd>{device.utilization.value===null ? device.utilization.status==='unsupported' ? '尚無支援的監控介面' : '未知' : `${device.utilization.value}%`}</dd></div>
         <div><dt>專用顯存</dt><dd>{device.vram_total.value===null ? '未知' : gb(device.vram_total.value)}</dd></div>
         <div><dt>已用專用顯存</dt><dd>{device.vram_used.value===null ? '未知' : gb(device.vram_used.value)}</dd></div>
-        <div><dt>可用專用顯存</dt><dd>{device.vram_available.value===null ? '未知' : gb(device.vram_available.value)}</dd></div>
+        <div><dt>專用顯存餘量（估計）</dt><dd>{device.vram_available.value===null ? '未知' : gb(device.vram_available.value)}</dd></div>
         {device.shared_used && <div><dt>已用共享記憶體</dt><dd>{device.shared_used.value===null ? '未知' : gb(device.shared_used.value)}</dd></div>}
       </dl>
       {device.kind!=='gpu' && <p className="small muted">NPU 推理待硬體驗收。一般聊天與創作可繼續使用既有 CPU／GPU 引擎。</p>}

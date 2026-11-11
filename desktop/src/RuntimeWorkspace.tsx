@@ -68,7 +68,7 @@ export function RuntimeWorkspace({info, health, policy, tasks, run, report, noti
             {info?.engine ? <><SelectModels models={models} value={local} change={setLocal} registry={info?.registry.models}/><div className="row section-note"><button className="button primary" disabled={engineBusy || !local} onClick={()=>run('engine-start',{model:local,mode:'auto',context:2048})}>啟動模型</button><button className="button" disabled={engineBusy || !activeText} onClick={()=>run('engine-stop',{})}>停止模型</button></div></> :
             <button className="button primary" disabled={engineBusy || !info} onClick={()=>run('engine-install',{})}><ArrowDownToLine size={16}/>安裝官方 llama.cpp</button>}
             {info?.active?.[3] && <Estimate plan={info.active[3]}/>}
-            {info?.devices.map(([device,free,shared])=><div className="list-row" key={device}><span>{device}{shared ? ' · 可能為共享記憶體' : ''}</span><b>偵測時可用 {gb(free)}</b></div>)}
+            {info?.devices.map(([device,free])=><div className="list-row" key={device}><span>{device} · llama.cpp 回報記憶體池</span><b>回報容量 {gb(free)} · 類型及可分配性待確認</b></div>)}
           </Panel><Panel title="ComfyUI" description="工作台可按需安裝官方便攜版。首次安裝會下載較大的執行環境。">
             <Health status={health?.comfyui}/>
             <div className="row"><label className="grow">便攜版<select value={profile} onChange={e=>setProfile(e.target.value)}>{info?.profiles.map(p=><option key={p}>{p}</option>)}</select></label><label>連接埠<input type="number" value={port} min={1024} max={65535} onChange={e=>setPort(Number(e.target.value))}/></label></div>
