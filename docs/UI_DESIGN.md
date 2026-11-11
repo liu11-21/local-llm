@@ -1,5 +1,18 @@
 # 桌面 UI 設計
 
+## E3-A、E3-B 的實際介面
+
+| 區域 | E1、E2 | 本輪行為 |
+|---|---|---|
+| GPU 資源 | 顯示專用顯存和共享記憶體 | 補上 UMA／獨立顯存類型，餘量明列估計，後端回報的池容量另列 |
+| OpenVINO | 主 Worker 的 Provider 查詢 | 獨立 Runtime 安裝摘要、使用者確認、裝置查詢、IR 匯入與移除 |
+| 聊天 | llama.cpp 和原有外部 Runtime | 可選本機 OpenVINO 和已匯入文字模型，進階參數選擇實際裝置，正常串流與保存對話 |
+| 裝置證據 | 硬體是否存在 | 可查執行紀錄，明列指定裝置、回報裝置與未取得算子證據的情況 |
+
+以下三張截圖使用真實 React、Worker、TaskManager、隔離 OpenVINO 及官方 Qwen2.5-Coder 0.5B 模型。CPU 文字生成完成並保存，GenAI 算子分配仍標未驗證。 [Runtime 管理](ui-preview/e3/openvino-runtime-real.png) · [深色 CPU 聊天](ui-preview/e3/openvino-chat-cpu-real-dark.png) · [650 px 淺色聊天](ui-preview/e3/openvino-chat-cpu-real-light.png)
+
+E5 的情境首頁、固定引導操作列、輕量完成提示和作品 Grid／List 尚未交付。本輪延續原有配色、焦點與 reduced motion。 [實測範圍](TEST_REPORT.md)
+
 ## Batch 4E＋NPU 的 E1、E2
 
 | 區域 | 更新前 | 本輪行為 |

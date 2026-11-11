@@ -1,12 +1,20 @@
 # 桌面工作台架構
 
+## E3-A、E3-B 的資源與 OpenVINO 執行
+
+- `resource_contract.py` 與 `hardware_contract.py` 為數值保存單位、時間、來源、狀態和證據。DXGI／D3D12 的 UMA 訊號區分統一記憶體與獨立顯存。舊紀錄缺少類型、時間或映射時保留未知。
+- `vram_available` 表示專用總量減去已用量的估計餘量。Runtime 推薦只接受單張、已識別且取樣新鮮的獨立顯存池，仍由後端確認模型是否可分配。統一記憶體、共享上限及多 GPU 不合併。llama.cpp 回報的池容量另列。
+- `openvino_adapter.py` 在應用程式資料夾管理可選 Runtime、固定套件快取、IR 模型及編譯快取。八個檔案固定版本和 SHA-256，Windows 系統 TLS 負責 HTTPS，傳輸沿用既有多線程、續傳和校驗。
+- `openvino_runner.py` 在獨立 Python 3.12.10 程序載入 OpenVINO 2025.4.1，提供裝置查詢、張量推理和 GenAI 文字串流。父程序套用 8 GiB 程序記憶體上限、180 秒執行時限與取消，工作結束釋放原生模型和程序。
+- OpenVINO 聊天使用現有對話保存、IPC、任務中心和本機 compute 槽。SQLite 第 10 版增加 `engine_runs`，記錄模型雜湊、指定及實際回報裝置、算子資訊和結果狀態。GenAI 未提供足夠分配證據時維持未驗證。 [操作與限制](NPU_SUPPORT.md) · [儲存政策](PRIVACY_STORAGE.md)
+
 ## Batch 4E＋NPU 的 E1、E2
 
 - Runtime 契約增加可選 `task_health`。推薦與文字預檢優先使用對應任務的狀態，離線仍會阻擋傳送。舊 Host 可沿用整體健康或既有圖片就緒資料。
 - SQLite 第 9 版的 `client_media_jobs` 在提交前保存 Client 私人提示詞、排除提示詞、Workflow、模型、Host／Job ID、參數和時間。取回作品時還原資料，作品登錄與保存狀態在同一交易寫入。Host 的任務索引維持原有資料政策。
 - `hardware_monitor.py` 在背景讀取 Windows CIM 裝置及驅動，以 DXGI 識別實體 GPU 與記憶體池，再按 LUID 配對 PDH 計數器。裝置清單最多每 60 秒更新，量測快取至少 3 秒。關閉時取消清單查詢並釋放 PDH。監控失敗不阻擋推理。
 - `hardware_contract.py` 驗證版本、數值、來源、時間與數量上限，整合到本機 Registry 和 Runtime 契約，也可由已配對 Host 回報。每張 GPU 的專用與共享記憶體分開。NPU 無獨立記憶體或使用率介面時保留未知或未支援。
-- `hardware_providers.py` 只在使用者明確檢查時，以有時限的獨立程序列出既有 OpenVINO／ONNX Runtime Provider。E3 的 Engine Adapter、模型執行、Benchmark 與異質派送待後續實作。 [能力範圍](NPU_SUPPORT.md)
+- E1、E2 的 `hardware_providers.py` 以有時限的獨立程序列出主 Worker 環境的既有 Provider。E3 新增的受管理 OpenVINO Runtime 使用獨立裝置查詢，避免把兩個 Python 環境的套件狀態混為一談。 [能力範圍](NPU_SUPPORT.md)
 
 ## 首次使用與遠端圖片
 

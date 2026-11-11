@@ -1,0 +1,142 @@
+{
+  "source_commit": "52f69cadf9cbfc0735ac3d9890ceb347f7ae2544",
+  "status": "PASS",
+  "scope": "deterministic-ir-contract",
+  "input": [
+    [
+      [
+        1,
+        2,
+        3,
+        4
+      ]
+    ]
+  ],
+  "expected_output": [
+    [
+      [
+        2,
+        4,
+        6,
+        8
+      ]
+    ]
+  ],
+  "correct_output": true,
+  "result": {
+    "event": "result",
+    "outputs": [
+      [
+        [
+          2.0,
+          4.0,
+          6.0,
+          8.0
+        ]
+      ]
+    ],
+    "latency_ms": 1.077,
+    "evidence": {
+      "requested_device": "GPU",
+      "available_devices": [
+        "CPU",
+        "GPU"
+      ],
+      "execution_devices": [
+        "GPU.0"
+      ],
+      "operator_allocation": [
+        {
+          "node": "Convert",
+          "execution_type": "reorder_data_fast_b1__f32",
+          "status": "Status.EXECUTED"
+        },
+        {
+          "node": "Multiply",
+          "execution_type": "generic_eltwise_ref__f16",
+          "status": "Status.EXECUTED"
+        },
+        {
+          "node": "Relu",
+          "execution_type": "undef",
+          "status": "Status.OPTIMIZED_OUT"
+        },
+        {
+          "node": "Convert",
+          "execution_type": "undef",
+          "status": "Status.OPTIMIZED_OUT"
+        },
+        {
+          "node": "Result",
+          "execution_type": "reorder_data_fast_b1__f32",
+          "status": "Status.EXECUTED"
+        },
+        {
+          "node": "Parameter",
+          "execution_type": "wait_for_events__f32",
+          "status": "Status.EXECUTED"
+        }
+      ],
+      "verified_inference": true,
+      "fallback": "none-reported",
+      "backend": "OpenVINO",
+      "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4"
+    }
+  },
+  "model": "757c344593b31f51",
+  "created": "2026-11-11T04:46:35+00:00",
+  "execution_record": {
+    "requested_device": "GPU",
+    "available_devices": [
+      "CPU",
+      "GPU"
+    ],
+    "execution_devices": [
+      "GPU.0"
+    ],
+    "operator_allocation": [
+      {
+        "node": "Convert",
+        "execution_type": "reorder_data_fast_b1__f32",
+        "status": "Status.EXECUTED"
+      },
+      {
+        "node": "Multiply",
+        "execution_type": "generic_eltwise_ref__f16",
+        "status": "Status.EXECUTED"
+      },
+      {
+        "node": "Relu",
+        "execution_type": "undef",
+        "status": "Status.OPTIMIZED_OUT"
+      },
+      {
+        "node": "Convert",
+        "execution_type": "undef",
+        "status": "Status.OPTIMIZED_OUT"
+      },
+      {
+        "node": "Result",
+        "execution_type": "reorder_data_fast_b1__f32",
+        "status": "Status.EXECUTED"
+      },
+      {
+        "node": "Parameter",
+        "execution_type": "wait_for_events__f32",
+        "status": "Status.EXECUTED"
+      }
+    ],
+    "verified_inference": true,
+    "fallback": "none-reported",
+    "backend": "OpenVINO",
+    "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+    "status": "completed",
+    "latency_ms": 1.077,
+    "model_hashes": {
+      "openvino_model.xml": "3a77a8a177be7ed465c389123d1557ebe2621a4f5c1d1285f02be308a63f326c",
+      "openvino_model.bin": "c3a6b1f08b0b05ac05390d6c257551ffd0cdcf40496f232b52df2498f915469e"
+    },
+    "memory_limit": 8589934592,
+    "timeout_seconds": 180
+  }
+}

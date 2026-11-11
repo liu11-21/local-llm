@@ -1,5 +1,29 @@
 # 桌面工作台測試紀錄
 
+## E3-A、E3-B 的資源與 OpenVINO Adapter
+
+基準 `14a8fff`，版本 `0.6.2`。資源契約提交 `02709de`，Adapter `6f7975f`，路徑隔離 `f6e9f6a`，Windows 匯入修正及 UI／TLS 測試 `354a712`，顯存證據修正 `7fd3b42`，本機狀態與診斷 `b00e37d`，獨立驗收資料及保存等待 `52f69ca`。
+
+| 狀態 | 範圍與證據 |
+|---|---|
+| PASS | 本機最後全套 Python 共 120 項，114 項通過，6 項受 Norton 回環 TLS 替換影響的案例交由 Windows CI 執行。TypeScript／Vite 建置通過，保留既有 bundle 大小提醒。 |
+| PASS | 資源測試區分 NVIDIA／AMD／Intel 受控裝置、獨立／統一記憶體、無 GPU、多 GPU、共享上限、過期與未知值、驅動矛盾數值。推薦採用同一量測契約，容量達到估計仍須後端載入驗證。 |
+| PASS | 真實 Windows 空白資料夾完成 84,376,901 bytes 的固定官方套件下載及 SHA-256 驗證，獨立 Python 安裝 OpenVINO，Core 回報 CPU、GPU。測試期間修正進度 callback 及 Windows 系統 TLS 傳輸相容性。 |
+| PASS | 真實 OpenVINO CPU、Intel Iris Xe GPU 執行固定 IR 張量模型，輸出符合 `[2,4,6,8]`，後端分別回報 CPU、GPU，保存 profiling 與模型雜湊。這是單次功能測試，未做效能等價比較。 |
+| PASS | `52f69ca` 的實際驗收紀錄保存在文件中。CPU 單次推理 0.252 ms，GPU 1.077 ms，皆未包含編譯與載入。資料是功能核對證據，不構成冷／暖、精度或吞吐量 Benchmark。NPU 未由 Core 回報，明列 NEEDS NPU。 [CPU 原始結果](evidence/e3/openvino-cpu.json) · [GPU 原始結果](evidence/e3/openvino-gpu.json) · [NPU 狀態](evidence/e3/openvino-npu.json) |
+| PASS | 真實 React → IPC → TaskManager → 隔離 OpenVINO GenAI 的 CPU 文字生成與對話保存。測試模型為官方 OpenVINO/Qwen2.5-Coder-0.5B-Instruct-int4-ov，revision `339876973306da551969e2d88991b7053be2029c`。以 LFS SHA-256／Git blob 身分核對下載，保留原始碼來源。模型為 INT4 asymmetric，因此未列入本輪 NPU 文字候選。 [模型來源](https://huggingface.co/OpenVINO/Qwen2.5-Coder-0.5B-Instruct-int4-ov/tree/339876973306da551969e2d88991b7053be2029c) |
+| PASS | 受控測試涵蓋安裝失敗與重試、缺少 Provider、格式錯誤、模型變動、NPU 量化條件、CPU fallback 證據、程序 IPC、取消、失敗後再次執行、移除保留模型、私有提示詞不進例外及推理紀錄清理。 |
+| PASS | Chromium 四種尺寸與深淺色的既有 Agent／Team／遠端圖片回歸。新增受控 OpenVINO 選擇、compute 排程、本機隱私政策及聊天保存，另執行真實 CPU 聊天並截圖。 [畫面與前後比較](UI_DESIGN.md) |
+| PASS | `52f69ca` 通過 Windows Server 2022 x64 的 Python、HTTPS 與系統 TLS 憑證拒絕、封裝 Worker、Chromium、NSIS、每使用者安裝、捷徑啟動和卸載。已下載並核對 GitHub ZIP digest、建置提交、0.6.2 版本及 EXE SHA-256 `e95ee52f3f226dfb229747ae756aa147bcfa81171ca10afbd8d7780a598590bc`。 [Windows CI](https://github.com/liu11-21/local-llm/actions/runs/42961488684) · [Windows 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42961488684/artifacts/13830205244) |
+| FAIL | 首輪 Windows CI 的暫存資料夾具有上層別名，匯入來源未正規化父層，五項模型測試失敗。修正只正規化父層，保留來源資料夾與檔案的連結拒絕。 [失敗紀錄](https://github.com/liu11-21/local-llm/actions/runs/42959478650) |
+| FAIL | 本機狀態文字修正後，舊的瀏覽器定位器同時匹配回答來源和頁尾，觸發 strict mode。`52f69ca` 將等待條件限制在已保存訊息的來源區域，並核對送出按鈕重新出現。 [失敗紀錄](https://github.com/liu11-21/local-llm/actions/runs/42960896968) |
+| NEEDS NPU | 本機未回報 NPU。Intel NPU 的真實 IR／文字推理和驅動條件待硬體驗收，提供 `openvino_acceptance.py` 重跑。 |
+| NEEDS GPU | NVIDIA／AMD 實體資源監控，其他 Intel GPU 型號及真實 NPU 的記憶體行為。 |
+| NEEDS REMOTE HOST | 雙實體電腦的 LAN／VPN、文字／圖片 GPU 生成仍待原有驗收。 |
+| NOT RUN | E3-C 正式 Benchmark、E3-D 智慧分工／推薦／HETERO、E4 遠端影片及音樂、E5 情境首頁／引導完成提示／作品網格。AMD／Qualcomm 保留契約，尚無推理 Adapter。 |
+
+GenAI 的文字生成契約已通過，實際逐算子裝置分配維持未驗證。任何 CPU 生成或 Provider 列舉均未記為 NPU 成功。
+
 ## Batch 4E＋NPU 的 E1、E2
 
 基準 `38f7406`，程式版本 `0.6.2`。E1 提交 `ef5ae88`，E2 提交 `60810ca`，關閉清理及硬體驗收腳本 `e2e9c76`。

@@ -1,5 +1,9 @@
 # 共用任務準備
 
+OpenVINO 透過現有 TaskManager 執行安裝、裝置查詢、模型匯入及推理。安裝需確認固定版本套件和空間，模型由使用者從既有 IR 資料夾匯入。聊天只列出含完整 Tokenizer 的模型，使用本機政策，不增加外部傳送確認。OpenVINO 與 llama.cpp／ComfyUI 共用單一 compute 槽，獨立安裝走原 network 槽。
+
+指定裝置使用 CPU、GPU／GPU.n、NPU／NPU.n，不提供 AUTO／HETERO。NPU 文字模型須符合可辨識的對稱 INT4、group size 和 ratio 條件，實際算子相容性由後端載入檢查。格式檢查、後端存在、估計容量、實際推理證據及 Benchmark 各自呈現。E3-C、E3-D 的基準框架與智慧派送尚未交付。
+
 首頁的首次使用引導使用同一套模型及 Runtime 資料。文字引擎和 GGUF 各自走原有任務，使用者只需要按一次準備。切換 Runtime 時更新模型清單並重驗證選取項目，保留提示詞。 [首次使用](ONBOARDING.md)
 
 圖片只有在已配對 Host 宣告圖片工作流程時才顯示該選項。流程、權重、節點及外部同意通過後才提交。Host 的文字和圖片健康分開判斷。 [遠端圖片](REMOTE_MEDIA.md)

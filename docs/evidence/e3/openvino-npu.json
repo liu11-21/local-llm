@@ -1,0 +1,10 @@
+{
+  "source_commit": "52f69cadf9cbfc0735ac3d9890ceb347f7ae2544",
+  "status": "NEEDS NPU",
+  "scope": "device-detection",
+  "devices": [
+    "CPU",
+    "GPU"
+  ],
+  "detection": "completed"
+}
