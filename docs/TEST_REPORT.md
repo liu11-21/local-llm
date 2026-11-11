@@ -2,7 +2,7 @@
 
 ## E3-D1–D5 智慧運算完整交付
 
-基準 40ea060，版本 0.6.2。D1 9559ef8、D2 1f24df4、D3 b75dd5f、D4 14493a9，D5 為原生驗收、回歸修正、文件及安裝包。規則見 [DEVICE_RECOMMENDATION](DEVICE_RECOMMENDATION.md)，資料見 [原生驗收](evidence/device/acceptance-real.json)、[完整推薦](evidence/device/recommendation-real.json)、[實際執行](evidence/device/dispatch-runs-real.json)。
+基準 40ea060，版本 0.6.2。D1 9559ef8、D2 1f24df4、D3 b75dd5f、D4 14493a9，D5 `a4343f5` 為原生驗收、回歸修正及文件；`1d0da88` 修正公平排程，`4bd3f17` 修正 ComfyUI 消費者預留，`ceba11e` 隔離 Agent 測試，最終安裝包來源亦為 `ceba11e`。規則見 [DEVICE_RECOMMENDATION](DEVICE_RECOMMENDATION.md)，資料見 [原生驗收](evidence/device/acceptance-real.json)、[完整推薦](evidence/device/recommendation-real.json)、[實際執行](evidence/device/dispatch-runs-real.json)。
 
 | 狀態 | 具體驗收與界線 |
 |---|---|
@@ -20,12 +20,21 @@
 | PASS | TypeScript／Vite 建置與完整 Chromium 回歸，保留既有 bundle 大小提醒。共用 Picker 四尺寸、深淺色、長名稱、缺失／過期／未知證據、離線、手動覆寫、無自動派送、鍵盤及 Reduced Motion。既有 Agent／Team、Onboarding、遠端圖片、作品與 Benchmark 流程通過。 |
 | PASS | 真實 React 共用推薦→採用 Vulkan→聊天→此次新 Dispatch ID→非空畫面回答→任務證據；深色、650px 淺色與實際證據畫面位於 ui-preview/device。 |
 | NEEDS NPU | Intel NPU 實體推理／多設備並行、AMD／Qualcomm Adapter 尚無實體驗收，不以模擬或列舉代替。 |
-| NOT RUN | 其他廠牌 GPU、多 GPU 實機；未知 Vulkan 映射仍保守互斥，HETERO 單模型分割拒絕。CPU／頻寬屬規劃預算，未宣稱 OS 級百分比隔離；可靠程序 VRAM／功耗／溫度不足時未知。 |
+| NEEDS GPU | 其他廠牌 GPU、多 GPU 實機；未知 Vulkan 映射仍保守互斥，沒有以受控裝置測試代替實體驗收。 |
+| NOT RUN | HETERO 單模型分割仍拒絕。CPU／頻寬屬規劃預算，未宣稱 OS 級百分比隔離；可靠程序 VRAM／功耗／溫度不足時未知。 |
 | NEEDS REMOTE HOST | 雙實體 Windows 的 GPU 文字／圖片與 LAN／VPN 驗收未取得硬體。既有回環 TLS、配對與來源同意回歸保留。 |
 | NEEDS CLOUD AUTH | 只有受控文字 Provider／同意測試，未啟用付費雲端或自動外傳。 |
 | NOT RUN | 正式 Release、Authenticode、防毒申訴與 main 變更，本輪僅開發分支安裝包。 |
 
-本機最終 Python、Windows CI、安裝包提交與校驗值在本輪建置結束後補入本節，避免引用 E3-C 安裝包當成新成果。
+本機最終 Python 共 173 項，167 項通過；6 項受 Norton 回環 TLS 憑證替換影響的案例交由乾淨 Windows CI 執行。修正並測試了長 CPU 等待不阻擋無衝突 GPU，以及 ComfyUI 常駐保留可供本地／Host 圖片序列使用，其他引擎／Benchmark 仍維持互斥。
+
+首輪 Windows CI 的遠端圖片回歸發現 ComfyUI 消費者被自身常駐預留阻擋，故障已由 `4bd3f17` 修正。舊 run 43048074372 失敗，43048930495 已取消，均不作通過證據。`43051388362` 已通過全部回環 TLS／遠端圖片案例，但 10 項舊 Agent 測試依賴開發機已有引擎而失敗；`ceba11e` 補上隔離引擎資料及缺少引擎的拒絕案例，另外以只允許暫存目錄引擎的查詢執行 21 項 Agent／對話案例通過，正式預檢未放寬。
+
+**Windows CI PASS**：[工作流程 43052048060](https://github.com/liu11-21/local-llm/actions/runs/43052048060)，固定應用程式來源 `ceba11ef0a3d6e398ea444197353b274388f3641`。173 項先通過 172 項，僅尚未建置的 PackagedWorker 略過，封裝後該項另外通過；本機略過的 6 項 TLS 案例在此實際執行通過。TypeScript／Vite、完整 Chromium、Tauri Windows x64、安裝／桌面與開始功能表捷徑／WebView Worker 啟動／程序清理／卸載保留資料均 PASS。
+
+[本輪 Windows 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/43052048060/artifacts/13869791964) 保留 14 天。解壓後執行 `Local LLM Workspace_0.6.2_x64-setup.exe`，13,192,187 bytes。版本維持 0.6.2，未簽章，未建立正式 Release。EXE SHA-256：`23957b5a5c082e7fdfcdcde4a57ce8bd500903643da6b122af507a7bb4b1c78f`。
+
+已下載核對 GitHub Artifact Digest、BUILD.json 提交／版本／EXE 雜湊，以及 SHA256SUMS.txt。見 [BUILD](evidence/device/windows-build.json) 與 [下載驗證](evidence/device/windows-verification.json)。最後文件提交不改變安裝包程式碼；來源以此固定 SHA 為準。
 
 ## E3-C1–C3 Benchmark
 

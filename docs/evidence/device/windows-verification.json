@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "run": 43052048060,
+  "artifact": 13869791964,
+  "commit": "ceba11ef0a3d6e398ea444197353b274388f3641",
+  "version": "0.6.2",
+  "artifact_digest": "sha256:d8b3a73f411d884f01b35ca00e0859e2d195ae9fdaec67a0231636ece12c66e6",
+  "downloaded_archive_sha256": "d8b3a73f411d884f01b35ca00e0859e2d195ae9fdaec67a0231636ece12c66e6",
+  "exe_sha256": "23957b5a5c082e7fdfcdcde4a57ce8bd500903643da6b122af507a7bb4b1c78f",
+  "build_json_commit_version_and_exe_hash_match": true,
+  "sha256sums_match": true,
+  "official_release": false,
+  "authenticode": "NotSigned",
+  "python_ci": {
+    "tests": 173,
+    "initial_pass": 172,
+    "initial_skipped_packaged": 1,
+    "packaged_after_build_pass": 1
+  },
+  "loopback_tls_and_remote_image": "PASS on clean Windows runner; not skipped",
+  "controlled_ui": "PASS including shared device recommendation, Benchmark, Agent/Team, creation, remote image and previous workflows",
+  "installer_smoke": "PASS per-user install, desktop/start-menu shortcuts, WebView/worker startup, process cleanup, uninstall preserving user data"
+}

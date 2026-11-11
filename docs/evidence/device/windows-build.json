@@ -1,0 +1,13 @@
+{
+  "version": "0.6.2",
+  "bytes": 13192187,
+  "node": "v24.22.1",
+  "run": "43052048060",
+  "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "target": "x86_64-pc-windows-msvc",
+  "commit": "ceba11ef0a3d6e398ea444197353b274388f3641",
+  "runner": "Windows",
+  "python": "Python 3.12.10",
+  "sha256": "23957b5a5c082e7fdfcdcde4a57ce8bd500903643da6b122af507a7bb4b1c78f",
+  "authenticode": "NotSigned"
+}
