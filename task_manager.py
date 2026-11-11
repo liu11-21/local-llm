@@ -8,11 +8,13 @@ from time import monotonic
 
 from comfy_runtime import PROFILES
 from downloads import model_filename
+from device_resources import ResourceDemand,admission,conflicts
 
 ACTIVE = {"queued", "running", "paused"}
 RETRYABLE = {"download", "engine-install", "comfy-install", "media-install", "update-download", "openvino-install"}
-CAPACITY = {"compute": 1, "network": 2, "remote": 2}
-RESOURCES = {"compute": ["local-compute"], "network": ["network", "disk"], "remote": ["network", "external-runtime"]}
+CAPACITY = {"compute": 1, "network": 2, "remote": 2,"device":4,"control":2}
+RESOURCES = {"compute": ["local-compute"], "network": ["network", "disk"], "remote": ["network", "external-runtime"],
+             "device":["declared-device","host-ram"],"control":["orchestration"]}
 
 
 def timestamp():
@@ -61,6 +63,10 @@ class Task:
     thread: Thread | None = None
     on_snapshot: object = None
     saved_at: float = 0
+    demand: ResourceDemand | None = None
+    deadline: float | None = None
+    timed_out: bool = False
+    queued_at: float = field(default_factory=monotonic)
 
 
 class PauseTask(Exception):
@@ -74,9 +80,18 @@ class TaskManager:
         self.lock = Lock()
         self.tasks = {}
         self.closed = False
+        self.resource_snapshot = lambda:{"ram_available":None,"vram":{},"external":[]}
+        self.wake_stop = Event()
+        self.ticker = None
+        self.dynamic_resources=False
 
-    def submit(self, action, payload, *, plan_id=None, plan_version=None, team_run_id=None, on_snapshot=None):
+    def submit(self, action, payload, *, plan_id=None, plan_version=None, team_run_id=None, on_snapshot=None, demand=None, parent_id=None):
         lane, runtime, key, target = classify(action, payload)
+        if demand is not None and not isinstance(demand,ResourceDemand):raise ValueError("排程資源契約無效。")
+        if demand:
+            lane="device" if demand.scope=="local" else "control" if demand.scope=="control" else "remote"
+        elif lane=="compute":demand=ResourceDemand()
+        elif lane=="remote":demand=ResourceDemand(scope="remote",device=runtime,exclusive=("remote:"+runtime,))
         with self.lock:
             if self.closed:
                 raise ValueError("工作台正在關閉。")
@@ -90,7 +105,10 @@ class TaskManager:
                          "title": target if action == "download" else "", "lane": lane, "runtime": runtime,
                          "resources": RESOURCES[lane],
                          "state": "queued", "created": timestamp(), "message": "等候可用資源…",
-                         "started": None, "finished": None, "error": None}, payload, key)
+                         "started": None, "finished": None, "error": None}, {**payload,"_task_id":task_id}, key)
+            task.demand=demand
+            if demand:task.public["resource_request"]=demand.public()
+            if parent_id:task.public["parent_id"]=parent_id
             if action == "media-install":
                 task.public.update(media_target=target)
             if action == "benchmark":
@@ -105,6 +123,9 @@ class TaskManager:
                 on_snapshot(dict(task.public))
                 task.on_snapshot = on_snapshot
             self.tasks[task_id] = task
+            if (lane in ("device","control") or self.dynamic_resources and demand) and self.ticker is None:
+                self.ticker=Thread(target=self._tick,daemon=True,name="device-scheduler")
+                self.ticker.start()
             self._dispatch()
             return {"id": task_id}
 
@@ -123,6 +144,7 @@ class TaskManager:
     def _dispatch(self):
         if self.closed:
             return
+        snapshot=self.resource_snapshot()
         for lane, limit in CAPACITY.items():
             running = sum(task.public["lane"] == lane and task.public["state"] == "running" for task in self.tasks.values())
             for task in self.tasks.values():
@@ -130,7 +152,25 @@ class TaskManager:
                     break
                 if task.public["lane"] != lane or task.public["state"] != "queued":
                     continue
+                holders=[(other.public["id"],other.demand) for other in self.tasks.values()
+                         if other.public["state"]=="running" and other.demand]
+                external=[(identity,demand) for identity,demand in snapshot.get("external",[])
+                          if not (identity=="comfyui-resident" and task.public["action"]=="comfy-stop")
+                          and not (identity=="legacy-llama-resident" and task.public["lane"]=="compute")]
+                allowed,reason=admission(task.demand,holders+external,snapshot) if task.demand else (True,None)
+                # Let old blocked work drain resources rather than starve through endless backfill.
+                older=[other for other in self.tasks.values() if other.public["state"]=="queued" and other.demand and task.demand
+                       and other.queued_at<task.queued_at and monotonic()-other.queued_at>30 and
+                       (conflicts(other.demand,task.demand) or other.demand.scope==task.demand.scope=="local" and other.demand.ram>0)]
+                if older and task.public["action"] not in ("comfy-stop","engine-stop"):
+                    allowed,reason=False,"QUEUE_FAIRNESS · 等候較早的資源任務。"
+                if not allowed:
+                    if task.public.get("message")!=reason:
+                        task.public["message"]=reason
+                        self._persist(task)
+                    continue
                 task.public.update(state="running", started=task.public["started"] or timestamp(), message="正在準備…")
+                task.deadline=monotonic()+task.demand.seconds if task.demand and lane in ("device","control") else None
                 self._persist(task)
                 task.thread = Thread(target=self._run, args=(task,), daemon=True)
                 task.thread.start()
@@ -154,7 +194,10 @@ class TaskManager:
             failure = error
         with self.lock:
             detail = (str(failure).strip()[:1500] or "本機工作失敗。") if failure else None
-            if task.stop.is_set():
+            if task.timed_out and not self.closed:
+                state,message="failed","SCHEDULER_TIMEOUT · 任務已到達時間上限，資源已釋放。"
+                detail=message
+            elif task.stop.is_set():
                 state = "interrupted" if self.closed else "cancelled"
                 message = detail if isinstance(failure, InterruptedError) else "已停止任務。"
             elif isinstance(failure, PauseTask):
@@ -170,6 +213,16 @@ class TaskManager:
             self._persist(task)
             self._dispatch()
             self._trim()
+
+    def _tick(self):
+        while not self.wake_stop.wait(.25):
+            with self.lock:
+                if self.closed:return
+                for task in self.tasks.values():
+                    if task.public["state"]=="running" and task.deadline and monotonic()>task.deadline:
+                        task.timed_out=True
+                        task.stop.set()
+                if any(task.public["state"]=="queued" for task in self.tasks.values()):self._dispatch()
 
     def _trim(self):
         finished = [task_id for task_id, task in self.tasks.items() if task.public["state"] not in ACTIVE]
@@ -241,6 +294,7 @@ class TaskManager:
     def close(self):
         with self.lock:
             self.closed = True
+            self.wake_stop.set()
             for task in self.tasks.values():
                 if task.public["state"] in ACTIVE:
                     task.stop.set()

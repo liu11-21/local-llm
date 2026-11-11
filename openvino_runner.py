@@ -53,7 +53,10 @@ def main():
     if request["kind"]=="tensor":
         import numpy as np
         model = core.read_model(request["model"]+"/openvino_model.xml",request["model"]+"/openvino_model.bin")
-        compiled = core.compile_model(model,device,{"CACHE_DIR":cache,"PERFORMANCE_HINT":"LATENCY","PERF_COUNT":True})
+        config={"CACHE_DIR":cache,"PERFORMANCE_HINT":"LATENCY","PERF_COUNT":True}
+        if request.get("precision")=="f32" and device.startswith(("CPU","GPU")):config["INFERENCE_PRECISION_HINT"]=ov.Type.f32
+        if device=="CPU" and request.get("threads"):config["INFERENCE_NUM_THREADS"]=request["threads"]
+        compiled = core.compile_model(model,device,config)
         evidence["execution_devices"] = list(compiled.get_property("EXECUTION_DEVICES"))
         inputs = request["inputs"]
         if len(inputs)!=len(compiled.inputs):
@@ -86,6 +89,7 @@ def main():
     else:
         import openvino_genai as genai
         settings = {"CACHE_DIR":cache}
+        if device=="CPU" and request.get("threads"):settings["INFERENCE_NUM_THREADS"]=request["threads"]
         if device=="NPU":
             settings.update(MAX_PROMPT_LEN=1024,MIN_RESPONSE_LEN=128)
         pipeline = genai.LLMPipeline(request["model"],device,settings)

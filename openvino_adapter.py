@@ -78,6 +78,14 @@ def memory_limit(process, maximum):
 
 
 class OpenVINOAdapter:
+    def session(self):
+        from copy import copy
+        session=copy(self)
+        session.lock=Lock()
+        session.process=None
+        session.last_evidence=None
+        return session
+
     def __init__(self, data, connect):
         self.root = data / "openvino"
         self.connect = connect
@@ -352,7 +360,7 @@ class OpenVINOAdapter:
                          "identities":result.get("identities",{})}
         return {"message":"已更新獨立 OpenVINO 環境的可用裝置。"}
 
-    def infer(self, identity, device, cancel, update, *, inputs=None, messages=None, max_tokens=128):
+    def infer(self, identity, device, cancel, update, *, inputs=None, messages=None, max_tokens=128, threads=None, memory=LIMIT, precision=None):
         if not isinstance(device,str) or not re.fullmatch(r"CPU|NPU(?:\.\d+)?|GPU(?:\.\d+)?",device):
             raise ValueError("請明確選擇 CPU、Intel GPU 或 NPU。")
         if type(max_tokens) is not int or not 1<=max_tokens<=512:
@@ -368,17 +376,24 @@ class OpenVINOAdapter:
         request = {"op":"infer","kind":model["kind"],"model":str(directory),"device":device,
                    "cache":str(self.root/"compiled"/identity/device.replace(".","-")),"inputs":inputs,
                    "messages":messages,"max_tokens":max_tokens}
+        if threads is not None:
+            if type(threads) is not int or not 1<=threads<=64:raise ValueError("CPU 執行緒數無效。")
+            request["threads"]=threads
+        if precision is not None:
+            if precision!="f32":raise ValueError("推理精度設定無效。")
+            request["precision"]=precision
         if not owned(Path(request["cache"])):
             raise ValueError("OpenVINO 編譯快取目錄不安全。")
         evidence = {"requested_device":device,"verified_inference":False,"status":"failed"}
         try:
-            result = self.execute(request,cancel,update)
+            result = self.execute(request,cancel,update,memory=memory)
             evidence = {**result.get("evidence",{}),"status":"completed","latency_ms":result.get("latency_ms"),
-                        "model_hashes":model["hashes"],"memory_limit":LIMIT,"timeout_seconds":180}
+                        "model_hashes":model["hashes"],"memory_limit":memory,"timeout_seconds":180}
             return result
         finally:
             if cancel.is_set():
                 evidence["status"] = "cancelled"
+            self.last_evidence=evidence
             with self.connect() as db:
                 db.execute("INSERT INTO engine_runs VALUES(?,?,?,?,?)",
                            (uuid4().hex,"openvino",identity,json.dumps(evidence),timestamp()))

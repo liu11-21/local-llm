@@ -38,6 +38,9 @@ from openvino_adapter import OpenVINOAdapter
 from benchmark_service import BenchmarkService
 from benchmark_core import comparable
 from device_recommendation import DeviceRecommendations
+from device_execution import DeviceExecution,DispatchTarget
+from openvino_adapter import memory_limit
+from load_plan import block_count
 from resource_contract import gpu_memory
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
@@ -178,6 +181,9 @@ class Desktop(Workspace):
         self.openvino = OpenVINOAdapter(self.data,self.connect)
         self.benchmarks = BenchmarkService(self)
         self.device_recommendations = DeviceRecommendations(self)
+        self.device_execution = DeviceExecution(self)
+        self.scheduler.resource_snapshot=self.device_execution.snapshot
+        self.scheduler.dynamic_resources=True
 
     @contextmanager
     def connect(self):
@@ -317,17 +323,25 @@ class Desktop(Workspace):
         self.local.stop()
         self.active = None
         update(message="正在估算系統記憶體與 GPU 分層…")
-        plan = plan_load(executable, path)
-        if mode == "cpu":
+        target=getattr(self,"execution_target",None)
+        if target:
+            devices=engine_devices(executable) if target.device!="CPU" else []
+            selected=[item for item in devices if item[0]==target.device]
+            if target.device!="CPU" and not selected:raise ValueError("DEVICE_UNAVAILABLE · 不改用 CPU。")
+            plan=allocate(path.stat().st_size,block_count(path),selected,detect_hardware(self.models).ram_available)
+            if target.device!="CPU" and not plan.layers:raise ValueError("VRAM_BUDGET · 所選 GPU 無法配置模型層，不改用 CPU。")
+        else:plan = plan_load(executable, path)
+        if mode == "cpu" and not target:
             plan = allocate(path.stat().st_size, plan.total_layers, [], mmap_args=plan.mmap_args)
         ram = detect_hardware(self.models).ram_available
         if ram is not None and plan.ram > ram:
             raise ValueError("可用記憶體可能不足。請關閉其他程式、改用更小的模型，或手動選擇其他運算環境。")
         update(message="正在載入模型…", plan=asdict(plan))
         try:
-            self.local.start(executable, path, cancel, plan, context=context, native_tools=native)
+            options={"threads":target.threads,"on_process":lambda process:self.session_guards.enter_context(memory_limit(process,target.memory))} if target else {}
+            self.local.start(executable, path, cancel, plan, context=context, native_tools=native,**options)
         except RuntimeError as error:
-            if plan.layers and not cancel.is_set() and (ram is None or estimate_ram(path.stat().st_size) <= ram):
+            if not target and plan.layers and not cancel.is_set() and (ram is None or estimate_ram(path.stat().st_size) <= ram):
                 plan = allocate(path.stat().st_size, plan.total_layers, [], mmap_args=plan.mmap_args)
                 update(message="GPU 載入失敗，正在改用 CPU…", plan=asdict(plan))
                 self.local.start(executable, path, cancel, plan, context=context, native_tools=native)
@@ -793,6 +807,12 @@ class Desktop(Workspace):
         return text if member["runtime"] == "local" else text.replace(model.token, "[已遮蔽金鑰]")
 
     def perform(self, action, data, cancel, update):
+        target=data.get("_dispatch")
+        if isinstance(target,DispatchTarget) and not getattr(self,"execution_scoped",False):
+            with self.device_execution.scope(target,data.get("_task_id"),cancel) as (scoped,execution):
+                result=scoped.perform(action,data,cancel,update)
+            update(execution=execution)
+            return {**(result or {}),"execution":execution}
         if action=="benchmark":
             return self.benchmarks.run(data,cancel,update)
         if action.startswith("openvino-"):
@@ -813,7 +833,7 @@ class Desktop(Workspace):
                     raise ValueError("請先停止 ComfyUI，再執行 OpenVINO。")
                 result = self.openvino.infer(field(data,"model",16),field(data,"device",16),cancel,
                                             lambda event:update(message="OpenVINO 已載入模型。") if event.get("event")=="loaded" else None,
-                                            inputs=data.get("inputs"))
+                                            inputs=data.get("inputs"),**({"threads":target.threads,"memory":target.memory,"precision":"f32" if target.device.startswith(("CPU","GPU")) else None} if isinstance(target,DispatchTarget) else {}))
                 return {"message":"OpenVINO 推理已完成，執行證據已保存。","inference":result}
         if action == "remote-host-media":
             return self.host_image(data,cancel,update)
@@ -882,7 +902,7 @@ class Desktop(Workspace):
                 prompt = field(data, "prompt", 12000)
             model = field(data, "model", 200)
             budget, temperature = data.get("max_tokens", 512), data.get("temperature", 0.4)
-            if type(budget) is not int or not 64 <= budget <= 2048 or type(temperature) not in (int, float) or not 0 <= temperature <= 2:
+            if type(budget) is not int or not 8 <= budget <= 2048 or type(temperature) not in (int, float) or not 0 <= temperature <= 2:
                 raise ValueError("生成參數超出範圍。")
             runtime = data.get("runtime", "local")
             known_pair = isinstance(runtime, str) and runtime in self.remote_clients.items
@@ -921,7 +941,8 @@ class Desktop(Workspace):
                     if event.get("event")=="token":
                         answer += event["text"]
                         update(answer=answer)
-                self.openvino.infer(model,data.get("device","CPU"),cancel,receive,messages=messages,max_tokens=budget)
+                self.openvino.infer(model,target.device if isinstance(target,DispatchTarget) else data.get("device","CPU"),cancel,receive,messages=messages,max_tokens=budget,
+                    **({"threads":target.threads,"memory":target.memory} if isinstance(target,DispatchTarget) else {}))
                 stream = (fragment for fragment in ())
             elif chosen == "local":
                 stream = self.local.stream(messages, max_tokens=budget, temperature=temperature, cancel=cancel)
@@ -1008,6 +1029,10 @@ class Desktop(Workspace):
     def rpc(self, op, data):
         if op=="runtime-recommend":
             return self.device_recommendations.query(data)
+        if op=="dispatch-runs":
+            with self.connect() as db:
+                return [{"id":identity,"task":task,"state":state,"details":json.loads(details),"created":created,"finished":finished}
+                        for identity,task,state,details,created,finished in db.execute("SELECT * FROM dispatch_runs ORDER BY rowid DESC LIMIT 30")]
         if op=="benchmark-plan":
             return self.benchmarks.plan()
         if op=="benchmark-list":
@@ -1265,6 +1290,12 @@ class Desktop(Workspace):
                 raise ValueError("未支援的工作。")
             if action=="benchmark":
                 return self.benchmarks.submit(data)
+            if action in ("chat","openvino-infer") and data.get("execution") is not None:
+                task="tensor" if action=="openvino-infer" else "chat"
+                payload={**data,"runtime":"openvino" if action=="openvino-infer" else data.get("runtime","local")}
+                target=self.device_execution.prepare(task,payload)
+                if action=="openvino-infer":payload["device"]=target.device
+                return self.device_execution.submit(action,payload,target=target)
             if action == "agent":
                 if data.get("confirmed") is not True:
                     raise ValueError("請先預覽並確認代理人計畫。")
@@ -1326,6 +1357,8 @@ class Desktop(Workspace):
         raise ValueError("未支援的操作。")
 
     def close(self):
+        self.scheduler.close()
+        self.device_execution.close()
         self.openvino.close()
         self.hardware_monitor.close()
         self.remote_host.stop()

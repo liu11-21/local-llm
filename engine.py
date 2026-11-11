@@ -28,7 +28,7 @@ class LocalEngine:
         with self.lock:
             return self.process is not None and self.process.poll() is None
 
-    def start(self, executable, model, cancel=None, plan=None, *, context=2048, native_tools=False, on_process=None):
+    def start(self, executable, model, cancel=None, plan=None, *, context=2048, native_tools=False, on_process=None, threads=None):
         cancel = cancel or Event()
         executable = Path(executable).resolve(strict=True)
         model = Path(model).resolve(strict=True)
@@ -54,7 +54,7 @@ class LocalEngine:
                 process = subprocess.Popen(
                     [str(executable), "--model", str(model), "--alias", "local-model",
                      "--host", "127.0.0.1", "--port", str(port), "--ctx-size", str(context),
-                     "--parallel", "1", *(["--jinja"] if native_tools else []), *placement],
+                     "--parallel", "1", *(["--threads",str(threads)] if threads else []), *(["--jinja"] if native_tools else []), *placement],
                     cwd=executable.parent, env=env, stdin=subprocess.DEVNULL,
                     stdout=log, stderr=subprocess.STDOUT,
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
