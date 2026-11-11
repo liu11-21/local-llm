@@ -93,6 +93,8 @@ class TaskManager:
                          "started": None, "finished": None, "error": None}, payload, key)
             if action == "media-install":
                 task.public.update(media_target=target)
+            if action == "benchmark":
+                task.public["benchmark_id"] = payload["benchmark_id"]
             if plan_id is not None:
                 task.public.update(plan_id=plan_id, plan_version=plan_version)
             if team_run_id is not None:

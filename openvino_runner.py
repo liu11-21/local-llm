@@ -32,6 +32,14 @@ def main():
         raise ValueError("DEVICE_UNAVAILABLE")
     cache = request["cache"]
     os.makedirs(cache,exist_ok=True)
+    if request["op"]=="benchmark":
+        import importlib.util
+        from pathlib import Path
+        spec = importlib.util.spec_from_file_location("managed_benchmark",Path(__file__).with_name("benchmark_openvino.py"))
+        benchmark = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(benchmark)
+        benchmark.run(core,request,emit)
+        return
     started = perf_counter()
     evidence = {"requested_device":device,"available_devices":available,"execution_devices":[],
                 "operator_allocation":"unknown","verified_inference":False,"fallback":"unknown",

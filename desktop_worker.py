@@ -35,6 +35,7 @@ from engine_health import EngineHealth
 from hardware import ResourceMonitor, detect_hardware, estimate_ram
 from hardware_monitor import HardwareMonitor
 from openvino_adapter import OpenVINOAdapter
+from benchmark_service import BenchmarkService
 from resource_contract import gpu_memory
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
@@ -62,7 +63,7 @@ MAX_LINE = 256 * 1024
 WORKSPACE_VERSION = "0.6.2"
 ACTIONS = {"chat", "download", "team", "team-workflow", "comfy-start", "comfy-stop", "media", "engine-start",
            "engine-stop", "engine-install", "comfy-install", "media-install", "agent", "update-download", "remote-fetch-work",
-           "openvino-install","openvino-remove","openvino-detect","openvino-import","openvino-infer"}
+           "openvino-install","openvino-remove","openvino-detect","openvino-import","openvino-infer","benchmark"}
 
 
 def chat_id(data):
@@ -173,6 +174,7 @@ class Desktop(Workspace):
         self.client_media = ClientMedia(self.connect)
         self.remote_tls = ManagedTLS(self.connect, self.remote_host)
         self.openvino = OpenVINOAdapter(self.data,self.connect)
+        self.benchmarks = BenchmarkService(self)
 
     @contextmanager
     def connect(self):
@@ -788,6 +790,8 @@ class Desktop(Workspace):
         return text if member["runtime"] == "local" else text.replace(model.token, "[已遮蔽金鑰]")
 
     def perform(self, action, data, cancel, update):
+        if action=="benchmark":
+            return self.benchmarks.run(data,cancel,update)
         if action.startswith("openvino-"):
             if action in ("openvino-install","openvino-remove") and data.get("confirmed") is not True:
                 raise ValueError("請先確認 OpenVINO Runtime 的安裝或移除。")
@@ -999,6 +1003,22 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op=="benchmark-plan":
+            return self.benchmarks.plan()
+        if op=="benchmark-list":
+            offset = data.get("offset",0)
+            if type(offset) is not int or not 0<=offset<=100000:
+                raise ValueError("Benchmark 頁碼無效。")
+            return self.benchmarks.store.list(field(data,"model",180,optional=True),field(data,"device",32,optional=True),offset)
+        if op=="benchmark-get":
+            return self.benchmarks.store.get(field(data,"id",32))
+        if op=="benchmark-delete":
+            if data.get("confirmed") is not True:
+                raise ValueError("請確認刪除 Benchmark 紀錄。")
+            self.benchmarks.store.delete(field(data,"id",32))
+            return None
+        if op=="benchmark-export":
+            return self.benchmarks.export(data)
         if op=="openvino-status":
             return self.openvino.status()
         if op=="openvino-install-plan":
@@ -1236,6 +1256,8 @@ class Desktop(Workspace):
             action = field(data, "action", 30)
             if action not in ACTIONS:
                 raise ValueError("未支援的工作。")
+            if action=="benchmark":
+                return self.benchmarks.submit(data)
             if action == "agent":
                 if data.get("confirmed") is not True:
                     raise ValueError("請先預覽並確認代理人計畫。")

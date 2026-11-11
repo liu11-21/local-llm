@@ -28,7 +28,7 @@ class LocalEngine:
         with self.lock:
             return self.process is not None and self.process.poll() is None
 
-    def start(self, executable, model, cancel=None, plan=None, *, context=2048, native_tools=False):
+    def start(self, executable, model, cancel=None, plan=None, *, context=2048, native_tools=False, on_process=None):
         cancel = cancel or Event()
         executable = Path(executable).resolve(strict=True)
         model = Path(model).resolve(strict=True)
@@ -66,6 +66,8 @@ class LocalEngine:
             self.port, self.key, self.model = port, key, model
 
         try:
+            if on_process:
+                on_process(process)
             self.wait_until_ready(process, port, key, cancel)
         except Exception:
             self.stop()
@@ -168,7 +170,7 @@ class LocalEngine:
                     if isinstance(token, str) and token:
                         yield token
 
-    def completion_events(self, messages, *, max_tokens=512, temperature=0.4, cancel=None, tools=None):
+    def completion_events(self, messages, *, max_tokens=512, temperature=0.4, cancel=None, tools=None, benchmark=False):
         port, key = self.endpoint()
         body = json.dumps({
             "model": "local-model",
@@ -176,6 +178,7 @@ class LocalEngine:
             "stream": True,
             "max_tokens": max_tokens,
             "temperature": temperature,
+            **({"cache_prompt":False,"ignore_eos":True,"seed":0,"stream_options":{"include_usage":True}} if benchmark else {}),
             **({"tools": tools, "tool_choice": "auto", "parallel_tool_calls": False} if tools else {}),
         }, ensure_ascii=False).encode("utf-8")
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=180)
