@@ -68,6 +68,27 @@ def parameters(data, kind):
     return result,workloads
 
 
+def comparable(left, right):
+    """Conservative equivalence, never a ranking across workloads or missing evidence."""
+    reasons = []
+    if left["state"]!="completed" or right["state"]!="completed":
+        reasons.append("至少一份測試未完整完成。")
+    key = left.get("config",{}).get("comparison_key")
+    if not key or key!=right.get("config",{}).get("comparison_key"):
+        reasons.append("模型權重、量化、工作量或參數不同，或尚未完成環境紀錄。")
+    if left["engine"]!=right["engine"]:
+        reasons.append("不同 Backend，非完全等價比較。")
+    versions = [{run["environment"].get("environment",{}).get("backend_version") for run in item["runs"] if run["state"]=="completed"}
+                for item in (left,right)]
+    if not versions[0] or None in versions[0] or versions[0]!=versions[1]:
+        reasons.append("Backend 版本不同或未知。")
+    precisions = [{run["environment"].get("preparation",{}).get("requested_precision") for run in item["runs"] if run["state"]=="completed"}
+                  for item in (left,right)]
+    if not precisions[0] or None in precisions[0] or precisions[0]!=precisions[1]:
+        reasons.append("推理精度設定不同或未知。")
+    return {"comparable":not reasons,"reasons":reasons,"scope":"相同工作量分開比較，驅動與裝置仍需核對。"}
+
+
 class BenchmarkStore:
     def __init__(self, connect):
         self.connect = connect

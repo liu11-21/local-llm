@@ -1,0 +1,8 @@
+{
+  "status": "NEEDS NPU",
+  "available_devices": [
+    "CPU",
+    "GPU"
+  ],
+  "reason": "No NPU reported on acceptance hardware. No NPU inference claimed."
+}

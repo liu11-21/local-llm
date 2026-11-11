@@ -132,6 +132,8 @@ def run(core, request, emit):
             latency = (perf_counter()-start)*1000
             metrics = outputs.perf_metrics
             generated = metrics.get_num_generated_tokens()
+            if generated!=params["max_tokens"]:
+                raise ValueError("OUTPUT_LENGTH_MISMATCH")
             tpot = finite(metrics.get_tpot().mean)
             serialize_start = perf_counter()
             result = {"latency_ms":latency,"input_tokens":metrics.get_num_input_tokens(),"output_tokens":generated,
@@ -139,7 +141,8 @@ def run(core, request, emit):
                       "decode_tokens_per_s":1000/tpot if tpot and generated>1 else None,
                       "reported_throughput":finite(metrics.get_throughput().mean),"prefill_tokens_per_s":None,
                       "output_correct":None,"nonempty_generation":any(bool(text.strip()) for text in outputs.texts),
-                      "raw_token_infer_ms":[finite(value) for value in metrics.raw_metrics.token_infer_durations],
+                      "raw_token_infer_native":[finite(value) for value in metrics.raw_metrics.token_infer_durations],
+                      "raw_token_infer_unit":"unverified; preserved verbatim, excluded from derived metrics",
                       "token_count_source":"OpenVINO GenAI PerfMetrics","decode_rate_source":"1000 / reported TPOT ms",
                       "prefill_limit":"API does not isolate a reliable prefill throughput here."}
             result["result_processing_ms"] = (perf_counter()-serialize_start)*1000

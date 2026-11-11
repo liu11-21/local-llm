@@ -22,7 +22,8 @@ class BenchmarkService:
 
     def plan(self):
         ov = self.app.openvino.status()
-        models = [{"id":item["id"],"label":item["label"],"kind":item["kind"],"engine":"openvino"} for item in ov["models"]]
+        models = [{"id":item["id"],"label":item["label"],"kind":item["kind"],"engine":"openvino",
+                   "npu_candidate":item.get("npu_candidate",False)} for item in ov["models"]]
         models += [{"id":path.name,"label":path.name,"kind":"text","engine":"llama.cpp"}
                    for path in self.app.models.glob("*.gguf") if path.is_file()]
         return {"schema":1,"models":models,"devices":{"openvino":ov["devices"] if ov["installed"] else [],
@@ -46,6 +47,8 @@ class BenchmarkService:
         if engine=="llama.cpp" and any(item!="CPU" and not item.startswith(("CUDA","Vulkan")) for item in devices):
             raise ValueError("llama.cpp 裝置格式不相容。")
         params,workloads = parameters(data,match["kind"])
+        if engine=="openvino" and match["kind"]=="text":
+            params["context"] = 1024
         config = {"parameters":params,"workloads":[{"id":item["id"],"sha256":fingerprint(item)} for item in workloads],
                   "kind":match["kind"],"devices":devices,"cold_policy":"fresh process; OS file cache uncontrolled",
                   "memory_scope":"child process Job Object commit limit; peak RAM is working set",
@@ -132,8 +135,12 @@ class BenchmarkService:
                     summary = {workload["id"]:statistics([sample for sample in samples if sample["workload"]==workload["id"]])
                                for workload in data["workloads"]}
                     correct = all(sample.get("output_correct") is not False for sample in samples)
-                    state = "completed" if correct else "failed"
-                    self.store.finish_run(run,state,summary,result.get("evidence"),None if correct else "OUTPUT_MISMATCH")
+                    complete = all(sum(sample["workload"]==workload["id"] and sample["phase"]==phase for sample in samples)==count
+                                   for workload in data["workloads"] for phase,count in
+                                   (("first",1),("warmup",params["warmup"]),("measured",params["iterations"])))
+                    state = "completed" if correct and complete else "failed"
+                    self.store.finish_run(run,state,summary,result.get("evidence"),
+                                          "INCOMPLETE_MEASUREMENTS" if not complete else None if correct else "OUTPUT_MISMATCH")
                     results.append(state)
                 except Exception as error:
                     state,code = failure(error,budget)
@@ -172,5 +179,6 @@ def failure(error,budget):
         return "failed","NEEDS WINDOWS · Windows application control blocked this executable."
     if isinstance(error,MemoryError):
         return "failed","INSUFFICIENT_MEMORY"
-    known = {"DEVICE_UNAVAILABLE","NPU_INCOMPATIBLE","PROVIDER_MISSING","CONTEXT_LIMIT"}
+    known = {"DEVICE_UNAVAILABLE","NPU_INCOMPATIBLE","PROVIDER_MISSING","CONTEXT_LIMIT","OUTPUT_LENGTH_MISMATCH",
+             "INPUT_MISMATCH","INPUT_TOO_LARGE","OUTPUT_TOO_LARGE"}
     return "failed",str(error) if str(error) in known else "BACKEND_FAILED · 檢查引擎、驅動、模型相容性與記憶體上限。"

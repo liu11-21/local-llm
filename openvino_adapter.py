@@ -316,6 +316,8 @@ class OpenVINOAdapter:
                     if event is None:
                         break
                     if event.get("event")=="error":
+                        if request.get("op")=="benchmark":
+                            raise ValueError(event.get("code","OPENVINO_REQUEST_FAILED"))
                         messages = {"DEVICE_UNAVAILABLE":"所選裝置未由 OpenVINO 回報。請檢查驅動，或明確改選 CPU。",
                                     "CONTEXT_LIMIT":"OpenVINO 輸入超過 1024 Token。請縮短提示詞或建立新對話。",
                                     "INPUT_MISMATCH":"輸入張量數量與模型不符。",

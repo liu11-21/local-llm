@@ -1,0 +1,1899 @@
+{
+  "schema": 1,
+  "model": "2be7d6055f735f29",
+  "engine": "openvino",
+  "state": "completed",
+  "created": "2026-11-11T12:50:28+00:00",
+  "finished": "2026-11-11T12:50:40+00:00",
+  "config": {
+    "parameters": {
+      "warmup": 3,
+      "iterations": 10,
+      "timeout": 600,
+      "memory_mib": 4096,
+      "max_tokens": 32,
+      "context": 2048
+    },
+    "workloads": [
+      {
+        "id": "input-1",
+        "sha256": "c493379c3b41f1ebfdba39019799f30bff5a692859603c4010f9cdcc06456618"
+      },
+      {
+        "id": "input-2",
+        "sha256": "324163f47132bf094329f58b0287a642e46867e3b53108cef3661a9502373699"
+      }
+    ],
+    "kind": "tensor",
+    "devices": [
+      "CPU",
+      "GPU"
+    ],
+    "cold_policy": "fresh process; OS file cache uncontrolled",
+    "memory_scope": "child process Job Object commit limit; peak RAM is working set",
+    "vram_limit": null,
+    "temperature": null,
+    "power_watts": null,
+    "model_hashes": {
+      "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+      "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+    },
+    "quantization": "unknown",
+    "architecture": "custom-ir",
+    "model_bytes": 1050122,
+    "comparison_key": "473f6cffdc6ad4addd92c5fe2b791ea7e1fb8b38c38cc7ecedf94a1a631dbcba"
+  },
+  "message": "Benchmark 完成，請依相同工作量檢視數據與裝置證據。",
+  "started": "2026-11-11T12:50:28+00:00",
+  "id": "d0f1a81ad6df446e8e122fea439507da",
+  "runs": [
+    {
+      "id": "b8fee8a7792842b896ca4c8c9498710b",
+      "device": "CPU",
+      "state": "completed",
+      "environment": {
+        "os": "Windows-11-10.0.26300-SP0",
+        "machine": "AMD64",
+        "runtime_id": "openvino",
+        "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "hardware": {
+          "schema": 1,
+          "checked_at": 1794401438,
+          "inventory_at": 1794401438,
+          "state": "available",
+          "devices": [
+            {
+              "id": "00000000_0001298d",
+              "kind": "gpu",
+              "name": "Intel(R) Iris(R) Xe Graphics",
+              "vendor": "Intel",
+              "vram_total": {
+                "value": 134217728,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "shared_limit": {
+                "value": 8390934528,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "memory_type": "unified",
+              "driver": {
+                "value": "31.0.101.5590",
+                "unit": "version",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "driver_state": {
+                "value": 0,
+                "unit": "code",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "verified_inference": false,
+              "utilization": {
+                "value": 0.9,
+                "unit": "percent",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_used": {
+                "value": 0,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_available": {
+                "value": 134217728,
+                "unit": "bytes",
+                "source": "estimated",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "estimated"
+              },
+              "shared_used": {
+                "value": 611704832,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              }
+            }
+          ],
+          "npu_present": {
+            "value": false,
+            "unit": "boolean",
+            "source": "detected",
+            "checked_at": 1794401438,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "providers": [],
+          "provider_state": "not-checked",
+          "provider_checked_at": null
+        },
+        "driver": null,
+        "backend_version": null,
+        "peak_vram_bytes": null,
+        "vram_limit": "Per-process reliable VRAM sampling not available.",
+        "npu_memory_bytes": null,
+        "started_monotonic": 40187.531,
+        "environment": {
+          "properties": {
+            "FULL_DEVICE_NAME": "12th Gen Intel(R) Core(TM) i5-12500H",
+            "DEVICE_ARCHITECTURE": "intel64"
+          },
+          "mapping": {
+            "state": "unknown",
+            "windows_id": null,
+            "driver": null,
+            "method": null
+          },
+          "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4"
+        },
+        "preparation": {
+          "read_model_ms": 5.108299999847077,
+          "compile_ms": 20.16449999791803,
+          "pipeline_load_ms": null,
+          "requested_precision": "f32",
+          "cold_scope": "fresh-process-and-empty-openvino-cache",
+          "os_file_cache": "uncontrolled"
+        }
+      },
+      "summary": {
+        "input-1": {
+          "count": 10,
+          "mean_ms": 0.13590999878942966,
+          "stddev_ms": 0.01774330701713178,
+          "p50_ms": 0.13564999972004443,
+          "p95_ms": 0.1602850021299673,
+          "requests_per_second": 7357.810381187161
+        },
+        "input-2": {
+          "count": 10,
+          "mean_ms": 0.19575000114855357,
+          "stddev_ms": 0.04482548872521728,
+          "p50_ms": 0.18500000078347512,
+          "p95_ms": 0.26614500056894025,
+          "requests_per_second": 5108.556802720556
+        }
+      },
+      "evidence": {
+        "requested_device": "CPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "CPU"
+        ],
+        "operator_allocation": [
+          {
+            "node": "Parameter",
+            "execution_type": "unknown_f32",
+            "status": "Status.NOT_RUN"
+          },
+          {
+            "node": "FullyConnected",
+            "execution_type": "gemm_mlas_f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "unknown_f32",
+            "status": "Status.NOT_RUN"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "verification_limit": null,
+        "identity": {
+          "properties": {
+            "FULL_DEVICE_NAME": "12th Gen Intel(R) Core(TM) i5-12500H",
+            "DEVICE_ARCHITECTURE": "intel64"
+          },
+          "mapping": {
+            "state": "unknown",
+            "windows_id": null,
+            "driver": null,
+            "method": null
+          }
+        }
+      },
+      "error": null,
+      "measurements": [
+        {
+          "latency_ms": 0.4332000025897287,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.24819999816827476,
+          "workload": "input-1",
+          "phase": "first",
+          "index": 0,
+          "session_cold": true,
+          "input_prepare_ms": 0.18670000281417742,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.16960000357357785,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.15079999866429716,
+          "workload": "input-1",
+          "phase": "warmup",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.13279999984661117,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.13509999553207308,
+          "workload": "input-1",
+          "phase": "warmup",
+          "index": 1,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.12100000458303839,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.11620000441325828,
+          "workload": "input-1",
+          "phase": "warmup",
+          "index": 2,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.1388000018778257,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.10119999933522195,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.12449999485397711,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.11159999849041924,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 1,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.12159999459981918,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.1249999986612238,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 2,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.12040000001434237,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.09499999578110874,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 3,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.10509999992791563,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.10630000178935006,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 4,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.148899998748675,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.09090000094147399,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 5,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.14859999646432698,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.10180000390391797,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 6,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.16870000399649143,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.09439999848837033,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 7,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.13249999756226316,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.1373999984934926,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 8,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.14999999984866008,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.14830000145593658,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 9,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.18029999773716554,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.38439999480033293,
+          "workload": "input-2",
+          "phase": "first",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0.12040000001434237,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.20059999951627105,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3862000012304634,
+          "workload": "input-2",
+          "phase": "warmup",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.2830000012181699,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3542000049492344,
+          "workload": "input-2",
+          "phase": "warmup",
+          "index": 1,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.1655000014579855,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.357000004441943,
+          "workload": "input-2",
+          "phase": "warmup",
+          "index": 2,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.20629999926313758,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.34610000147949904,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.29129999893484637,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3288999942014925,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 1,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.15530000382568687,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.400400000216905,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 2,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.13010000111535192,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3668999997898936,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 3,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.1866000020527281,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.363199993444141,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 4,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.23130000045057386,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3485000052023679,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 5,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.23540000256616622,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.37710000469814986,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 6,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.18339999951422215,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.34929999674204737,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 7,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.15490000077988952,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.38180000410648063,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 8,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        },
+        {
+          "latency_ms": 0.18290000298293307,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.352399998519104,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 9,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 130641920
+        }
+      ]
+    },
+    {
+      "id": "7e9709653f8d4241b4573701d4ab4866",
+      "device": "GPU",
+      "state": "completed",
+      "environment": {
+        "os": "Windows-11-10.0.26300-SP0",
+        "machine": "AMD64",
+        "runtime_id": "openvino",
+        "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "hardware": {
+          "schema": 1,
+          "checked_at": 1794401438,
+          "inventory_at": 1794401438,
+          "state": "available",
+          "devices": [
+            {
+              "id": "00000000_0001298d",
+              "kind": "gpu",
+              "name": "Intel(R) Iris(R) Xe Graphics",
+              "vendor": "Intel",
+              "vram_total": {
+                "value": 134217728,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "shared_limit": {
+                "value": 8390934528,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "memory_type": "unified",
+              "driver": {
+                "value": "31.0.101.5590",
+                "unit": "version",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "driver_state": {
+                "value": 0,
+                "unit": "code",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "verified_inference": false,
+              "utilization": {
+                "value": 0.9,
+                "unit": "percent",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_used": {
+                "value": 0,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_available": {
+                "value": 134217728,
+                "unit": "bytes",
+                "source": "estimated",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "estimated"
+              },
+              "shared_used": {
+                "value": 611704832,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794401438,
+                "status": "available",
+                "evidence": "detected"
+              }
+            }
+          ],
+          "npu_present": {
+            "value": false,
+            "unit": "boolean",
+            "source": "detected",
+            "checked_at": 1794401438,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "providers": [],
+          "provider_state": "not-checked",
+          "provider_checked_at": null
+        },
+        "driver": null,
+        "backend_version": null,
+        "peak_vram_bytes": null,
+        "vram_limit": "Per-process reliable VRAM sampling not available.",
+        "npu_memory_bytes": null,
+        "started_monotonic": 40188.25,
+        "environment": {
+          "properties": {
+            "FULL_DEVICE_NAME": "Intel(R) Iris(R) Xe Graphics (iGPU)",
+            "DEVICE_UUID": "8680a6460c0000000002000000000000",
+            "DEVICE_LUID": "8d29010000000000",
+            "DEVICE_ARCHITECTURE": "GPU: vendor=0x8086 arch=v12.3.0"
+          },
+          "mapping": {
+            "state": "verified",
+            "windows_id": "00000000_0001298d",
+            "driver": "31.0.101.5590",
+            "method": "OpenVINO DEVICE_LUID equals DXGI LUID"
+          },
+          "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4"
+        },
+        "preparation": {
+          "read_model_ms": 5.192700002226047,
+          "compile_ms": 475.6578000014997,
+          "pipeline_load_ms": null,
+          "requested_precision": "f32",
+          "cold_scope": "fresh-process-and-empty-openvino-cache",
+          "os_file_cache": "uncontrolled"
+        }
+      },
+      "summary": {
+        "input-1": {
+          "count": 10,
+          "mean_ms": 0.5105099997308571,
+          "stddev_ms": 0.16029957153797972,
+          "p50_ms": 0.460450002719881,
+          "p95_ms": 0.7704549963818861,
+          "requests_per_second": 1958.8254892699536
+        },
+        "input-2": {
+          "count": 10,
+          "mean_ms": 0.46070000098552555,
+          "stddev_ms": 0.0791146495420186,
+          "p50_ms": 0.43754999933298677,
+          "p95_ms": 0.5927499980316495,
+          "requests_per_second": 2170.609936750181
+        }
+      },
+      "evidence": {
+        "requested_device": "GPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "GPU.0"
+        ],
+        "operator_allocation": [
+          {
+            "node": "FullyConnected",
+            "execution_type": "fully_connected_gpu_bf_tiled__f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "reorder_data__f32",
+            "status": "Status.OPTIMIZED_OUT"
+          },
+          {
+            "node": "Parameter",
+            "execution_type": "wait_for_events__f32",
+            "status": "Status.EXECUTED"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "verification_limit": null,
+        "identity": {
+          "properties": {
+            "FULL_DEVICE_NAME": "Intel(R) Iris(R) Xe Graphics (iGPU)",
+            "DEVICE_UUID": "8680a6460c0000000002000000000000",
+            "DEVICE_LUID": "8d29010000000000",
+            "DEVICE_ARCHITECTURE": "GPU: vendor=0x8086 arch=v12.3.0"
+          },
+          "mapping": {
+            "state": "verified",
+            "windows_id": "00000000_0001298d",
+            "driver": "31.0.101.5590",
+            "method": "OpenVINO DEVICE_LUID equals DXGI LUID"
+          }
+        }
+      },
+      "error": null,
+      "measurements": [
+        {
+          "latency_ms": 1.3789000004180707,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.2347999979974702,
+          "workload": "input-1",
+          "phase": "first",
+          "index": 0,
+          "session_cold": true,
+          "input_prepare_ms": 0.19289999909233302,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.9486999988439493,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.15330000314861536,
+          "workload": "input-1",
+          "phase": "warmup",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.8109999980661087,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.12910000077681616,
+          "workload": "input-1",
+          "phase": "warmup",
+          "index": 1,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.6162000063341111,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.11310000263620168,
+          "workload": "input-1",
+          "phase": "warmup",
+          "index": 2,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.5243999985395931,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.10299999848939478,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.6779999966965988,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.10459999612066895,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 1,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.447600003099069,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.10650000331224874,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 2,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.8460999961243942,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.11170000652782619,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 3,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.6703000035486184,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.10789999942062423,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 4,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.473300002340693,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.10309999925084412,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 5,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.3580999982659705,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.09660000068834051,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 6,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.40559999615652487,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.09979999595088884,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 7,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.35039999784203246,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.09180000051856041,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 8,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.3513000046950765,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "198ebc3aa9bd364555ba26077d0acf756b403de314667e2c39f33315bd01363b",
+              "shape": [
+                1,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.08930000331019983,
+          "workload": "input-1",
+          "phase": "measured",
+          "index": 9,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.8916000006138347,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3192000003764406,
+          "workload": "input-2",
+          "phase": "first",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0.1536999989184551,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.5859999946551397,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3099000023212284,
+          "workload": "input-2",
+          "phase": "warmup",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.46909999946365133,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3037999995285645,
+          "workload": "input-2",
+          "phase": "warmup",
+          "index": 1,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.4273999948054552,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3209999995306134,
+          "workload": "input-2",
+          "phase": "warmup",
+          "index": 2,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.39340000512311235,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3474000041023828,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 0,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.411000000895001,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3004000027431175,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 1,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.46800000563962385,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.31550000130664557,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 2,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.41649999911896884,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3035000045201741,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 3,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.6750999964424409,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.32020000071497634,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 4,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.45650000538444147,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.31940000189933926,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 5,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.4185999932815321,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.31960000342223793,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 6,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.4920999999740161,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.30509999487549067,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 7,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.48149999929592013,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3403000009711832,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 8,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        },
+        {
+          "latency_ms": 0.39430000470019877,
+          "output_correct": true,
+          "output_fingerprints": [
+            {
+              "sha256": "17b48ea6c07e64409d9e83f053bc76661be349898e9245abddad35eb8c7f836e",
+              "shape": [
+                8,
+                512
+              ],
+              "dtype": "float32"
+            }
+          ],
+          "input_tokens": null,
+          "output_tokens": null,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "prefill_tokens_per_s": null,
+          "result_processing_ms": 0.3079000016441569,
+          "workload": "input-2",
+          "phase": "measured",
+          "index": 9,
+          "session_cold": false,
+          "input_prepare_ms": 0,
+          "peak_ram_bytes": 246599680
+        }
+      ]
+    }
+  ],
+  "acceptance": {
+    "data_source": "real-native-hardware",
+    "task_state": "completed"
+  }
+}

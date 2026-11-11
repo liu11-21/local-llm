@@ -5,11 +5,12 @@ from pathlib import Path
 import sqlite3
 from tempfile import TemporaryDirectory
 from threading import Event
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 from benchmark_adapters import Budget
-from benchmark_core import BenchmarkStore, fingerprint, parameters, statistics
+from benchmark_core import BenchmarkStore, comparable, fingerprint, parameters, statistics
 from desktop_worker import Desktop
 
 
@@ -118,6 +119,81 @@ class BenchmarkTests(unittest.TestCase):
             for task in list(self.app.scheduler.tasks.values()):
                 if task.thread:
                     task.thread.join(timeout=3)
+
+    def run_controlled(self,execute,*,free=8*1024**3):
+        # This adapter fixture measures no hardware; native acceptance has a separate script.
+        with patch.object(self.app.benchmarks,"plan",return_value={"models":[{"id":"text","kind":"text","engine":"openvino"}]}):
+            payload = self.app.benchmarks.prepare({"model":"text","engine":"openvino","devices":["CPU"],"confirmed":True,"warmup":0,"iterations":2})
+        metadata = {"hashes":{"weights":"known-hash"},"kind":"text","bytes":1024}
+        self.app.hardware_monitor.refresh_thread = None
+        with patch.object(self.app.openvino,"validate_model",return_value=(Path(self.tmp.name),metadata)), \
+             patch.object(self.app.openvino,"installed",return_value=True), \
+             patch.object(self.app.hardware_monitor,"snapshot",return_value={"devices":[]}), \
+             patch('benchmark_service.detect_hardware',return_value=SimpleNamespace(ram_available=free)), \
+             patch('benchmark_service.OpenVINOBenchmark.run',side_effect=execute):
+            try:
+                self.app.benchmarks.run(payload,Event(),lambda **_:None)
+            except RuntimeError:
+                pass
+        return self.app.benchmarks.store.get(payload["benchmark_id"])
+
+    def test_progressive_raw_data_survives_backend_failure(self):
+        def execute(_model,_device,_params,_workloads,_windows,_budget,receive):
+            receive({"event":"environment","backend_version":"controlled"})
+            receive({"event":"measurement","workload":"short","phase":"measured","index":0,"latency_ms":2})
+            raise ValueError("private model input must never be logged")
+        result = self.run_controlled(execute)
+        self.assertEqual(result["state"],"failed")
+        self.assertEqual(len(result["runs"][0]["measurements"]),1)
+        self.assertNotIn("private model",json.dumps(result))
+
+    def test_timeout_and_cancel_are_distinct(self):
+        for cancel,expected in ((False,"timeout"),(True,"cancelled")):
+            def execute(_model,_device,_params,_workloads,_windows,budget,receive):
+                receive({"event":"measurement","workload":"short","phase":"measured","index":0,"latency_ms":2})
+                if cancel:
+                    budget.stop.set()
+                else:
+                    budget.deadline = 0
+                budget.check()
+            result = self.run_controlled(execute)
+            self.assertEqual(result["state"],expected)
+            self.assertEqual(result["runs"][0]["state"],expected)
+            self.assertEqual(len(result["runs"][0]["measurements"]),1)
+
+    def test_insufficient_memory_never_starts_inference(self):
+        execute = unittest.mock.Mock()
+        result = self.run_controlled(execute,free=1)
+        self.assertEqual(result["message"],"INSUFFICIENT_MEMORY")
+        self.assertFalse(execute.called)
+
+    def test_completed_summary_and_unknown_placement_remain_separate(self):
+        def execute(_model,_device,_params,_workloads,_windows,_budget,receive):
+            receive({"event":"environment","backend_version":"controlled"})
+            receive({"event":"preparation","requested_precision":"backend-default"})
+            for workload in ("short","long"):
+                for phase in ("first","measured","measured"):
+                    receive({"event":"measurement","workload":workload,"phase":phase,"index":0,"latency_ms":3})
+            return {"evidence":{"verified_inference":False,"fallback":"unknown"}}
+        result = self.run_controlled(execute)
+        self.assertEqual(result["state"],"completed")
+        run = result["runs"][0]
+        self.assertEqual(run["summary"]["short"]["count"],2)
+        self.assertEqual(run["summary"]["long"]["count"],2)
+        self.assertFalse(run["evidence"]["verified_inference"])
+        self.assertTrue(comparable(result,result)["comparable"])
+        result2 = json.loads(json.dumps(result))
+        result2["config"]["comparison_key"] = "different-quantization"
+        self.assertFalse(comparable(result,result2)["comparable"])
+        result2["engine"] = "other"
+        self.assertGreaterEqual(len(comparable(result,result2)["reasons"]),2)
+
+    def test_incomplete_adapter_result_is_not_successful_benchmark(self):
+        def execute(*_args):
+            return {"evidence":{"verified_inference":True}}
+        result = self.run_controlled(execute)
+        self.assertEqual(result["state"],"failed")
+        self.assertEqual(result["runs"][0]["error"],"INCOMPLETE_MEASUREMENTS")
 
 
 if __name__=="__main__":

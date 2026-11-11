@@ -1,0 +1,26 @@
+{
+  "source": "real-native-hardware",
+  "cases": [
+    {
+      "case": "cancel",
+      "expected": "cancelled",
+      "state": "cancelled",
+      "raw_rows_retained": 1,
+      "child_cleaned": true,
+      "status": "PASS"
+    },
+    {
+      "case": "timeout",
+      "expected": "timeout",
+      "state": "timeout",
+      "raw_rows_retained": 6,
+      "child_cleaned": true,
+      "status": "PASS"
+    },
+    {
+      "case": "recovery",
+      "state": "completed",
+      "status": "PASS"
+    }
+  ]
+}

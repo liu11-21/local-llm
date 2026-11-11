@@ -5,13 +5,13 @@ from dataclasses import asdict
 from hashlib import sha256
 import os
 from pathlib import Path
+import subprocess
 from tempfile import TemporaryDirectory
 from time import monotonic, perf_counter
 
-from benchmark_openvino import process_peak_ram
 from engine import LocalEngine
 from hardware import detect_hardware
-from load_plan import allocate, block_count, engine_devices
+from load_plan import allocate, block_count, engine_devices, engine_environment
 from openvino_adapter import memory_limit
 
 
@@ -70,6 +70,12 @@ class LlamaBenchmark:
         self.executable,self.model = Path(executable),Path(model)
 
     def run(self, model, device, params, workloads, windows, budget, receive):
+        version = subprocess.run([str(self.executable),"--version"],capture_output=True,timeout=min(8,budget.remaining()),
+            env=engine_environment(),creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
+        if version.returncode:
+            raise ValueError("PROVIDER_MISSING")
+        version_text = (version.stdout+b"\n"+version.stderr).decode("utf-8",errors="replace").strip().splitlines()
+        backend_version = version_text[0][:160] if version_text else None
         devices = engine_devices(self.executable) if device!="CPU" else []
         selected = [item for item in devices if item[0]==device]
         if device!="CPU" and not selected:
@@ -85,7 +91,7 @@ class LlamaBenchmark:
                     "execution_devices":[],"verified_inference":False,"operator_allocation":"unknown",
                     "fallback":"unknown","verification_limit":"Configured layers are not operator placement evidence.",
                     "configured_plan":asdict(plan)}
-        receive({"event":"environment","backend_version":"b11810","executable_sha256":sha256(self.executable.read_bytes()).hexdigest(),
+        receive({"event":"environment","backend_version":backend_version,"executable_sha256":sha256(self.executable.read_bytes()).hexdigest(),
                  "driver":None,"mapping":{"state":"unknown"}})
         try:
             with ExitStack() as guards:
@@ -117,6 +123,8 @@ class LlamaBenchmark:
                                 if first is None and any(choice.get("delta",{}).get("content") for choice in event.get("choices",[])):
                                     first = (perf_counter()-start)*1000
                             budget.check()
+                            if usage.get("completion_tokens") is not None and usage["completion_tokens"]!=params["max_tokens"]:
+                                raise ValueError("OUTPUT_LENGTH_MISMATCH")
                             receive({"event":"measurement","workload":workload["id"],"phase":phase,"index":index,
                                      "session_cold":first_session,"latency_ms":(perf_counter()-start)*1000,
                                      "input_prepare_ms":prepare_ms if phase=="first" else 0,"result_processing_ms":None,
