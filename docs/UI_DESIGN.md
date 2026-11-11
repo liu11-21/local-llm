@@ -1,5 +1,20 @@
 # 桌面 UI 設計
 
+## Batch 4E＋NPU 的 E1、E2
+
+| 區域 | 更新前 | 本輪行為 |
+|---|---|---|
+| 資源摘要 | GPU 與 VRAM 一律未知 | 首頁可選擇每張偵測到的 GPU，顯示實際計數器。未知數值繼續保留未知 |
+| 運算環境 | 以引擎狀態及 llama.cpp 裝置清單為主 | 加入 GPU／NPU 面板，分列驅動、取樣時間、使用率、專用顯存和共享記憶體。Provider 資料放在進階區 |
+| 圖片新手引導 | 固定前往本機 ComfyUI 準備 | 可直接推薦已配對且流程就緒的圖片主機，帶入創作頁的 Runtime 與 Workflow |
+| 斷線後作品 | 原提示詞可能空白 | E1 升級後提交的任務可從本機資料庫還原提示詞與設定 |
+
+- 真實 Iris Xe 的監控畫面，來自實際 React、Worker 與 Windows 計數器。其餘模型名稱屬既有 UI 回歸資料。 [硬體監控](ui-preview/batch4e/hardware-runtime-real.png)
+- 受控 NPU 資料驗證 650 px 淺色、長名稱和未支援數值。畫面標示受控裝置及推理待驗收。 [NPU 介面回歸](ui-preview/batch4e/hardware-npu-controlled-light.png)
+- 已配對主機的遠端圖片引導，主機和生成輸出來自受控測試。 [遠端創作引導](ui-preview/batch4e/onboarding-remote-image.png)
+
+E5 的固定底部操作列、輕量完成提示、情境首頁及作品網格尚未交付。本輪沿用既有配色、焦點和 reduced motion。 [驗收範圍](TEST_REPORT.md)
+
 ## 首次使用與遠端圖片
 
 - 引導把硬體、用途、模型與準備分開。失敗時在原地提供重試，成功保存首個回答後提供下一項任務。 [推薦與準備](ui-preview/first-use-prepare.png) · [首次任務完成](ui-preview/first-use-complete.png)

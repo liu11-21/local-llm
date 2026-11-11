@@ -1,5 +1,25 @@
 # 桌面工作台測試紀錄
 
+## Batch 4E＋NPU 的 E1、E2
+
+基準 `38f7406`，程式版本 `0.6.2`。E1 提交 `ef5ae88`，E2 提交 `60810ca`，關閉清理及硬體驗收腳本 `e2e9c76`。
+
+| 狀態 | 範圍與證據 |
+|---|---|
+| PASS | 本機 Python 共 103 項測試，98 項通過，5 項 HTTPS 回環案例由 Windows CI 執行。TypeScript／Vite 建置與差異格式檢查通過，保留既有的前端 bundle 大小提醒。 |
+| PASS | 任務健康分離、圖片可用而文字引擎失敗、能力過期和隱私限制的回歸。Client 重啟後恢復私人提示詞、排除提示詞、種子、Host／Job 來源和提交時間，並保存作品狀態。第 8 版資料庫升級到第 9 版保留既有對話與作品。 |
+| PASS | 受控硬體測試涵蓋 Intel／AMD／Qualcomm NPU、驅動錯誤、無 NPU、清單未知、Provider 缺失及初始化失敗、多 GPU 計數器歸屬、專用與共享記憶體分離、未知數值、快取、查詢失敗和關閉清理。 |
+| PASS | Chromium 已驗證 1280×900、1024×768、800×600、650×720 的深淺色、長名稱、鍵盤、reduced motion、NPU 已偵測／未知，以及先前 Agent／Team／作品庫功能。新手引導可直接選遠端圖片，並在外傳確認後取回校驗結果與作品來源。模型與遠端傳輸採受控資料。 [實際截圖與比較](UI_DESIGN.md) |
+| PASS | 本機真實 Intel Iris Xe，驅動 `31.0.101.5590`。DXGI 回報專用顯存 134,217,728 bytes，共享上限 8,390,934,528 bytes。三次驗收最後一次 GPU 3.5%，專用顯存已用 0 bytes，共享已用 547,319,808 bytes。取樣耗時中位數 2.20 ms，不含背景裝置清單查詢。 [監控畫面](ui-preview/batch4e/hardware-runtime-real.png) |
+| PASS | 本機 PnP 未偵測到 NPU。既有工作程序環境未安裝 OpenVINO／ONNX Runtime，明確顯示缺失。可用 `hardware_acceptance.py` 在其他電腦保存偵測證據。 |
+| PASS | `e2e9c76` 通過 Windows Server 2022 x64 CI 的 Python、受控 HTTPS、封裝 Worker、Chromium、NSIS、每使用者安裝、捷徑啟動與卸載。下載後核對 GitHub ZIP digest、建置提交、0.6.2 版本及 EXE SHA-256 `efe244d49340ab780134158a80ca968396e1cf9d14d33d5f4ec7375a6b0f9588`。 [Windows CI](https://github.com/liu11-21/local-llm/actions/runs/42949339821) · [開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/42949339821/artifacts/13824596508) |
+| NEEDS GPU | NVIDIA／AMD 的實體 GPU 監控與多實體 GPU，尚待硬體驗收。 |
+| NEEDS NPU | Intel／AMD／Qualcomm 實體 NPU 的裝置及 Provider 查詢，尚待硬體驗收。 |
+| NEEDS REMOTE HOST | 雙實體電腦的 LAN／VPN 與真實 GPU 生成，沿用既有待驗收項目。 |
+| NOT RUN | E3 的 NPU Engine Adapter、模型載入與推理、CPU／GPU／NPU 及異質效能 Benchmark，E4 遠端影片／音樂，E5 情境首頁、引導操作列與作品網格。現有 GPU 取樣耗時只反映監控成本。 |
+
+Windows 本機的 Norton TLS 替換問題仍適用，5 項 HTTPS 回環案例交由乾淨的 Windows CI 執行。新套件仍保留版本 0.6.2，安裝產物以建置提交識別。
+
 ## Batch 4E-1／4E-2／4D-1–3
 
 程式基準 `1b47887`，版本 `0.6.2`。

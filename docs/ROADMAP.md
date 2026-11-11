@@ -1,6 +1,6 @@
 # 桌面工作台路線圖
 
-**Batch 4** 已加入首次使用引導、跨功能準備狀態、遠端任務持久化及受管 ComfyUI 圖片傳輸。下一批先驗收真實雙機 GPU 圖片，再擴充遠端影片、音樂、GPU／VRAM 監控與情境化首頁。
+**Batch 4E＋NPU** 已交付 E1、E2。任務健康分離、Client 私人創作紀錄恢復、遠端圖片引導、Windows GPU／VRAM 監控和 NPU／Provider 偵測已接入既有工作台。下一批依序實作 E3 的可選 NPU Engine Adapter、相容模型與實際 Benchmark，E4 的遠端影片／音樂，以及 E5 的情境首頁、新手操作列與作品網格。雙實體主機 GPU、其他 GPU 與 NPU 廠牌仍須硬體驗收。 [目前支援範圍](NPU_SUPPORT.md)
 
 **第三階段 Batch 3**。3A 已加入部分交付與固定工具參數。3B 接入 SD 1.5、Wan 2.1、ACE-Step 的受管權重安裝。3C 加入作品查詢、媒體中繼資料、原檔與參數回填。3D 加入私人網路文字 Host／Client。3E 加入 Runtime 能力與推薦，並區分權重偵測和校驗。下一項驗收是兩台實體 Windows 電腦上的 GPU 文字推理和斷線恢復，之後再擴充遠端媒體與憑證配置體驗。
 

@@ -1,5 +1,13 @@
 # 桌面工作台架構
 
+## Batch 4E＋NPU 的 E1、E2
+
+- Runtime 契約增加可選 `task_health`。推薦與文字預檢優先使用對應任務的狀態，離線仍會阻擋傳送。舊 Host 可沿用整體健康或既有圖片就緒資料。
+- SQLite 第 9 版的 `client_media_jobs` 在提交前保存 Client 私人提示詞、排除提示詞、Workflow、模型、Host／Job ID、參數和時間。取回作品時還原資料，作品登錄與保存狀態在同一交易寫入。Host 的任務索引維持原有資料政策。
+- `hardware_monitor.py` 在背景讀取 Windows CIM 裝置及驅動，以 DXGI 識別實體 GPU 與記憶體池，再按 LUID 配對 PDH 計數器。裝置清單最多每 60 秒更新，量測快取至少 3 秒。關閉時取消清單查詢並釋放 PDH。監控失敗不阻擋推理。
+- `hardware_contract.py` 驗證版本、數值、來源、時間與數量上限，整合到本機 Registry 和 Runtime 契約，也可由已配對 Host 回報。每張 GPU 的專用與共享記憶體分開。NPU 無獨立記憶體或使用率介面時保留未知或未支援。
+- `hardware_providers.py` 只在使用者明確檢查時，以有時限的獨立程序列出既有 OpenVINO／ONNX Runtime Provider。E3 的 Engine Adapter、模型執行、Benchmark 與異質派送待後續實作。 [能力範圍](NPU_SUPPORT.md)
+
 ## 首次使用與遠端圖片
 
 - `onboarding.py` 從現有 Registry、硬體資料與已配對能力挑選候選。React 引導連續提交既有文字引擎安裝及 GGUF 下載，失敗時重新盤點已完成項目。
