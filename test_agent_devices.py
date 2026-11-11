@@ -2,12 +2,25 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import time,monotonic,sleep
 import unittest
+from unittest.mock import patch
 
 from desktop_worker import Desktop
 from runtime_provider import OpenAIProvider
 
 
 class AgentDeviceTests(unittest.TestCase):
+    def test_local_agent_requires_installed_engine_even_when_model_is_present(self):
+        with TemporaryDirectory() as folder:
+            app=Desktop(Path(folder))
+            app.models.mkdir(exist_ok=True)
+            (app.models/'fixture.gguf').touch()
+            try:
+                with patch('web_bridge.engine_path',return_value=None),patch('desktop_worker.engine_path',return_value=None):
+                    with self.assertRaisesRegex(ValueError,'安裝本機文字引擎'):
+                        app.rpc('agent-plan',{'role':'general','model':'fixture.gguf','prompt':'controlled task','tools':[]})
+                self.assertEqual(app.agent_plans.list(),[])
+            finally:app.close()
+
     def test_external_tools_require_plan_scoped_consent_and_tokens_stay_redacted(self):
         with TemporaryDirectory() as folder:
             app=Desktop(Path(folder))

@@ -12,6 +12,14 @@ from agent_runtime import InvalidDecision, native_decision, parse_decision
 from tool_registry import Tool, ToolError, ToolRegistry, obj, string
 
 
+def controlled_engine(desktop):
+    # These tests replace inference; their readiness fixture must not depend on
+    # an actual engine installed beside the developer's checkout.
+    folder = desktop.data / "engine-vulkan"
+    folder.mkdir(exist_ok=True)
+    (folder / "llama-server.exe").write_bytes(b"controlled-not-an-executable")
+
+
 class ToolRegistryTests(TestCase):
     def setUp(self):
         self.registry = ToolRegistry()
@@ -88,6 +96,7 @@ class AgentPlanTests(TestCase):
     def test_versions_independent_approval_and_restart(self):
         with TemporaryDirectory() as directory:
             desktop = Desktop(Path(directory))
+            controlled_engine(desktop)
             desktop.models.mkdir()
             (desktop.models / "fixture.gguf").touch()
             form = {"role": "general", "model": "fixture.gguf", "prompt": "Test task", "tools": ["models"]}
@@ -109,6 +118,7 @@ class AgentPlanTests(TestCase):
     def test_expired_and_revoked_plans_cannot_be_executed(self):
         with TemporaryDirectory() as directory:
             desktop = Desktop(Path(directory))
+            controlled_engine(desktop)
             desktop.models.mkdir()
             (desktop.models / "fixture.gguf").touch()
             form = {"role": "general", "model": "fixture.gguf", "prompt": "Test task", "tools": []}
@@ -128,6 +138,7 @@ class AgentRuntimeTests(TestCase):
         folder = TemporaryDirectory()
         self.addCleanup(folder.cleanup)
         self.desktop = Desktop(Path(folder.name))
+        controlled_engine(self.desktop)
         self.addCleanup(self.desktop.close)
         self.desktop.models.mkdir()
         (self.desktop.models / "fixture.gguf").touch()

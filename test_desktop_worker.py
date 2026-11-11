@@ -159,6 +159,9 @@ class ConversationTests(unittest.TestCase):
     def test_agent_executes_only_the_previewed_plan_once(self):
         with TemporaryDirectory() as directory:
             desktop = Desktop(Path(directory))
+            engine = desktop.data / "engine-vulkan"
+            engine.mkdir()
+            (engine / "llama-server.exe").write_bytes(b"controlled-not-an-executable")
             desktop.models.mkdir()
             (desktop.models / "test.gguf").touch()
             plan = desktop.rpc("agent-plan", {"role": "general", "model": "test.gguf",
