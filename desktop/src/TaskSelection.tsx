@@ -31,6 +31,10 @@ export function TaskModelPicker({info, runtime, model, change, disabled, ariaLab
 }) {
   const models = runtime === 'local' ? info?.models : runtime==='openvino' ?
     info?.openvino?.models.filter(item=>item.kind==='text').map(item=>item.id) : info?.providers.find(item => item.id === runtime)?.models
+  if (runtime==='openvino') return <select aria-label={ariaLabel} value={model} disabled={disabled}
+    onChange={event=>change(event.target.value)}>
+    {info?.openvino?.models.filter(item=>item.kind==='text').map(item=><option key={item.id} value={item.id}>{item.label}</option>)}
+  </select>
   return <SelectModels ariaLabel={ariaLabel} models={models ?? []} value={model}
     registry={runtime === 'local' ? info?.registry.models : undefined} disabled={disabled} change={change}/>
 }

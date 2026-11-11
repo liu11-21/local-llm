@@ -204,6 +204,7 @@ class OpenVINOAdapter:
         if not self.safe or not owned(self.models):
             raise ValueError("OpenVINO 模型資料夾不安全。")
         source = Path(source).absolute()
+        source = source.parent.resolve()/source.name
         if not owned(source) or not source.is_dir():
             raise ValueError("請選擇沒有連結的 OpenVINO IR 模型資料夾。")
         for name in ("openvino_model.xml","openvino_model.bin"):

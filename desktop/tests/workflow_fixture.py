@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import sys
-from threading import Thread
+from threading import Event, Thread
 from time import sleep
 from time import time
 from types import SimpleNamespace
@@ -141,6 +141,23 @@ if __name__ == "__main__":
                 return super().perform(action,data,cancel,update)
 
             def rpc(self, op, data):
+                if op == "fixture-openvino":
+                    source = self.data/"受控 OpenVINO 模型"
+                    source.mkdir(exist_ok=True)
+                    (source/"openvino_model.xml").write_text('<net><layers><layer type="Relu"/></layers></net>')
+                    for name in ("openvino_tokenizer","openvino_detokenizer"):
+                        (source/(name+".xml")).write_text("<net/>")
+                        (source/(name+".bin")).write_bytes(b"controlled")
+                    (source/"openvino_model.bin").write_bytes(b"controlled")
+                    (source/"config.json").write_text('{"model_type":"controlled"}')
+                    model = self.openvino.import_model(str(source),Event(),lambda **_:None)["model"]
+                    self.openvino.installed = lambda:True
+                    self.openvino.detected = {"state":"reported","devices":["CPU","NPU"]}
+                    def execute(request,stop,update,**_):
+                        update({"event":"token","text":"受控 OpenVINO 回答。"})
+                        return {"evidence":{"requested_device":request.get("device"),"verified_inference":False}}
+                    self.openvino.execute = execute
+                    return model
                 if op == "fixture-remote-image":
                     id = "5"*32
                     image = {"installed":True,"state":"ready","workflows":["sd15"],"formats":["png"]}
