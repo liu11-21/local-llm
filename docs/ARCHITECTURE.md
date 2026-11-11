@@ -1,5 +1,11 @@
 # 桌面工作台架構
 
+## E3-C Benchmark
+
+`benchmark_core.py` 定義版本化記錄、工作量雜湊、統計與可比較性。`benchmark_service.py` 負責確認、資源預檢、SQLite 保存及任務進度。`benchmark_adapters.py` 重用既有 OpenVINOAdapter／LocalEngine，前者透過隔離 Runner 載入 `benchmark_openvino.py`，同一程序內重複推理。TaskManager 仍獨占本機 compute lane，沒有另建引擎管理器。SQLite 11 新增三張 Benchmark 表，裝置／驅動快照嵌入 Run。中斷資料不自動重跑。
+
+React BenchmarkPanel 位於運算環境進階區，只手動觸發，支援歷史、比較、刪除與匯出。[量測定義及真實資料](HARDWARE_BENCHMARK.md)。E3-D Benchmark 推薦、新鮮度及異質並行調度尚未實作，既有推薦邏輯與外部傳送同意流程仍按原契約執行。
+
 ## E3-A、E3-B 的資源與 OpenVINO 執行
 
 - `resource_contract.py` 與 `hardware_contract.py` 為數值保存單位、時間、來源、狀態和證據。DXGI／D3D12 的 UMA 訊號區分統一記憶體與獨立顯存。舊紀錄缺少類型、時間或映射時保留未知。

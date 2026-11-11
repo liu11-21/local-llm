@@ -197,9 +197,21 @@ class BenchmarkStore:
             raise ValueError("請選擇 JSON 或 CSV。")
         stream = StringIO(newline="")
         writer = csv.writer(stream)
-        writer.writerow(("session","run","device","workload","phase","ordinal","latency_ms","input_tokens","output_tokens","ttft_ms","decode_tokens_per_s"))
+        writer.writerow(("session","run","model","engine","created","run_state","device","backend_version","driver","precision",
+                         "model_hashes","workload_hash","workload","phase","ordinal","latency_ms","input_tokens","output_tokens",
+                         "ttft_ms","decode_tokens_per_s","prefill_tokens_per_s","peak_ram_bytes"))
+        hashes = {item["id"]:item["sha256"] for item in result["config"].get("workloads",[]) if "id" in item}
+        def cell(value):
+            return "'"+value if isinstance(value,str) and value.startswith(("=","+","-","@","\t","\r","\n")) else value
         for run in result["runs"]:
             for index,sample in enumerate(run["measurements"]):
-                writer.writerow((identity,run["id"],run["device"],sample["workload"],sample["phase"],index,
-                                 *(sample.get(key) for key in ("latency_ms","input_tokens","output_tokens","ttft_ms","decode_tokens_per_s"))))
+                environment = run["environment"].get("environment",{})
+                row = (identity,run["id"],result["model"],result["engine"],result["created"],run["state"],run["device"],
+                       environment.get("backend_version"),environment.get("mapping",{}).get("driver"),
+                       run["environment"].get("preparation",{}).get("requested_precision"),
+                       json.dumps(result["config"].get("model_hashes",{})),hashes.get(sample["workload"]),
+                       sample["workload"],sample["phase"],index,
+                       *(sample.get(key) for key in ("latency_ms","input_tokens","output_tokens","ttft_ms","decode_tokens_per_s",
+                                                     "prefill_tokens_per_s","peak_ram_bytes")))
+                writer.writerow([cell(value) for value in row])
         return stream.getvalue()

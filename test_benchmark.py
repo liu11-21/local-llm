@@ -78,6 +78,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(len(result["runs"][0]["measurements"]),1)
         self.assertEqual(json.loads(store.export(identity,"json"))["id"],identity)
         self.assertIn("11",store.export(identity,"csv"))
+        self.assertIn("model_hashes",store.export(identity,"csv"))
         exported = self.app.benchmarks.export({"id":identity,"format":"json"})
         self.assertTrue(Path(exported["path"]).is_file())
         store.delete(identity)

@@ -1,5 +1,13 @@
 # 桌面 UI 設計
 
+## E3-C Benchmark
+
+運算環境加入折疊的「進階 · 模型效能測試與歷史」。簡易操作先選模型與設備，顯示工作量和整體上限，確認後才開始。次數、記憶體和 Token 參數放在進階選項。沿用既有黑白灰、Panel、按鈕、Reduced Motion 與任務進度，沒有重做 Design System。
+
+結果逐個工作量呈現 Warm 平均、P50／P95、標準差、吞吐、首次推理和程序 RAM。文字另顯示原生 TTFT、首段文字延遲、Prefill、Decode、Token 數。缺少來源時顯示未知，Tensor 不列出不適用的 Token 欄位。載入與編譯、實際裝置和驗證限制另列。歷史可依模型／設備篩選、分頁、比較、刪除及匯出。非等價比較會顯示原因，不產生混合工作量排行榜。
+
+[真實深色結果](ui-preview/benchmark/benchmark-real-history-dark.png) · [真實 650px 淺色比較](ui-preview/benchmark/benchmark-real-compare-light-650.png)。受控回歸涵蓋 1280×900、1024×768、800×600、650×720、深淺色、鍵盤、Reduced Motion、無 GPU／NPU、無紀錄、進行中／失敗、長名稱與未知值。受控數據未作為硬體證據。
+
 ## E3-A、E3-B 的實際介面
 
 | 區域 | E1、E2 | 本輪行為 |

@@ -1,5 +1,25 @@
 # 桌面工作台測試紀錄
 
+## E3-C1–C3 Benchmark
+
+基準 7ed3a75，版本維持 0.6.2。Core 33917d9、真實推理及證據 62d8c23，介面接續獨立提交。E3-D1／D2、E4／E5 未交付。[方法與完整統計](HARDWARE_BENCHMARK.md) · [原始資料](evidence/benchmark/)。
+
+| 狀態 | 範圍與證據 |
+|---|---|
+| PASS | 本機 Python 共 131 項，125 通過，6 項 Norton 回環 TLS 替換案例略過並交由 Windows CI 執行。新增統計、範圍、確認、資源預檢、取消／逾時區分、逐筆保存、中斷恢復、隱私、匯出、比較、完整性與排隊取消測試。 |
+| PASS | TypeScript／Vite 正式建置，保留既有 bundle 大小提醒。完整 Chromium 回歸涵蓋既有聊天、Agent／Team、遠端圖片、首次使用、OpenVINO 與新增 Benchmark。 |
+| PASS | Benchmark 受控資料測試四種尺寸、深淺色、鍵盤與 Reduced Motion、長名稱、無 GPU／NPU、無紀錄、進行中、未知指標、失敗、非等價比較、確認與取消。數字不作為真實硬體證據。 |
+| PASS | 真實 React → IPC → TaskManager → OpenVINO CPU Benchmark，0 Warmup + 2 measured × 2 工作量，寫入 6 列。另驗證 SQLite 真實歷史、比較、JSON／CSV 檔案匯出與四尺寸雙主題，畫面位於 ui-preview/benchmark。 |
+| PASS | 正式原生量測每組 first 1 + warmup 3 + measured 10，OpenVINO FP32 MatMul CPU／Iris Xe GPU 共 56 列並全部通過參考輸出；Qwen CPU 文字 28 列；SmolLM2 llama.cpp CPU／Vulkan 共 56 列。OpenVINO 文字精確輸出 32 Token、原生 TTFT／TPOT；llama.cpp 保存原生 usage／timings。 |
+| PASS | OpenVINO GPU EXECUTION_DEVICES=GPU.0，LUID 精確對應 00000000_0001298d、驅動 31.0.101.5590。文字 GenAI 與 llama.cpp 完整算子放置仍 unknown，未誇大 verified_inference。 |
+| PASS | 真實子程序取消保留 1 列、15 秒逾時保留 6 列，程序清理完成後重測成功。Windows Job Object 限制 committed memory，RAM 峰值為工作集，沒有宣稱硬性 VRAM 限制。 |
+| NEEDS NPU | 本機只回報 CPU／GPU，沒有實體 NPU 推理驗收。AMD／Qualcomm Adapter 與多設備 HETERO 未實作。 |
+| NOT RUN | 其他 GPU、多 GPU、跨硬體效能驗收、可靠程序 VRAM／功耗／溫度。Benchmark 驅動推薦、新鮮度與異質並行調度待 E3-D。 |
+| NEEDS REMOTE HOST | 遠端 Benchmark 契約目前 unsupported，實體雙機未測。 |
+| NOT RUN | 正式 Release、簽章、防毒申訴與付費雲端。本次只產出開發分支安裝包。 |
+
+Windows CI 與安裝包 SHA-256 將在本輪工作流程完成後補上對應提交，避免將舊版安裝包當成本輪成果。
+
 ## E3-A、E3-B 的資源與 OpenVINO Adapter
 
 基準 `14a8fff`，版本 `0.6.2`。資源契約提交 `02709de`，Adapter `6f7975f`，路徑隔離 `f6e9f6a`，Windows 匯入修正及 UI／TLS 測試 `354a712`，顯存證據修正 `7fd3b42`，本機狀態與診斷 `b00e37d`，獨立驗收資料及保存等待 `52f69ca`。

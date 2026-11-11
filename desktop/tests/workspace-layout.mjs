@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright-core'
 import { createServer } from 'vite'
 import { exerciseWorkflows } from './workflow-ui.mjs'
+import { exerciseBenchmarks } from './benchmark-ui.mjs'
 
 const desktop = fileURLToPath(new URL('../', import.meta.url))
 const root = await realpath(tmpdir())
@@ -379,6 +380,8 @@ try {
   await page.getByRole('heading',{name:'可選 OpenVINO 引擎',exact:true}).waitFor()
   await button('使用 OpenVINO 聊天').click()
   const openvinoChat=page.getByRole('region',{name:'文字聊天'})
+  await page.waitForFunction(()=>document.querySelector('.chat-workspace select[aria-label="運算環境"]')?.value==='openvino' ||
+    [...document.querySelectorAll('select')].some(item=>item.value==='openvino'))
   assert.equal(await openvinoChat.getByLabel('運算環境',{exact:true}).inputValue(),'openvino')
   await page.getByLabel('訊息').fill('受控本機 OpenVINO 提示詞')
   await button('送出').click()
@@ -387,6 +390,7 @@ try {
   await page.locator('.message .small').filter({hasText:/OpenVINO ·/}).waitFor()
   assert.equal(await page.getByRole('dialog',{name:'確認資料傳送'}).count(),0)
   console.log('PASS controlled OpenVINO Runtime selection, compute scheduling, local privacy and saved chat')
+  await exerciseBenchmarks(page,navigate)
   assert.deepEqual(exceptions, [])
 } finally {
   if (browser) await browser.close()

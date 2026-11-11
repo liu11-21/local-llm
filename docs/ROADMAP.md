@@ -1,6 +1,8 @@
 # 桌面工作台路線圖
 
-**Batch 4E E3-A、E3-B** 已交付統一資源語意及可選 OpenVINO Adapter。實測包含空白環境安裝、真實 CPU 文字聊天、CPU／Intel GPU 的 IR 張量推理與裝置證據。Intel NPU 同一路徑待硬體驗收，AMD／Qualcomm 維持契約。接著依序完成 E3-C 的可重複 Benchmark、E3-D 的智慧分工與推薦，E4 的遠端影音，以及 E5 的情境首頁、新手操作列與作品網格。 [支援範圍](NPU_SUPPORT.md)
+**E3-C1–C3 已交付**，版本維持 0.6.2。Benchmark Core、版本化 SQLite、受控資源／時間、同一載入實例的 Cold／Warm 分離、OpenVINO CPU／Intel GPU IR 與 CPU 文字，以及 llama.cpp CPU／Vulkan 文字的真實原始數據均已加入。進階介面提供手動測試、取消、歷史比較與 JSON／CSV 匯出。新鮮度與 Benchmark 驅動設備推薦 E3-D1、異質並行調度 E3-D2 尚待下一批，compute capacity 仍為 1，HETERO 拒絕。[Benchmark](HARDWARE_BENCHMARK.md) · [推薦交付邊界](DEVICE_RECOMMENDATION.md)。
+
+**Batch 4E E3-A、E3-B** 已交付統一資源語意及可選 OpenVINO Adapter。實測包含空白環境安裝、真實 CPU 文字聊天、CPU／Intel GPU 的 IR 張量推理與裝置證據。Intel NPU 同一路徑待硬體驗收，AMD／Qualcomm 維持契約。E3-C 本輪完成後，接著依序實作 E3-D 的智慧分工與推薦，E4 的遠端影音，以及 E5 的情境首頁、新手操作列與作品網格。 [支援範圍](NPU_SUPPORT.md)
 
 **第三階段 Batch 3**。3A 已加入部分交付與固定工具參數。3B 接入 SD 1.5、Wan 2.1、ACE-Step 的受管權重安裝。3C 加入作品查詢、媒體中繼資料、原檔與參數回填。3D 加入私人網路文字 Host／Client。3E 加入 Runtime 能力與推薦，並區分權重偵測和校驗。下一項驗收是兩台實體 Windows 電腦上的 GPU 文字推理和斷線恢復，之後再擴充遠端媒體與憑證配置體驗。
 

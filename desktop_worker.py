@@ -36,6 +36,7 @@ from hardware import ResourceMonitor, detect_hardware, estimate_ram
 from hardware_monitor import HardwareMonitor
 from openvino_adapter import OpenVINOAdapter
 from benchmark_service import BenchmarkService
+from benchmark_core import comparable
 from resource_contract import gpu_memory
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
@@ -1012,6 +1013,8 @@ class Desktop(Workspace):
             return self.benchmarks.store.list(field(data,"model",180,optional=True),field(data,"device",32,optional=True),offset)
         if op=="benchmark-get":
             return self.benchmarks.store.get(field(data,"id",32))
+        if op=="benchmark-compare":
+            return comparable(self.benchmarks.store.get(field(data,"left",32)),self.benchmarks.store.get(field(data,"right",32)))
         if op=="benchmark-delete":
             if data.get("confirmed") is not True:
                 raise ValueError("請確認刪除 Benchmark 紀錄。")

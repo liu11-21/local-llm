@@ -1,5 +1,11 @@
 # 共用任務準備
 
+## E3-C Benchmark 工作
+
+確認模型、裝置、固定工作量、次數、時間與程序記憶體上限後，先建立 queued Session，再交給現有 TaskManager 的 compute lane。排隊取消仍留下可追蹤紀錄；執行時逐列保存。Benchmark 與聊天／Agent／Team 依序執行，沒有為測試強制中斷其他工作。取得 lane 後可釋放閒置文字模型，ComfyUI 服務尚在運行時拒絕測試，讓使用者自行停止。
+
+Benchmark 不列為自動重試工作。取消、逾時或 Backend 失敗保留已完成的列；重新開啟程式把未完成 Session／Run 標為 interrupted。記憶體／時間 Budget、引擎缺失與不支援裝置會產生明確失敗，不自動改用 CPU。Remote Benchmark 為 unsupported。E3-D CPU／GPU／NPU 的獨立 lane、共享 RAM 預留與並行策略仍待實作。
+
 OpenVINO 透過現有 TaskManager 執行安裝、裝置查詢、模型匯入及推理。安裝需確認固定版本套件和空間，模型由使用者從既有 IR 資料夾匯入。聊天只列出含完整 Tokenizer 的模型，使用本機政策，不增加外部傳送確認。OpenVINO 與 llama.cpp／ComfyUI 共用單一 compute 槽，獨立安裝走原 network 槽。
 
 指定裝置使用 CPU、GPU／GPU.n、NPU／NPU.n，不提供 AUTO／HETERO。NPU 文字模型須符合可辨識的對稱 INT4、group size 和 ratio 條件，實際算子相容性由後端載入檢查。格式檢查、後端存在、估計容量、實際推理證據及 Benchmark 各自呈現。E3-C、E3-D 的基準框架與智慧派送尚未交付。
