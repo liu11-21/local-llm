@@ -88,7 +88,8 @@ export function RemoteWorkspace({info, refresh, openChat, run}: {
         const cap = peer.capability
         return <article key={peer.id} className="section-note remote-peer">
           <strong className="pre">{peer.label}</strong>
-          <p className="small pre">{peer.host}:{peer.port} · {peer.connected ? '已連線' : '尚未連線'} · 文字聊天 · {peer.models.length} 個文字模型</p>
+          <p className="small pre">{peer.host}:{peer.port} · {peer.connected ? '已連線' : '尚未連線'} · 文字聊天 · {peer.models.length} 個文字模型
+            {cap?.task_health?.chat==='unhealthy' ? ' · 文字引擎需修復' : ''}</p>
           {cap?.media?.image?.workflows.length ? <p className="small">遠端圖片 · {cap.media.image.state==='ready' ? '已就緒' : '需要準備 ComfyUI'}</p> : null}
           <p className="small pre">RAM 可用 {cap?.resources.ram_available?.value != null ? gb(Number(cap.resources.ram_available.value)) : '未知'} ·
             GPU {Array.isArray(cap?.resources.gpus?.value) ? cap.resources.gpus.value.join('、') : '未知'} · 無 API 計費</p>

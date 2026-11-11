@@ -246,6 +246,9 @@ class Host:
                           engines=(["llama.cpp"] if state["installed"] else []) + (["ComfyUI"] if image.get("installed") else []),
                           models=models, model_ram=self.model_ram(models), resources=self.resources(),
                           media={"image":image} if image else {},
+                          task_health={"chat":"unhealthy" if not state["accepting"] else "busy" if state["busy"] else "ready",
+                                       **({"image":"ready" if image.get("state")=="ready" else "setup"}
+                                          if supported else {})},
                           network=True, destination=self.address,
                           auth="paired-token-tls", cost="no-api-fee", source="remote-host",
                           error=state["error"], features={"stream": True, "cancel": True, "load": False,

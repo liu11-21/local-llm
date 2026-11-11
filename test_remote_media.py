@@ -5,8 +5,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import Event
 import unittest
+from unittest.mock import patch
+import json
 
-from remote_media import fetch_image, image_input
+from remote_media import fetch_image, image_input, ClientMedia
+from desktop_worker import Desktop
 
 PNG = b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR" + b"\x00\x00\x00\x01"*2 + b"controlled media payload"
 
@@ -22,6 +25,45 @@ class Response(BytesIO):
 
 
 class RemoteMediaTests(unittest.TestCase):
+    def test_migration_and_private_prompt_recovery_after_client_restart(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            worker = Desktop(root)
+            host, job = "a"*32,"b"*32
+            payload = image_input({"kind":"image","workflow":"sd15","prompt":"private prompt",
+                                   "options":{"negative":"private exclusions","seed":417}})
+            worker.client_media.submit(host,job,payload)
+            worker.close()
+            worker = Desktop(root)
+            try:
+                artifact = {"id":"a12345678901.png","kind":"image","workflow":"sd15","bytes":len(PNG),
+                            "sha256":sha256(PNG).hexdigest(),"options":payload["options"]}
+                class Client:
+                    label = "paired host"
+                    def job(self, request):
+                        return {"state":"completed","artifact":artifact}
+                path = worker.outputs / "a12345678901.png"
+                path.parent.mkdir(parents=True,exist_ok=True)
+                path.write_bytes(PNG)
+                with patch.object(worker.remote_clients,"get",return_value=Client()), \
+                     patch("desktop_worker.fetch_image",return_value=path):
+                    worker.remote_image({"runtime":host,"request":job},Event(),lambda **_:None,fetch_only=True)
+                with worker.connect() as db:
+                    details = json.loads(db.execute("SELECT details FROM creations").fetchone()[0])
+                    self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],9)
+                    self.assertEqual(db.execute("SELECT COUNT(*) FROM remote_jobs").fetchone()[0],0)
+                self.assertEqual(details["prompt"],"private prompt")
+                self.assertEqual(details["options"]["negative"],"private exclusions")
+                self.assertEqual(details["options"]["seed"],417)
+                self.assertTrue(details["submitted"])
+                self.assertEqual(worker.client_media.get(host,job)["state"],"saved")
+                self.assertIsNone(worker.client_media.get("c"*32,job))
+                with worker.connect() as db:
+                    ClientMedia.initialize(db)
+                self.assertEqual(worker.client_media.get(host,job)["prompt"],"private prompt")
+            finally:
+                worker.close()
+
     def test_workflow_allowlist_and_range_limits(self):
         data = {"kind":"image","workflow":"sd15","prompt":"paint"}
         self.assertEqual(image_input(data)["options"]["width"],512)

@@ -5,6 +5,7 @@ export type Plan = { device: string | null; layers: number; total_layers: number
 export type RuntimeCapability = {
   schema: number; id: string; label: string; kind: string; health: string; connected: boolean | null; error?: string;
   checked_at: number; cost: string; tasks: string[]; formats: string[]; models: string[];
+  task_health?:Record<string,string>;
   resources: Record<string, {value: number | string[] | null; source: string}>;
   media?: {image?: {state:'checking'|'ready'|'missing'|'unavailable'; installed:boolean; workflows:string[]; missing:string[]; missing_nodes:string[]}}
 }

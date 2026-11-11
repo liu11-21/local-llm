@@ -15,7 +15,7 @@ def observed(value=None, source="detected"):
 
 def capability(id, label, kind, provider, *, version=None, connected=None, health="unknown", tasks=(), formats=(),
                engines=(), models=(), resources=None, features=None, network=None, destination=None, auth=None,
-               cost="unknown", source="registry", error=None, checked_at=None, model_ram=None, media=None):
+               cost="unknown", source="registry", error=None, checked_at=None, model_ram=None, media=None, task_health=None):
     return validate({
         "schema": VERSION, "id": id, "label": label, "kind": kind, "provider": provider, "version": version,
         "connected": connected, "health": health, "tasks": list(tasks), "formats": list(formats),
@@ -26,6 +26,7 @@ def capability(id, label, kind, provider, *, version=None, connected=None, healt
         "features": {key: (features or {}).get(key) for key in FEATURES},
         "model_ram": model_ram or {},
         "media": media or {},
+        "task_health": task_health or {},
     })
 
 
@@ -82,6 +83,12 @@ def validate(data):
             or any(type(value) is not int or not 0 < value <= 2**53 - 1 for value in estimates.values())):
         raise ValueError("Runtime 模型記憶體估計資料無效。")
     result["model_ram"] = estimates
+    health = data.get("task_health", {})
+    if (not isinstance(health, dict) or health.keys() - set(result["tasks"])
+            or any(not isinstance(value, str) or value not in
+                   ("ready", "busy", "offline", "unhealthy", "unknown", "setup") for value in health.values())):
+        raise ValueError("Runtime 任務健康狀態無效。")
+    result["task_health"] = dict(health)
     media = data.get("media", {})
     if not isinstance(media, dict):
         raise ValueError("遠端創作能力格式無效。")
@@ -105,6 +112,17 @@ def fresh(record, now=None):
     return 0 <= (time() if now is None else now) - record["checked_at"] <= MAX_AGE
 
 
+def task_health(record, task):
+    if record["connected"] is False:
+        return "offline"
+    if task in record.get("task_health", {}):
+        return record["task_health"][task]
+    media = record.get("media", {}).get(task)
+    if media:
+        return "ready" if media["state"] == "ready" else "setup"
+    return record["health"]
+
+
 def local_capability(info, health, active_jobs):
     hardware = info["hardware"]
     devices = info.get("devices", [])
@@ -115,6 +133,11 @@ def local_capability(info, health, active_jobs):
                               else "ready" if engines else "setup"),
                       tasks=("chat", "agent", "team", "image", "video", "music"), formats=("GGUF", "safetensors"),
                       engines=engines, models=info["models"][:250], network=False, destination="this-device",
+                      task_health={task: ("unhealthy" if state in ("failed", "unhealthy") else
+                                          "busy" if state == "busy" else "ready" if state == "ready" else
+                                          "setup" if engine not in engines else "unknown")
+                                   for task, state, engine in [(task, text, "llama.cpp") for task in ("chat", "agent", "team")]
+                                   + [(task, media, "ComfyUI") for task in ("image", "video", "music")]},
                       cost="no-api-fee", resources={
                           "cpu_threads": observed(hardware["cpu_threads"]), "ram_total": observed(hardware["ram_total"]),
                           "ram_available": observed(hardware["ram_available"]), "active_jobs": observed(active_jobs),

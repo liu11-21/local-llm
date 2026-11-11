@@ -1,5 +1,5 @@
 """Explain compatibility without submitting work or contacting providers."""
-from runtime_contract import fresh
+from runtime_contract import fresh, task_health
 
 TASK_FORMAT = {"chat": "GGUF", "agent": "GGUF", "team": "GGUF", "image": "safetensors",
                "video": "safetensors", "music": "safetensors", "notebook": None}
@@ -26,13 +26,14 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
     image = record.get("media",{}).get("image") if task=="image" and not local else None
     if image and image["state"]!="ready":
         risks.append("遠端 ComfyUI 或圖片權重尚未就緒。")
-    if not image and record["health"] in ("unhealthy", "offline"):
+    health = task_health(record, task)
+    if health in ("unhealthy", "offline"):
         risks.append("運算環境目前無法穩定接收工作。")
-    elif record["health"] == "busy":
+    elif health == "busy":
         risks.append("運算環境正在工作，可能需要排隊。")
-    elif record["health"] == "unknown":
+    elif health == "unknown":
         unknown.append("運算環境健康狀態未知。")
-    elif record["health"] == "setup":
+    elif health == "setup":
         install = local
         risks.append("此環境尚未完成設定。")
     if local and task in record["tasks"]:

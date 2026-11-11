@@ -123,7 +123,7 @@ export function Onboarding({guide, update, close, info, policy, run, cancel, lau
         <div className="row creation-actions section-note">
           {!ready && <button className="button primary" disabled={busy} onClick={()=>void prepare()}>{error ? '重試準備' : '一鍵準備'}</button>}
           {ready && <button className="button primary" disabled={busy} onClick={()=>launch(task,choice.runtime,choice.model)}>
-            {media ? '前往創作並準備權重' : task==='chat' ? '開始第一次聊天' : '開始第一項任務'}</button>}
+            {media ? choice.runtime==='local' ? '前往創作並準備權重' : '開始遠端創作' : task==='chat' ? '開始第一次聊天' : '開始第一項任務'}</button>}
           {busy && <button className="button" onClick={()=>{stop.current=true;if(job)cancel(job.id)}}>取消準備</button>}
         </div>
       </>}

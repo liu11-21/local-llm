@@ -38,6 +38,7 @@ export function App() {
   const [preset, setPreset] = useState<Work>()
   const [preferredRuntime, setPreferredRuntime] = useState<{id:string;model?:string}>()
   const [guide, setGuide] = useState(readGuide)
+  const [creationRuntime,setCreationRuntime] = useState<{kind:Use;runtime:string;workflow:string}>()
   const [showGuide, setShowGuide] = useState(false)
   const [agentJob, setAgentJob] = useState<Job>()
   const [agentBusy, setAgentBusy] = useState(false)
@@ -89,6 +90,7 @@ export function App() {
   function launchGuide(task:Use, runtime:string, model:string) {
     updateGuide({stage:'launched',task,runtime,model,prepared:!['image','video','music'].includes(task)})
     if (task==='chat') setPreferredRuntime({id:runtime,model})
+    if (task==='image' || task==='video' || task==='music') setCreationRuntime({kind:task,runtime,workflow:model})
     setShowGuide(false);go(task)
   }
   const runTracked:Run = async (action,data,observe) => {
@@ -158,6 +160,7 @@ export function App() {
         <div hidden={page !== 'team'}><TeamWorkspace info={info && {...info, providers:info.providers.filter(item=>item.kind!=='paired')}}
           policy={policy} run={runTracked} report={report} cancel={queue.cancel} refreshRuntime={refreshRuntime}/></div>
         {creation && <CreationWorkspace key={page} kind={page} info={info} health={health} preset={preset} works={works}
+          preferredRuntime={creationRuntime}
           tasks={queue.tasks} run={runTracked} cancel={queue.cancel} retry={queue.retry} go={go} openWork={openSavedWork}
           policy={policy} refreshRuntime={refreshRuntime} report={report}/>}
         {page === 'works' && <Works info={info} revision={works} selected={selected} choose={setSelected}

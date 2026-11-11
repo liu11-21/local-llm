@@ -225,12 +225,13 @@ function MediaSetup({kind, info, port, ready, tasks, run, cancel, retry, refresh
 }
 
 export function CreationWorkspace({ kind, info, health, preset, works, tasks, run, cancel, retry, go, openWork,
-  policy, refreshRuntime, report }: {
+  policy, refreshRuntime, report, preferredRuntime }: {
   kind: MediaKind; info?: Info; health?: EngineHealth; preset?: Work; works: Work[]; tasks: Task[];
   run: Run; go: (page: 'runtime' | 'works') => void
   cancel: (id: string) => void; retry: (id: string) => Promise<void>
   openWork: (name: string) => void
   policy:string;refreshRuntime:(runtime:string)=>Promise<void>;report:(error:unknown)=>void
+  preferredRuntime?:{kind:string;runtime:string;workflow:string}
 }) {
   const prepare = useTaskPreparation()
   const [runtime,setRuntime] = useState('local')
@@ -243,6 +244,11 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
   const [result, setResult] = useState<string>()
   const [readiness, setReadiness] = useState<Readiness>()
   const [recheck, setRecheck] = useState(0)
+  useEffect(()=>{
+    if (preferredRuntime?.kind===kind) {
+      setRuntime(preferredRuntime.runtime);setId(preferredRuntime.workflow)
+    }
+  },[preferredRuntime,kind])
   const provider = info?.providers.find(item=>item.id===runtime)
   const remote = runtime!=='local'
   const imageCapability = provider?.capability?.media?.image

@@ -25,3 +25,13 @@ class OnboardingTests(unittest.TestCase):
         self.assertEqual(len(onboarding_plan(self.info([model],True), [remote], "chat", "privacy")["choices"]), 1)
         self.assertEqual(len(onboarding_plan(self.info([model],True), [remote], "chat", "auto")["choices"]), 2)
         self.assertTrue(onboarding_plan(self.info(), [], "image", "auto")["media"])
+
+    def test_ready_image_host_does_not_require_local_install_or_healthy_text(self):
+        remote = capability("p","Image desk","remote-host","Local LLM", connected=True,health="unhealthy",
+                            tasks=["chat","image"],task_health={"chat":"unhealthy","image":"ready"},
+                            media={"image":{"state":"ready","installed":True,"workflows":["sd15"]}})
+        choice = onboarding_plan(self.info(),[remote],"image","auto")["choices"][0]
+        self.assertEqual((choice["runtime"],choice["model"],choice["actions"]),("p","sd15",[]))
+        self.assertEqual(len(onboarding_plan(self.info(),[remote],"image","privacy")["choices"]),1)
+        remote["checked_at"] = 0
+        self.assertEqual(len(onboarding_plan(self.info(),[remote],"image","auto")["choices"]),1)

@@ -38,10 +38,10 @@ from registries import media_metadata, model_identity, recent_works, work_file, 
 from remote_client import RemoteClients
 from remote_tls import ManagedTLS, inspect_invite
 from remote_host import ANSWER_LIMIT, Host
-from remote_media import IMAGE_WORKFLOWS, REMOTE_IMAGE_LIMIT, await_image, descriptor, fetch_image, image_input, validate_artifact
+from remote_media import ClientMedia, IMAGE_WORKFLOWS, REMOTE_IMAGE_LIMIT, await_image, descriptor, fetch_image, image_input, validate_artifact
 from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import POLICIES, Providers, route
-from runtime_contract import colab_capability, external_capability, fresh, local_capability, observed
+from runtime_contract import colab_capability, external_capability, fresh, local_capability, observed, task_health
 from runtime_recommendation import TASK_FORMAT, compare
 from onboarding import onboarding_plan
 from task_manager import TaskManager, timestamp
@@ -155,6 +155,7 @@ class Desktop(Workspace):
             self.agent_plans.initialize(db)
             self.team_store.initialize(db)
             Host.initialize(db)
+            ClientMedia.initialize(db)
             if db.execute("PRAGMA user_version").fetchone()[0] < 6:
                 db.execute("PRAGMA user_version=6")
         recover_downloads(self.download_cache, self.models, pinned_model, clean=True)
@@ -163,6 +164,7 @@ class Desktop(Workspace):
         self.remote_host = Host(self.connect, self.scheduler, self.host_models, self.host_engine, self.host_resources,
                                 self.host_model_ram, self.host_image_capability, self.remote_output)
         self.remote_clients = RemoteClients(self.connect)
+        self.client_media = ClientMedia(self.connect)
         self.remote_tls = ManagedTLS(self.connect, self.remote_host)
 
     @contextmanager
@@ -423,7 +425,7 @@ class Desktop(Workspace):
                 blockers.append(str(error))
             if model not in provider["models"]:
                 blockers.append("所選模型不在該環境的清單中。請更新模型清單。")
-            if record["health"] == "unhealthy":
+            if task_health(record, task) == "unhealthy":
                 blockers.append("遠端引擎目前無法接收工作。")
             transfers.append({"runtime":provider["label"], "model":model, "destination":record["destination"],
                               "cost":record["cost"], "needs_network":True})
@@ -507,6 +509,7 @@ class Desktop(Workspace):
             request = uuid4().hex
             payload = image_input({key:data[key] for key in ("kind","prompt","workflow","options") if key in data})
             prompt = payload["prompt"]
+            self.client_media.submit(runtime,request,payload)
             update(remote_request=request,message="正在提交圖片至主機…")
             if cancel.is_set():
                 return None
@@ -518,6 +521,11 @@ class Desktop(Workspace):
             except ConnectionError:
                 raise ConnectionError(f"主機連線中斷。請使用任務識別碼 {request} 重新查詢。") from None
         update(remote_request=request,message="正在下載並驗證作品…")
+        saved = self.client_media.get(runtime,request)
+        if saved:
+            if saved["workflow"] != artifact["workflow"]:
+                raise ValueError("遠端作品流程與本機提交紀錄不符。")
+            prompt = saved["prompt"]
         try:
             path = fetch_image(client,request,artifact,self.outputs,self.data/"remote-downloads",cancel,update)
         except ConnectionError:
@@ -525,9 +533,11 @@ class Desktop(Workspace):
         details = {"model":MODELS["image"][1],"workflow":artifact["workflow"],"runtime":"remote-comfyui",
                    "schema":1,"status":"completed","source":{"engine":"ComfyUI","job":request,
                    "original":artifact["id"],"host":runtime,"host_label":client.label},
-                   "dimensions":media_metadata(path),"prompt":prompt,"options":artifact["options"]}
+                   "dimensions":media_metadata(path),"prompt":prompt,"options":artifact["options"],
+                   "submitted":saved["submitted"] if saved else None,"prompt_recovered":saved is not None}
         with self.connect() as db:
             db.execute("INSERT OR IGNORE INTO creations VALUES(?,?)",(path.name,json.dumps(details)))
+            self.client_media.complete(db,runtime,request,artifact,path.name)
         return {"file":f"/output/{path.name}","message":"遠端圖片已校驗並儲存至作品庫。"}
 
     def reported_vram(self):

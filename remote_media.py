@@ -1,5 +1,6 @@
 """Shared limits and allow-list for paired ComfyUI image generation."""
 from hashlib import sha256
+import json
 import os
 import re
 from time import monotonic
@@ -7,10 +8,47 @@ from time import monotonic
 from download_recovery import exclusive, owned
 from media import FORMATS, MODELS, workflow_options
 from registries import work_file
+from task_manager import timestamp
 
 IMAGE_WORKFLOWS = ("sd15", "sd15-preview")
 REMOTE_IMAGE_LIMIT = 32 * 1024**2
 CHUNK = 256 * 1024
+
+
+class ClientMedia:
+    """Keep private generation inputs on the submitting device across restarts."""
+
+    def __init__(self, connect):
+        self.connect = connect
+
+    @staticmethod
+    def initialize(db):
+        db.execute("""CREATE TABLE IF NOT EXISTS client_media_jobs (
+                   host TEXT NOT NULL, job TEXT NOT NULL, workflow TEXT NOT NULL, model TEXT NOT NULL,
+                   prompt TEXT NOT NULL, options TEXT NOT NULL, submitted TEXT NOT NULL,
+                   state TEXT NOT NULL, work TEXT, PRIMARY KEY(host,job))""")
+        if db.execute("PRAGMA user_version").fetchone()[0] < 9:
+            db.execute("PRAGMA user_version=9")
+
+    def submit(self, host, job, payload):
+        with self.connect() as db:
+            db.execute("INSERT INTO client_media_jobs VALUES(?,?,?,?,?,?,?,'submitted',NULL)",
+                       (host, job, payload["workflow"], MODELS["image"][1], payload["prompt"],
+                        json.dumps(payload["options"]), timestamp()))
+
+    def get(self, host, job):
+        with self.connect() as db:
+            row = db.execute("""SELECT workflow,model,prompt,options,submitted,state,work
+                                FROM client_media_jobs WHERE host=? AND job=?""", (host,job)).fetchone()
+        if row is None:
+            return None
+        value = dict(zip(("workflow","model","prompt","options","submitted","state","work"),row))
+        value["options"] = json.loads(value["options"])
+        return value
+
+    def complete(self, db, host, job, artifact, work):
+        db.execute("""UPDATE client_media_jobs SET state='saved',options=?,work=? WHERE host=? AND job=?""",
+                   (json.dumps(artifact["options"]),work,host,job))
 
 
 def image_input(data):

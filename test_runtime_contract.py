@@ -5,6 +5,21 @@ from runtime_recommendation import compare
 
 
 class RuntimeContractTests(unittest.TestCase):
+    def test_health_is_specific_to_the_requested_task_and_still_requires_freshness(self):
+        host = capability("host","Desk","remote-host","Local LLM",connected=True,network=True,health="unhealthy",
+                          tasks=["chat","image"],models=["demo"],cost="no-api-fee",checked_at=100,
+                          media={"image":{"state":"ready","installed":True,"workflows":["sd15"]}},
+                          task_health={"chat":"unhealthy","image":"ready"})
+        self.assertTrue(compare(host,"image","sd15",ram=1,now=105)["unknown"])
+        self.assertEqual(compare(host,"image","sd15",ram=1,now=105)["risks"],[])
+        self.assertTrue(compare(host,"chat","demo",now=105)["risks"])
+        self.assertTrue(compare(host,"image","sd15",now=170)["needs_connection"])
+        host["task_health"] = {"chat":"ready","image":"unhealthy"}
+        self.assertEqual(compare(host,"chat","demo",now=105)["risks"],[])
+        self.assertTrue(compare(host,"image","sd15",now=105)["risks"])
+        with self.assertRaises(ValueError):
+            validate({**host,"task_health":{"video":"ready"}})
+
     def test_version_optional_features_and_unknown_resources(self):
         record = capability("local", "Local", "local", "Local LLM", checked_at=100)
         self.assertEqual(record["resources"]["vram_available"], observed())
