@@ -155,8 +155,14 @@ class TaskManager:
                     continue
                 holders=[(other.public["id"],other.demand) for other in self.tasks.values()
                          if other.public["state"]=="running" and other.demand]
+                # A resident service reserves local resources against other engines.
+                # Its own serialized consumers use that reservation, rather than wait
+                # forever for the service they need to disappear.
+                uses_comfy=(task.public["lane"]=="compute" and task.public["action"] in
+                            ("media","remote-host-media","comfy-start","comfy-stop") and
+                            any(identity=="comfyui-resident" for identity,_ in snapshot.get("external",[])))
                 external=[(identity,demand) for identity,demand in snapshot.get("external",[])
-                          if not (identity=="comfyui-resident" and task.public["action"]=="comfy-stop")
+                          if not (identity=="comfyui-resident" and uses_comfy)
                           and not (identity=="legacy-llama-resident" and task.public["lane"]=="compute")]
                 allowed,reason=admission(task.demand,holders+external,snapshot) if task.demand else (True,None)
                 # Let old blocked work drain resources rather than starve through endless backfill.
@@ -165,7 +171,7 @@ class TaskManager:
                        (conflicts(other.demand,task.demand) or other.demand.scope==task.demand.scope=="local" and other.demand.ram>0
                         and other.public.get("message","").startswith("RAM_BUDGET")
                         and any(claim.scope=="local" for _,claim in holders))]
-                if older and task.public["action"] not in ("comfy-stop","engine-stop"):
+                if older and not uses_comfy and task.public["action"] not in ("comfy-stop","engine-stop"):
                     allowed,reason=False,"QUEUE_FAIRNESS · 等候較早的資源任務。"
                 if not allowed:
                     if task.public.get("message")!=reason:

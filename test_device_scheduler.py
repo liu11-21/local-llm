@@ -112,6 +112,20 @@ class SchedulerTests(unittest.TestCase):
         self.manager.snapshot(first,cancel=True);self.terminal(first)
         self.assertTrue(self.started["GPU2"].wait(1))
 
+    def test_resident_comfy_serves_serialized_images_without_releasing_other_engines(self):
+        self.snapshot["external"]=[("comfyui-resident",ResourceDemand(engine="ComfyUI"))]
+        benchmark=self.manager.submit("benchmark",{"benchmark_id":"controlled","key":"GPU"})["id"]
+        self.manager.tasks[benchmark].queued_at-=60
+        image=self.manager.submit("remote-host-media",{"key":"CPU"})["id"]
+        self.assertTrue(self.started["CPU"].wait(1))
+        local=self.manager.submit("media",{"key":"later","kind":"image"})["id"]
+        self.assertEqual(self.manager.snapshot(local)["state"],"queued")
+        self.release["CPU"].set();self.terminal(image)
+        self.assertTrue(self.started["later"].wait(1))
+        self.release["later"].set();self.terminal(local)
+        self.assertEqual(self.manager.snapshot(benchmark)["state"],"queued")
+        self.assertFalse(self.started["GPU"].is_set())
+
     def test_long_cpu_queue_does_not_starve_an_unrelated_gpu(self):
         self.submit('CPU',demand('cpu:host'))
         queued=self.submit('later',demand('cpu:host'))
