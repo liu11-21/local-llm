@@ -34,6 +34,8 @@ try {
   await page.getByRole('button',{name:'送出',exact:true}).click()
   await page.getByText('Hello! How can I assist you today?',{exact:true}).waitFor({timeout:90000})
   await page.getByText(/OpenVINO ·/).waitFor()
+  assert.equal(await page.getByText('需要重新連線',{exact:true}).count(),0)
+  await page.evaluate(()=>{window.scrollTo(0,0);document.querySelector('.content')?.scrollTo(0,0)})
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))
   if(shots) await page.screenshot({path:join(shots,'openvino-chat-cpu-real-dark.png')})
   await page.setViewportSize({width:650,height:720})

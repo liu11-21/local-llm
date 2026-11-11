@@ -103,7 +103,9 @@ def main():
 if __name__=="__main__":
     try:
         main()
-    except Exception:
+    except Exception as error:
         # Model/plugin exceptions may contain the user's inputs or local paths.
-        emit({"event":"error","code":"OPENVINO_REQUEST_FAILED"})
+        known = {"DEVICE_UNAVAILABLE","INPUT_MISMATCH","INPUT_TOO_LARGE","OUTPUT_TOO_LARGE","CONTEXT_LIMIT"}
+        code = error.args[0] if isinstance(error,ValueError) and error.args and isinstance(error.args[0],str) and error.args[0] in known else "OPENVINO_REQUEST_FAILED"
+        emit({"event":"error","code":code})
         sys.exit(1)

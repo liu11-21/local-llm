@@ -316,7 +316,11 @@ class OpenVINOAdapter:
                     if event is None:
                         break
                     if event.get("event")=="error":
-                        raise RuntimeError("OpenVINO 無法執行。請檢查裝置、驅動、模型格式、算子與記憶體。")
+                        messages = {"DEVICE_UNAVAILABLE":"所選裝置未由 OpenVINO 回報。請檢查驅動，或明確改選 CPU。",
+                                    "CONTEXT_LIMIT":"OpenVINO 輸入超過 1024 Token。請縮短提示詞或建立新對話。",
+                                    "INPUT_MISMATCH":"輸入張量數量與模型不符。",
+                                    "INPUT_TOO_LARGE":"輸入張量超出大小限制。","OUTPUT_TOO_LARGE":"模型輸出超出大小限制。"}
+                        raise RuntimeError(messages.get(event.get("code"),"OpenVINO 無法執行。請檢查裝置、驅動、模型格式、算子與記憶體。"))
                     if event.get("event")=="result":
                         result = event
                     else:

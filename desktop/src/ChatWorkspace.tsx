@@ -158,7 +158,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         </div>
         <TaskFit key={`${runtime}:${model}:${policy}`} task="chat" runtime={runtime} model={model} policy={policy}/>
         {runtime === 'local' && <TextSetup info={info} run={run} cancel={cancel} openModels={()=>go('library')}/>}
-        {runtime !== 'local' && !provider?.connected && <PreparationNotice title="需要重新連線">
+        {runtime !== 'local' && runtime!=='openvino' && !provider?.connected && <PreparationNotice title="需要重新連線">
           <button className="button section-note" onClick={()=>go('runtime')}>檢查運算環境</button>
         </PreparationNotice>}
       </header>
@@ -202,7 +202,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         </form>
         {runtime==='openvino' && <p className="small muted">OpenVINO IR · 輸入上限 1024 Token，每次最多輸出 512 Token。指定裝置的實際算子分配待驗證，生成採固定貪婪解碼。</p>}
         <p className="small muted">{tokens ? <>輸入 {tokens.input} / {tokens.context} Token · 最多輸出 {tokens.max_output}{tokens.omitted_turns > 0 && ' · 略過較早 ' + tokens.omitted_turns + ' 輪'}</> :
-          <>{runtime === 'local' ? '上下文上限 ' + context + ' Token' : '端點未回報上下文用量'} · Ctrl + Enter 送出</>} · 目前支援文字輸入</p>
+          <>{runtime === 'local' ? '上下文上限 ' + context + ' Token' : runtime==='openvino' ? '本機 OpenVINO · ' + openvinoDevice : '端點未回報上下文用量'} · Ctrl + Enter 送出</>} · 目前支援文字輸入</p>
       </footer>
     </section>
   </div>
