@@ -96,7 +96,10 @@ export function Onboarding({guide, update, close, info, policy, run, cancel, lau
       <dl className="guide-hardware">
         <div><dt>CPU 執行緒</dt><dd>{info.hardware.cpu_threads ?? '未知'}</dd></div>
         <div><dt>可用 RAM</dt><dd>{info.hardware.ram_available == null ? '未知' : gb(info.hardware.ram_available)}</dd></div>
-        <div><dt>GPU</dt><dd>{info.devices.map(([name])=>name).join('、') || '未取得資料'}</dd></div>
+        <div><dt>GPU</dt><dd>{info.hardware_capabilities?.devices.filter(device=>device.kind==='gpu').map(device=>device.name).join('、') ||
+          info.devices.map(([name])=>name).join('、') || '未取得資料'}</dd></div>
+        <div><dt>NPU</dt><dd>{info.hardware_capabilities?.npu_present.value===true ? '已偵測 · 推理待驗收' :
+          info.hardware_capabilities?.npu_present.value===false ? '未偵測到 NPU' : '未知'}</dd></div>
         <div><dt>可用 VRAM</dt><dd>{info.dedicated_vram_available == null ? '未知' : gb(info.dedicated_vram_available)}</dd></div>
         <div><dt>可用磁碟</dt><dd>{info.hardware.disk_available == null ? '未知' : gb(info.hardware.disk_available)}</dd></div>
         <div><dt>文字引擎</dt><dd>{info.engine ? '已安裝' : '待準備'}</dd></div>

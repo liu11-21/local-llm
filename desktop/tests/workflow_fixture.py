@@ -144,7 +144,8 @@ if __name__ == "__main__":
                 if op == "fixture-remote-image":
                     id = "5"*32
                     image = {"installed":True,"state":"ready","workflows":["sd15"],"formats":["png"]}
-                    record = capability(id,"受控圖片主機","remote-host","Local LLM",connected=True,health="ready",
+                    record = capability(id,"受控圖片主機","remote-host","Local LLM",connected=True,health="unhealthy",
+                                        task_health={"chat":"unhealthy","image":"ready"},
                                         tasks=["chat","image"],formats=["GGUF","safetensors"],media={"image":image},
                                         destination="127.0.0.1",cost="no-api-fee")
                     png = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jh2sAAAAASUVORK5CYII=")

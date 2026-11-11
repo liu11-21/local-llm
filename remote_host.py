@@ -240,11 +240,12 @@ class Host:
         models = self.model_names()
         image = self.media()
         supported = bool(image.get("workflows"))
+        resources = self.resources()
         return capability(self.id, self.label, "remote-host", "Local LLM", version=str(PROTOCOL), connected=True,
                           health="unhealthy" if not state["accepting"] else "busy" if state["busy"] else "ready",
                           tasks=["chat","image"] if supported else ["chat"], formats=["GGUF","safetensors"] if supported else ["GGUF"],
                           engines=(["llama.cpp"] if state["installed"] else []) + (["ComfyUI"] if image.get("installed") else []),
-                          models=models, model_ram=self.model_ram(models), resources=self.resources(),
+                          models=models, model_ram=self.model_ram(models), resources=resources,hardware=resources.get("hardware"),
                           media={"image":image} if image else {},
                           task_health={"chat":"unhealthy" if not state["accepting"] else "busy" if state["busy"] else "ready",
                                        **({"image":"ready" if image.get("state")=="ready" else "setup"}

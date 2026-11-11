@@ -126,3 +126,6 @@
   .sidebar-collapsed .sidebar.open .nav-item,.sidebar-collapsed .sidebar.open .brand { justify-content:start; padding-inline:9px; }
   .sidebar-collapsed .sidebar.open .sidebar-foot { grid-template-columns:8px 1fr; justify-content:initial; }
 }
+.hardware-readings { display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-top:14px; }
+.hardware-readings dt { font-size:12px;color:var(--muted); }
+.hardware-readings dd { margin:4px 0 0;overflow-wrap:anywhere; }

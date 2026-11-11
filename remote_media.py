@@ -50,6 +50,12 @@ class ClientMedia:
         db.execute("""UPDATE client_media_jobs SET state='saved',options=?,work=? WHERE host=? AND job=?""",
                    (json.dumps(artifact["options"]),work,host,job))
 
+    def available(self, host, job, artifact):
+        with self.connect() as db:
+            db.execute("""UPDATE client_media_jobs SET state='ready',options=?
+                          WHERE host=? AND job=? AND state!='saved'""",
+                       (json.dumps(artifact["options"]),host,job))
+
 
 def image_input(data):
     workflow, prompt = data.get("workflow"), data.get("prompt")

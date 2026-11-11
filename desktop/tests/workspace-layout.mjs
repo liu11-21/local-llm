@@ -125,6 +125,43 @@ try {
   await navigate('運算環境')
   await page.getByRole('heading',{name:'選擇運算來源'}).waitFor()
   assert.equal(await page.getByLabel('HTTPS 端點').count(), 0)
+  const hardwareShots = process.env.LOCALLLM_HARDWARE_SHOTS
+  if (hardwareShots) {
+    await mkdir(hardwareShots,{recursive:true})
+    await page.getByRole('heading',{name:'GPU 與 NPU',exact:true}).waitFor()
+    await page.waitForTimeout(22000)
+    await page.screenshot({path:join(hardwareShots,'hardware-runtime-real.png'),fullPage:true})
+  }
+  const hardwareMetric = (value,status='available') => ({value,source:value===null?'unknown':'detected',status})
+  const hardwareFixture = {
+    schema:1,state:'available',checked_at:Math.floor(Date.now()/1000),inventory_at:Math.floor(Date.now()/1000),
+    npu_present:hardwareMetric(true),provider_state:'checked',provider_checked_at:null,providers:[],
+    devices:[{id:'controlled-npu',kind:'npu',name:'受控 Intel NPU · '+model,vendor:'Intel',
+      driver:hardwareMetric('test-driver'),driver_state:hardwareMetric(0),utilization:hardwareMetric(null,'unsupported'),
+      vram_total:hardwareMetric(null,'unsupported'),vram_used:hardwareMetric(null,'unsupported'),
+      vram_available:hardwareMetric(null,'unsupported'),verified_inference:false}],
+  }
+  await page.route('**/__desktop_dev_rpc',async route=>{
+    const {op}=route.request().postDataJSON()
+    if(op==='hardware-capabilities') return route.fulfill({json:{ok:true,value:hardwareFixture}})
+    return route.fallback()
+  })
+  await button('使用本機').click()
+  await page.getByText('NPU 推理待硬體驗收。一般聊天與創作可繼續使用既有 CPU／GPU 引擎。').waitFor()
+  for (const [width,height] of [[1280,900],[1024,768],[800,600],[650,720]]) {
+    await page.setViewportSize({width,height})
+    for (const theme of ['dark','light']) {
+      if (await page.evaluate(()=>getComputedStyle(document.documentElement).colorScheme)!==theme) await page.getByTitle('切換主題').click()
+      await noOverflow()
+      if (hardwareShots && width===650 && theme==='light') await page.screenshot({path:join(hardwareShots,'hardware-npu-controlled-light.png'),fullPage:true})
+    }
+  }
+  hardwareFixture.npu_present=hardwareMetric(null,'unknown')
+  hardwareFixture.devices=[]
+  await button('連接另一台電腦').click()
+  await button('使用本機').click()
+  await page.getByText('NPU · 未知 · 裝置資料尚未取得',{exact:true}).waitFor()
+  console.log('PASS controlled NPU presence, unknown monitoring, long names, four sizes and both themes')
   await button('連接另一台電腦').click()
   await page.getByRole('heading',{name:'將此電腦設為運算主機'}).waitFor()
   await page.getByText('尚未配對遠端電腦。').waitFor()
@@ -308,13 +345,23 @@ try {
   })
   await page.reload()
   await page.getByText('本機工作台已連線').waitFor()
-  await navigate('圖片生成')
-  await page.locator('.creation').getByLabel('運算環境',{exact:true}).selectOption(imageHost)
+  await navigate('首頁')
+  await button('新手引導').click()
+  const completedGuide=page.getByRole('dialog',{name:'第一項任務已完成'})
+  await completedGuide.getByRole('button',{name:'開始下一項任務'}).click()
+  await page.getByRole('dialog',{name:'開始使用 Local LLM'}).getByRole('button',{name:'圖片生成',exact:true}).click()
+  const remoteGuide=page.getByRole('dialog',{name:'開始使用 Local LLM'})
+  await remoteGuide.getByRole('button',{name:'開始遠端創作',exact:true}).waitFor()
+  assert.equal(await remoteGuide.getByLabel('入門推薦模型').inputValue(),imageHost+':sd15')
+  if(hardwareShots) await page.screenshot({path:join(hardwareShots,'onboarding-remote-image.png')})
+  await remoteGuide.getByRole('button',{name:'開始遠端創作',exact:true}).click()
+  assert.equal(await page.locator('.creation').getByLabel('運算環境',{exact:true}).inputValue(),imageHost)
   await page.getByLabel('提示詞',{exact:true}).fill('受控遠端圖片')
   await page.locator('.creation').getByRole('button',{name:'生成圖片',exact:true}).click()
   await page.getByRole('dialog',{name:'確認資料傳送'}).getByText(/受控圖片主機/).waitFor()
   if(firstUseShots) await page.screenshot({path:join(firstUseShots,'remote-image-consent.png')})
   await page.getByRole('dialog',{name:'確認資料傳送'}).getByRole('button',{name:'同意並送出'}).click()
+  await page.getByRole('dialog',{name:'第一項任務已完成'}).getByRole('button',{name:'完成',exact:true}).click()
   await page.getByRole('heading',{name:'本次作品'}).waitFor()
   await button('查看作品與參數').click()
   await page.getByText('受控圖片主機',{exact:true}).waitFor()

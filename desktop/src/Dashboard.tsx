@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Activity, ArrowRight, AudioLines, Bot, Cpu, Film, Image, MessageSquare, Server, Users } from 'lucide-react'
-import { rpc, type Info, type Task, type Work } from './api'
+import { rpc, type Info, type Task, type Work, type HardwareCapabilities } from './api'
 import { Empty, Panel, gb } from './ui'
 import { TaskCenter, activeTask } from './taskQueue'
 
@@ -14,10 +14,11 @@ const destinations = [
 ] as const
 
 type Sample = {cpu_percent: number | null; ram_used: number | null; ram_total: number | null;
-  gpu_percent: number | null; vram_used: number | null; vram_total: number | null}
+  gpu_percent: number | null; vram_used: number | null; vram_total: number | null;hardware?:HardwareCapabilities}
 
 function Resources({info, tasks}: {info?: Info; tasks: Task[]}) {
   const [sample, setSample] = useState<Sample>()
+  const [selected,setSelected] = useState('')
   useEffect(() => {
     if (!info) return
     let mounted = true
@@ -36,6 +37,8 @@ function Resources({info, tasks}: {info?: Info; tasks: Task[]}) {
     return () => {mounted = false; window.clearInterval(interval)}
   }, [!!info])
   const running = tasks.filter(task => task.state === 'running')
+  const gpus = sample?.hardware?.devices.filter(device=>device.kind==='gpu') ?? []
+  const gpu = gpus.find(device=>device.id===selected) ?? gpus[0]
   const model = info?.registry.models.find(item => item.id === info.active?.[0])
   const usage = (used?: number | null, total?: number | null) =>
     total && used != null ? Math.round(100 * used / total) : undefined
@@ -43,11 +46,15 @@ function Resources({info, tasks}: {info?: Info; tasks: Task[]}) {
     {label:'CPU', value:sample?.cpu_percent},
     {label:'RAM', value:usage(sample?.ram_used, sample?.ram_total), detail:sample?.ram_used != null ?
       gb(sample.ram_used) + ' / ' + gb(sample.ram_total) : undefined},
-    {label:'GPU', value:sample?.gpu_percent},
-    {label:'VRAM', value:usage(sample?.vram_used, sample?.vram_total)},
+    {label:'GPU', value:gpu?.utilization.value},
+    {label:'VRAM', value:usage(gpu?.vram_used.value,gpu?.vram_total.value),detail:gpu?.vram_used.value!=null ?
+      gb(gpu.vram_used.value)+' / '+gb(gpu.vram_total.value) : undefined},
   ]
   return <section className="resource-board" aria-label="本機資源">
     <header><Activity size={16}/><h2>本機資源</h2><span className="small">{sample ? '即時取樣' : '等待資料'}</span></header>
+    {gpus.length>0 && <label className="small section-note">監控 GPU<select value={gpu?.id} onChange={event=>setSelected(event.target.value)}>
+      {gpus.map(device=><option value={device.id} key={device.id}>{device.name}</option>)}
+    </select></label>}
     <div className="resource-meters">{meters.map(({label,value,detail}) =>
       <div key={label} className="resource-meter">
         <span>{label}</span><b>{value == null ? '未知' : value + '%'}</b>

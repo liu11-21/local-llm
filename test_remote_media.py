@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
@@ -7,6 +7,7 @@ from threading import Event
 import unittest
 from unittest.mock import patch
 import json
+import sqlite3
 
 from remote_media import fetch_image, image_input, ClientMedia
 from desktop_worker import Desktop
@@ -25,6 +26,24 @@ class Response(BytesIO):
 
 
 class RemoteMediaTests(unittest.TestCase):
+    def test_version_eight_database_migration_preserves_user_rows(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            with closing(sqlite3.connect(root/"desktop.sqlite3")) as db, db:
+                db.executescript("""PRAGMA user_version=8;
+                    CREATE TABLE chats(id TEXT PRIMARY KEY,title TEXT,touched TEXT DEFAULT CURRENT_TIMESTAMP);
+                    CREATE TABLE creations(name TEXT PRIMARY KEY,details TEXT NOT NULL);
+                    INSERT INTO chats(id,title) VALUES('existing','existing chat');
+                    INSERT INTO creations VALUES('a12345678901.png','{"prompt":"old prompt"}');""")
+            worker = Desktop(root)
+            try:
+                with worker.connect() as db:
+                    self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],9)
+                    self.assertEqual(db.execute("SELECT title FROM chats").fetchone()[0],"existing chat")
+                    self.assertEqual(json.loads(db.execute("SELECT details FROM creations").fetchone()[0])["prompt"],"old prompt")
+            finally:
+                worker.close()
+
     def test_migration_and_private_prompt_recovery_after_client_restart(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)

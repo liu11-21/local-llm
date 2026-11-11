@@ -1,5 +1,6 @@
 """Versioned capability records shared by the desktop and the paired Host."""
 from time import time
+from hardware_contract import validate_hardware
 
 VERSION = 1
 TYPES = {"local", "remote-host", "cloud-api", "colab-notebook", "unknown"}
@@ -15,7 +16,8 @@ def observed(value=None, source="detected"):
 
 def capability(id, label, kind, provider, *, version=None, connected=None, health="unknown", tasks=(), formats=(),
                engines=(), models=(), resources=None, features=None, network=None, destination=None, auth=None,
-               cost="unknown", source="registry", error=None, checked_at=None, model_ram=None, media=None, task_health=None):
+               cost="unknown", source="registry", error=None, checked_at=None, model_ram=None, media=None, task_health=None,
+               hardware=None):
     return validate({
         "schema": VERSION, "id": id, "label": label, "kind": kind, "provider": provider, "version": version,
         "connected": connected, "health": health, "tasks": list(tasks), "formats": list(formats),
@@ -27,6 +29,7 @@ def capability(id, label, kind, provider, *, version=None, connected=None, healt
         "model_ram": model_ram or {},
         "media": media or {},
         "task_health": task_health or {},
+        "hardware": hardware,
     })
 
 
@@ -89,6 +92,7 @@ def validate(data):
                    ("ready", "busy", "offline", "unhealthy", "unknown", "setup") for value in health.values())):
         raise ValueError("Runtime 任務健康狀態無效。")
     result["task_health"] = dict(health)
+    result["hardware"] = validate_hardware(data["hardware"]) if data.get("hardware") is not None else None
     media = data.get("media", {})
     if not isinstance(media, dict):
         raise ValueError("遠端創作能力格式無效。")
@@ -133,6 +137,7 @@ def local_capability(info, health, active_jobs):
                               else "ready" if engines else "setup"),
                       tasks=("chat", "agent", "team", "image", "video", "music"), formats=("GGUF", "safetensors"),
                       engines=engines, models=info["models"][:250], network=False, destination="this-device",
+                      hardware=info.get("hardware_capabilities"),
                       task_health={task: ("unhealthy" if state in ("failed", "unhealthy") else
                                           "busy" if state == "busy" else "ready" if state == "ready" else
                                           "setup" if engine not in engines else "unknown")

@@ -16,6 +16,7 @@ import hashlib
 import hmac
 import shutil
 import tempfile
+import subprocess
 from threading import Thread
 from time import time
 import zipfile
@@ -32,6 +33,7 @@ from downloads import check_gguf, download_model
 from engine import LocalEngine
 from engine_health import EngineHealth
 from hardware import ResourceMonitor, detect_hardware, estimate_ram
+from hardware_monitor import HardwareMonitor
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
 from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
@@ -120,6 +122,7 @@ class Desktop(Workspace):
         self.download_cache = self.models / ".localllm-downloads"
         self.hardware_cache = None
         self.resource_monitor = ResourceMonitor()
+        self.hardware_monitor = HardwareMonitor()
         self.hardware_sample_at = 0
         self.agent_plans = AgentPlans(self.connect)
         self.team_store = TeamStore(self.connect)
@@ -526,6 +529,7 @@ class Desktop(Workspace):
             if saved["workflow"] != artifact["workflow"]:
                 raise ValueError("遠端作品流程與本機提交紀錄不符。")
             prompt = saved["prompt"]
+            self.client_media.available(runtime,request,artifact)
         try:
             path = fetch_image(client,request,artifact,self.outputs,self.data/"remote-downloads",cancel,update)
         except ConnectionError:
@@ -549,11 +553,14 @@ class Desktop(Workspace):
     def host_resources(self):
         hardware = detect_hardware(self.models)
         devices = self.hardware_cache or []
+        detected = self.hardware_monitor.snapshot()
+        gpu_names = [device["name"] for device in detected["devices"] if device["kind"]=="gpu"]
         active = sum(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
         return {"cpu_threads": observed(hardware.cpu_threads), "ram_total": observed(hardware.ram_total),
                 "ram_available": observed(hardware.ram_available), "active_jobs": observed(active),
-                "gpus": observed([device[0] for device in devices][:32] or None, "reported"),
-                "vram_available": observed(self.reported_vram(), "reported")}
+                "gpus": observed(gpu_names or [device[0] for device in devices][:32] or None, "reported"),
+                "vram_available": observed(self.reported_vram(), "reported"),
+                "hardware":detected}
 
     def host_chat(self, data, cancel, update):
         try:
@@ -945,7 +952,27 @@ class Desktop(Workspace):
             info = self.rpc("info", {})
             return onboarding_plan(info, self.runtime_capabilities(info), task, data.get("policy", "auto"))
         if op == "system-resources":
-            return self.resource_monitor.sample(self.models)
+            sample = self.resource_monitor.sample(self.models)
+            hardware = self.hardware_monitor.snapshot()
+            gpus = [device for device in hardware["devices"] if device["kind"]=="gpu"]
+            percentages = [device["utilization"]["value"] for device in gpus if device["utilization"]["value"] is not None]
+            sample["gpu_percent"] = max(percentages,default=None)
+            # Each adapter has a different pool. A top-level VRAM value is only meaningful for one GPU.
+            if len(gpus)==1:
+                sample.update(vram_used=gpus[0]["vram_used"]["value"],vram_total=gpus[0]["vram_total"]["value"])
+            return {**sample,"hardware":hardware}
+        if op == "hardware-capabilities":
+            return self.hardware_monitor.snapshot()
+        if op == "hardware-provider-probe":
+            command = ([sys.executable] if getattr(sys,"frozen",False) else [sys.executable,str(Path(__file__).resolve())])
+            try:
+                result = subprocess.run([*command,"--hardware-providers"],capture_output=True,timeout=25,check=True,
+                                        creationflags=subprocess.CREATE_NO_WINDOW if os.name=="nt" else 0)
+                providers = json.loads(result.stdout)
+                self.hardware_monitor.set_providers(providers,"checked")
+            except (OSError,ValueError,subprocess.SubprocessError):
+                self.hardware_monitor.set_providers([],"failed")
+            return self.hardware_monitor.snapshot()
         if op == "task-preflight":
             return self.task_preflight(data)
         if op == "remote-host-networks":
@@ -1065,6 +1092,8 @@ class Desktop(Workspace):
                 recent = db.execute("SELECT value FROM settings WHERE key='recent_model'").fetchone()
                 sources = {name.casefold(): json.loads(details) for name, details in db.execute("SELECT * FROM model_sources")}
             info["registry"] = workspace_registry(info, self.models, ENGINE_VERSION, sources)
+            info["hardware_capabilities"] = self.hardware_monitor.snapshot()
+            info["registry"]["hardware"] = info["hardware_capabilities"]
             info["recoverable_downloads"] = recover_downloads(self.download_cache, self.models, pinned_model)
             info["recent_model"] = recent[0] if recent else None
             return info
@@ -1185,6 +1214,7 @@ class Desktop(Workspace):
         raise ValueError("未支援的操作。")
 
     def close(self):
+        self.hardware_monitor.close()
         self.remote_host.stop()
         self.scheduler.close()
         self.agent_tools.close()
@@ -1195,7 +1225,12 @@ class Desktop(Workspace):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=Path, default=Path(os.environ.get("LOCALAPPDATA", Path.home())) / "LocalLLM")
+    parser.add_argument("--hardware-providers",action="store_true")
     args = parser.parse_args()
+    if args.hardware_providers:
+        from hardware_providers import probe
+        print(json.dumps(probe(),ensure_ascii=True))
+        return
     worker = Desktop(args.data)
     try:
         while raw := sys.stdin.buffer.readline(MAX_LINE + 1):

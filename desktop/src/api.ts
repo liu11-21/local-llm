@@ -1,11 +1,25 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
 
 export type Params = Record<string, unknown>
+export type HardwareReading<T> = {value:T|null;source:string;status:string}
+export type HardwareDevice = {
+  id:string;name:string;vendor:string;kind:'gpu'|'npu'|'accelerator';verified_inference:boolean;
+  driver:HardwareReading<string>;driver_state:HardwareReading<number>;utilization:HardwareReading<number>;
+  vram_total:HardwareReading<number>;vram_used:HardwareReading<number>;vram_available:HardwareReading<number>;
+  shared_limit?:HardwareReading<number>;shared_used?:HardwareReading<number>;
+}
+export type HardwareCapabilities = {
+  schema:number;state:string;checked_at:number;inventory_at:number|null;npu_present:HardwareReading<boolean>;
+  devices:HardwareDevice[];provider_state:string;provider_checked_at:number|null;
+  providers:{id:string;state:string;version:string|null;devices:string[];providers:string[];formats:string[];
+    quantization:string[];verified_inference:boolean;limitations:string}[];
+}
 export type Plan = { device: string | null; layers: number; total_layers: number; ram: number; vram: number; mapped_bytes: number }
 export type RuntimeCapability = {
   schema: number; id: string; label: string; kind: string; health: string; connected: boolean | null; error?: string;
   checked_at: number; cost: string; tasks: string[]; formats: string[]; models: string[];
   task_health?:Record<string,string>;
+  hardware?:HardwareCapabilities|null;
   resources: Record<string, {value: number | string[] | null; source: string}>;
   media?: {image?: {state:'checking'|'ready'|'missing'|'unavailable'; installed:boolean; workflows:string[]; missing:string[]; missing_nodes:string[]}}
 }
@@ -38,6 +52,7 @@ export type Registry = {
   media_models?: MediaModel[];
 }
 export type Info = {
+  hardware_capabilities?:HardwareCapabilities;
   dedicated_vram_available?: number | null;
   models: string[]; model_folder: string; output_folder: string; engine: boolean;
   hardware: { cpu_threads: number | null; ram_total: number | null; ram_available: number | null; disk_available: number | null };
