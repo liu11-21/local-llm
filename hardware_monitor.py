@@ -12,11 +12,7 @@ import subprocess
 from threading import Event, Lock, Thread
 from time import monotonic, time
 import uuid
-
-
-def reading(value=None, source="detected", status=None):
-    return {"value":value, "source":source if value is not None else "unknown",
-            "status":status or ("available" if value is not None else "unknown")}
+from resource_contract import reading
 
 
 def windows_inventory(cancel=None):
@@ -68,6 +64,31 @@ class AdapterDescription(ct.Structure):
                 ("reserved",ct.c_size_t),("shared",ct.c_size_t),("luid",Luid),("flags",ct.c_uint32)]
 
 
+class Architecture(ct.Structure):
+    _fields_ = [("node",ct.c_uint32),("tile_based",ct.c_int32),("uma",ct.c_int32),("coherent",ct.c_int32)]
+
+
+def adapter_memory_type(adapter, method):
+    try:
+        library = ct.WinDLL("d3d12.dll")
+    except OSError:
+        return "unknown"
+    create = library.D3D12CreateDevice
+    create.argtypes = [ct.c_void_p,ct.c_uint32,ct.c_void_p,ct.POINTER(ct.c_void_p)]
+    create.restype = ct.c_int32
+    iid = (ct.c_ubyte*16).from_buffer_copy(uuid.UUID("189819f1-1db6-4b57-be54-1821339b85f7").bytes_le)
+    device = ct.c_void_p()
+    if create(adapter,0xb000,ct.byref(iid),ct.byref(device))<0:
+        return "unknown"
+    try:
+        architecture = Architecture()
+        status = method(device,13,ct.c_int32,ct.c_uint32,ct.c_void_p,ct.c_uint32)(
+            device,1,ct.byref(architecture),ct.sizeof(architecture))
+        return "unknown" if status<0 else "unified" if architecture.uma else "dedicated"
+    finally:
+        method(device,2,ct.c_uint32)(device)
+
+
 def dxgi_adapters():
     def method(pointer, slot, result, *arguments):
         table = ct.cast(pointer,ct.POINTER(ct.POINTER(ct.c_void_p))).contents
@@ -95,7 +116,8 @@ def dxgi_adapters():
                     continue
                 devices.append({"id":f"{desc.luid.high:08x}_{desc.luid.low:08x}","kind":"gpu","name":desc.name,
                                 "vendor":{0x10de:"NVIDIA",0x1002:"AMD",0x8086:"Intel"}.get(desc.vendor,"Unknown"),
-                                "vram_total":reading(desc.dedicated),"shared_limit":reading(desc.shared)})
+                                "vram_total":reading(desc.dedicated),"shared_limit":reading(desc.shared),
+                                "memory_type":adapter_memory_type(adapter,method)})
             finally:
                 method(adapter,2,ct.c_uint32)(adapter)
     finally:
@@ -284,11 +306,20 @@ class HardwareMonitor:
                                 vram_used=reading(used),vram_available=reading(total-used if used is not None else None),
                                 shared_used=reading(counter_values(values.get("shared",[]),device["id"])))
                 devices.append(item)
+            measured_at = int(time())
+            for device in devices:
+                for key,value in list(device.items()):
+                    if isinstance(value,dict) and "source" in value:
+                        unit = ("percent" if key=="utilization" else "version" if key=="driver" else
+                                "code" if key=="driver_state" else "bytes")
+                        measured = self.inventory_at if key in ("driver","driver_state","vram_total","shared_limit") else measured_at
+                        device[key] = {**value,"unit":unit,"checked_at":measured}
             self.sampled = now
             self.cached = {"schema":1,"checked_at":int(time()),"inventory_at":self.inventory_at,
                            "state":self.inventory_state,"devices":devices,
                            "npu_present":reading(any(d["kind"]=="npu" for d in devices)
-                                                 if self.npu_inventory_state=="available" else None),
+                                                 if self.npu_inventory_state=="available" else None,
+                                                 unit="boolean",checked_at=self.inventory_at),
                            "providers":self.providers,"provider_state":self.provider_state,
                            "provider_checked_at":self.provider_checked_at}
             return self.cached

@@ -1,5 +1,6 @@
 """Explain compatibility without submitting work or contacting providers."""
 from runtime_contract import fresh, task_health
+from resource_contract import fresh_measure, gpu_memory, memory_explanation, reading
 
 TASK_FORMAT = {"chat": "GGUF", "agent": "GGUF", "team": "GGUF", "image": "safetensors",
                "video": "safetensors", "music": "safetensors", "notebook": None}
@@ -72,13 +73,21 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
         for requirement, key, label in ((ram, "ram_available", "RAM"), (vram, "vram_available", "VRAM")):
             if requirement is None:
                 continue
-            available = record["resources"][key]["value"]
+            value = record["resources"][key]
+            available = value["value"]
+            if key=="vram_available":
+                _, measured = gpu_memory(record.get("hardware"),now)
+                available = measured["value"] if measured else None
+                if available is None:
+                    unknown.append(memory_explanation(record.get("hardware"),now))
+            elif value.get("checked_at") is not None and not fresh_measure(value,now):
+                available = None
             if available is None or connect:
                 unknown.append(f"可用 {label} 未知。")
             elif available < requirement:
                 risks.append(f"可用 {label} 低於目前的需求估計。")
             else:
-                reasons.append(f"回報的可用 {label} 達到目前估計。")
+                reasons.append(f"回報的可用 {label} 達到目前估計，實際載入仍需由後端驗證。")
     elif local or record["kind"] == "remote-host":
         unknown.append("這個模型的 RAM／VRAM 門檻未經驗證。")
     if cost == "unknown":
@@ -90,5 +99,7 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
     state = ("incompatible" if incompatible else "needs-setup" if connect or install else
              "uncertain" if risks or unknown else "compatible")
     return {"id": record["id"], "label": record["label"], "state": state, "recommended": state == "compatible",
+            "requirements":{"ram":reading(ram,"estimated",unit="bytes"),"vram":reading(vram,"estimated",unit="bytes")},
+            "inference_verified":False,"benchmark_verified":False,
             "reasons": reasons, "risks": risks, "unknown": unknown, "needs_install": install, "needs_connection": connect,
             "needs_consent": network, "may_charge": None if cost == "unknown" else cost == "may-charge"}

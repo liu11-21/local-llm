@@ -1,6 +1,7 @@
 """Versioned capability records shared by the desktop and the paired Host."""
 from time import time
 from hardware_contract import validate_hardware
+from resource_contract import UNITS, gpu_memory, reading
 
 VERSION = 1
 TYPES = {"local", "remote-host", "cloud-api", "colab-notebook", "unknown"}
@@ -10,8 +11,8 @@ EVIDENCE = {"detected", "reported", "estimated", "configured", "unknown"}
 MAX_AGE = 60
 
 
-def observed(value=None, source="detected"):
-    return {"value": value, "source": source if value is not None else "unknown"}
+def observed(value=None, source="detected", *, unit="unknown", checked_at=None, status=None, evidence=None):
+    return reading(value,source,status,unit=unit,checked_at=checked_at,evidence=evidence)
 
 
 def capability(id, label, kind, provider, *, version=None, connected=None, health="unknown", tasks=(), formats=(),
@@ -80,7 +81,20 @@ def validate(data):
                  if key == "gpus" else type(value) is int and 0 <= value <= 2**53 - 1)
         if (value is None) != (item["source"] == "unknown") or (value is not None and not valid):
             raise ValueError("Runtime 資源數值無效。")
-        result["resources"][key] = observed(value, item["source"])
+        unit = item.get("unit",UNITS[key])
+        if unit not in (UNITS[key],"unknown"):
+            raise ValueError("Runtime 資源單位無效。")
+        timestamp = item.get("checked_at")
+        if timestamp is not None and (type(timestamp) is not int or not 0<=timestamp<=2**53-1):
+            raise ValueError("Runtime 資源時間無效。")
+        status = item.get("status","available" if value is not None else "unknown")
+        if status not in ("available","unknown","unsupported") or (value is None)!=(status!="available"):
+            raise ValueError("Runtime 資源狀態無效。")
+        evidence = item.get("evidence",item["source"])
+        if evidence not in EVIDENCE | {"verified"}:
+            raise ValueError("Runtime 資源證據無效。")
+        result["resources"][key] = observed(value,item["source"],unit=unit,checked_at=timestamp,
+                                           status=status,evidence=evidence)
     estimates = data.get("model_ram", {})
     if (not isinstance(estimates, dict) or estimates.keys() - set(result["models"])
             or any(type(value) is not int or not 0 < value <= 2**53 - 1 for value in estimates.values())):
@@ -132,6 +146,8 @@ def local_capability(info, health, active_jobs):
     devices = info.get("devices", [])
     text, media = health["llama"]["state"], health["comfyui"]["state"]
     engines = (["llama.cpp"] if info["engine"] else []) + (["ComfyUI"] if info.get("comfy_installed") else [])
+    total, available = gpu_memory(info.get("hardware_capabilities"))
+    sampled = int(time())
     return capability("local", "本機 CPU／GPU", "local", "Local LLM", connected=True, source="desktop",
                       health=("busy" if active_jobs else "unhealthy" if {text, media} & {"unhealthy", "failed"}
                               else "ready" if engines else "setup"),
@@ -144,10 +160,12 @@ def local_capability(info, health, active_jobs):
                                    for task, state, engine in [(task, text, "llama.cpp") for task in ("chat", "agent", "team")]
                                    + [(task, media, "ComfyUI") for task in ("image", "video", "music")]},
                       cost="no-api-fee", resources={
-                          "cpu_threads": observed(hardware["cpu_threads"]), "ram_total": observed(hardware["ram_total"]),
-                          "ram_available": observed(hardware["ram_available"]), "active_jobs": observed(active_jobs),
-                          "gpus": observed([name for name, _, _ in devices][:32] or None),
-                          "vram_available": observed(info.get("dedicated_vram_available"), "reported"),
+                          "cpu_threads": observed(hardware["cpu_threads"],unit="count",checked_at=sampled),
+                          "ram_total": observed(hardware["ram_total"],unit="bytes",checked_at=sampled),
+                          "ram_available": observed(hardware["ram_available"],unit="bytes",checked_at=sampled),
+                          "active_jobs": observed(active_jobs,unit="count",checked_at=sampled),
+                          "gpus": observed([name for name, _, _ in devices][:32] or None,unit="names",checked_at=sampled),
+                          "vram_total":total or observed(), "vram_available":available or observed(),
                       }, features={"stream": bool(info["engine"]), "cancel": True, "load": bool(info["engine"]),
                                    "unload": bool(info["engine"]), "download": True},
                       error="引擎目前無法回應。" if {text, media} & {"unhealthy", "failed"} else None)

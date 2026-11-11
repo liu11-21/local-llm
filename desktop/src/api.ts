@@ -1,9 +1,10 @@
 import { invoke, isTauri } from '@tauri-apps/api/core'
 
 export type Params = Record<string, unknown>
-export type HardwareReading<T> = {value:T|null;source:string;status:string}
+export type HardwareReading<T> = {value:T|null;source:string;status:string;unit?:string;checked_at?:number|null;evidence?:string}
 export type HardwareDevice = {
   id:string;name:string;vendor:string;kind:'gpu'|'npu'|'accelerator';verified_inference:boolean;
+  memory_type?:'dedicated'|'unified'|'unknown';
   driver:HardwareReading<string>;driver_state:HardwareReading<number>;utilization:HardwareReading<number>;
   vram_total:HardwareReading<number>;vram_used:HardwareReading<number>;vram_available:HardwareReading<number>;
   shared_limit?:HardwareReading<number>;shared_used?:HardwareReading<number>;

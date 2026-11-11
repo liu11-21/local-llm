@@ -34,6 +34,7 @@ from engine import LocalEngine
 from engine_health import EngineHealth
 from hardware import ResourceMonitor, detect_hardware, estimate_ram
 from hardware_monitor import HardwareMonitor
+from resource_contract import gpu_memory
 from load_plan import allocate, engine_devices, plan_load
 from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
 from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
@@ -545,21 +546,23 @@ class Desktop(Workspace):
         return {"file":f"/output/{path.name}","message":"遠端圖片已校驗並儲存至作品庫。"}
 
     def reported_vram(self):
-        if self.hardware_cache is None or time() - self.hardware_sample_at > 30:
-            return None
-        dedicated = [free for _, free, shared in self.hardware_cache if not shared]
-        return max(dedicated, default=None)
+        _, available = gpu_memory(self.hardware_monitor.snapshot())
+        return available["value"] if available else None
 
     def host_resources(self):
         hardware = detect_hardware(self.models)
         devices = self.hardware_cache or []
         detected = self.hardware_monitor.snapshot()
+        total, available = gpu_memory(detected)
         gpu_names = [device["name"] for device in detected["devices"] if device["kind"]=="gpu"]
+        sampled = int(time())
         active = sum(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
-        return {"cpu_threads": observed(hardware.cpu_threads), "ram_total": observed(hardware.ram_total),
-                "ram_available": observed(hardware.ram_available), "active_jobs": observed(active),
-                "gpus": observed(gpu_names or [device[0] for device in devices][:32] or None, "reported"),
-                "vram_available": observed(self.reported_vram(), "reported"),
+        return {"cpu_threads": observed(hardware.cpu_threads,unit="count",checked_at=sampled),
+                "ram_total": observed(hardware.ram_total,unit="bytes",checked_at=sampled),
+                "ram_available": observed(hardware.ram_available,unit="bytes",checked_at=sampled),
+                "active_jobs": observed(active,unit="count",checked_at=sampled),
+                "gpus": observed(gpu_names or [device[0] for device in devices][:32] or None,"reported",unit="names",checked_at=sampled),
+                "vram_total":total or observed(),"vram_available":available or observed(),
                 "hardware":detected}
 
     def host_chat(self, data, cancel, update):

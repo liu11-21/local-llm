@@ -31,7 +31,17 @@ def validate_hardware(data):
                   or value > (100 if key=="utilization" else 2**53-1)
                   or key!="utilization" and type(value) is not int):
                 raise ValueError("硬體量測數值無效。")
-        return {"value":value,"source":source,"status":status}
+        unit = ("version" if key=="driver" else "boolean" if key=="npu_present" else
+                "code" if key=="driver_state" else "percent" if key=="utilization" else "bytes")
+        if item.get("unit",unit) not in (unit,"unknown"):
+            raise ValueError("硬體量測單位無效。")
+        timestamp = item.get("checked_at")
+        if timestamp is not None and (type(timestamp) is not int or not 0<=timestamp<=2**53-1):
+            raise ValueError("硬體量測時間無效。")
+        evidence = item.get("evidence",source)
+        if evidence not in ("detected","reported","estimated","unknown","verified"):
+            raise ValueError("硬體證據格式無效。")
+        return {"value":value,"unit":unit,"source":source,"status":status,"checked_at":timestamp,"evidence":evidence}
 
     if not isinstance(data,dict) or type(data.get("schema")) is not int or data["schema"]!=1:
         raise ValueError("硬體契約版本不相容。")
@@ -51,6 +61,10 @@ def validate_hardware(data):
             raise ValueError("硬體裝置類型無效。")
         entry = {key:text(device.get(key),500) for key in ("id","name","vendor")}
         entry.update(kind=device["kind"],verified_inference=device.get("verified_inference") is True)
+        memory_type = device.get("memory_type","unknown")
+        if memory_type not in ("unknown","unified","dedicated"):
+            raise ValueError("GPU 記憶體類型無效。")
+        entry["memory_type"] = memory_type
         entry.update({key:metric(device.get(key,reading()),key) for key in METRICS})
         result["devices"].append(entry)
     result["npu_present"] = metric(data.get("npu_present",reading()),"npu_present")

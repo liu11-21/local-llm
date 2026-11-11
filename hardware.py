@@ -7,6 +7,8 @@ from pathlib import Path
 import shutil
 from threading import Lock
 from time import monotonic
+from time import time
+from resource_contract import reading
 
 MIB = 1024 ** 2
 GIB = 1024 * MIB
@@ -88,6 +90,9 @@ class ResourceMonitor:
         used = (hardware.ram_total - hardware.ram_available
                 if hardware.ram_total is not None and hardware.ram_available is not None else None)
         return {"cpu_percent": cpu, "ram_used": used, "ram_total": hardware.ram_total,
+                "measurements":{"cpu_percent":reading(cpu,unit="percent",checked_at=int(time())),
+                                "ram_used":reading(used,unit="bytes",checked_at=int(time())),
+                                "ram_total":reading(hardware.ram_total,unit="bytes",checked_at=int(time()))},
                 "gpu_percent": None, "vram_used": None, "vram_total": None}
 
 

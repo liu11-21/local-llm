@@ -29,6 +29,8 @@ export function HardwarePanel() {
       <h3 className="pre">{device.name}</h3>
       <p className="small">{device.vendor} · {device.kind.toUpperCase()} · Windows 偵測
         {device.driver.value ? ` · 驅動 ${device.driver.value}` : ' · 驅動版本未知'}</p>
+      {device.kind==='gpu' && <p className="small muted">記憶體架構 · {device.memory_type==='unified' ? '統一記憶體' :
+        device.memory_type==='dedicated' ? '獨立顯存' : '尚未確認'}。模型可分配容量仍需由推理後端確認。</p>}
       {device.driver_state.value!==null && <p className="small">{device.driver_state.value===0 ? '裝置管理員未回報錯誤' :
         `裝置管理員錯誤碼 ${device.driver_state.value}`}</p>}
       <dl className="hardware-readings">
