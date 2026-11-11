@@ -80,11 +80,16 @@ def memory_limit(process, maximum):
 class OpenVINOAdapter:
     def __init__(self, data, connect):
         self.root = data / "openvino"
-        self.root.mkdir(exist_ok=True)
         self.connect = connect
         self.runtime = self.root / ("runtime-"+VERSION)
         self.models = self.root / "models"
-        self.models.mkdir(exist_ok=True)
+        self.safe = owned(self.root) and owned(self.models)
+        if self.safe:
+            try:
+                self.root.mkdir(exist_ok=True)
+                self.models.mkdir(exist_ok=True)
+            except OSError:
+                self.safe = False
         self.process = None
         self.lock = Lock()
         self.detected = {"state":"not-checked","devices":[],"version":VERSION}
@@ -96,15 +101,19 @@ class OpenVINOAdapter:
                 db.execute("PRAGMA user_version=10")
 
     def installed(self):
-        return owned(self.runtime) and (self.runtime/"READY.json").is_file() and (self.runtime/"python.exe").is_file()
+        return self.safe and owned(self.runtime) and (self.runtime/"READY.json").is_file() and (self.runtime/"python.exe").is_file()
 
     def status(self):
         models = []
-        for directory in sorted(self.models.iterdir()):
+        directories = sorted(self.models.iterdir()) if self.safe and owned(self.models) else []
+        for directory in directories:
             if not re.fullmatch(r"[a-f0-9]{16}",directory.name) or not owned(directory):
                 continue
             try:
-                record = json.loads((directory/"MODEL.json").read_text(encoding="utf-8"))
+                metadata = directory/"MODEL.json"
+                if not owned(metadata) or metadata.stat().st_size>256*1024:
+                    continue
+                record = json.loads(metadata.read_text(encoding="utf-8"))
                 models.append({"id":directory.name,**record})
             except (OSError,ValueError):
                 continue
@@ -120,6 +129,8 @@ class OpenVINOAdapter:
                 "directory":str(self.runtime)}
 
     def install(self, cancel, update):
+        if not self.safe:
+            raise ValueError("選用 Runtime 資料夾無法安全存取。既有引擎仍可使用。")
         if os.name!="nt":
             raise ValueError("此固定版本 Runtime 套件支援 Windows x64。")
         cache = self.root/"downloads"
@@ -190,6 +201,8 @@ class OpenVINOAdapter:
             process.wait()
 
     def import_model(self, source, cancel, update):
+        if not self.safe or not owned(self.models):
+            raise ValueError("OpenVINO 模型資料夾不安全。")
         source = Path(source).absolute()
         if not owned(source) or not source.is_dir():
             raise ValueError("請選擇沒有連結的 OpenVINO IR 模型資料夾。")
@@ -249,7 +262,7 @@ class OpenVINOAdapter:
         if not isinstance(identity,str) or not re.fullmatch(r"[a-f0-9]{16}",identity):
             raise ValueError("OpenVINO 模型識別碼無效。")
         directory = self.models/identity
-        if not owned(directory):
+        if not self.safe or not owned(directory) or not owned(directory/"MODEL.json"):
             raise ValueError("OpenVINO 模型目錄不安全。")
         record = json.loads((directory/"MODEL.json").read_text(encoding="utf-8"))
         for name,expected in record["hashes"].items():
@@ -347,6 +360,8 @@ class OpenVINOAdapter:
         request = {"op":"infer","kind":model["kind"],"model":str(directory),"device":device,
                    "cache":str(self.root/"compiled"/identity/device.replace(".","-")),"inputs":inputs,
                    "messages":messages,"max_tokens":max_tokens}
+        if not owned(Path(request["cache"])):
+            raise ValueError("OpenVINO 編譯快取目錄不安全。")
         evidence = {"requested_device":device,"verified_inference":False,"status":"failed"}
         try:
             result = self.execute(request,cancel,update)

@@ -13,12 +13,22 @@ from hashlib import sha256
 from zipfile import ZipFile
 
 from desktop_worker import Desktop
-from openvino_adapter import package_manifest
+from openvino_adapter import OpenVINOAdapter, package_manifest
 from runtime_provider import route
 from task_manager import classify
 
 
 class OpenVINOAdapterTests(TestCase):
+    def test_unsafe_optional_directory_does_not_prevent_existing_workspace_use(self):
+        directory = Path(self.folder.name)/"other-data"
+        with patch("openvino_adapter.owned",return_value=False):
+            adapter = OpenVINOAdapter(directory,self.worker.connect)
+            self.assertFalse(adapter.status()["installed"])
+            self.assertEqual(adapter.status()["models"],[])
+            with self.assertRaises(ValueError):
+                adapter.install(Event(),lambda **_:None)
+        self.assertFalse(directory.exists())
+
     def test_install_uses_the_shared_range_downloader_and_retries_an_unpublished_environment(self):
         python_zip = BytesIO()
         with ZipFile(python_zip,"w") as archive:
