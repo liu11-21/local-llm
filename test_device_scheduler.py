@@ -112,5 +112,14 @@ class SchedulerTests(unittest.TestCase):
         self.manager.snapshot(first,cancel=True);self.terminal(first)
         self.assertTrue(self.started["GPU2"].wait(1))
 
+    def test_long_cpu_queue_does_not_starve_an_unrelated_gpu(self):
+        self.submit('CPU',demand('cpu:host'))
+        queued=self.submit('later',demand('cpu:host'))
+        self.manager.tasks[queued].queued_at-=60
+        gpu=self.submit('GPU',demand('gpu:separate',ram=20))
+        self.assertTrue(self.started['GPU'].wait(1))
+        self.assertEqual(self.manager.snapshot(gpu)['state'],'running')
+        self.assertEqual(self.manager.snapshot(queued)['state'],'queued')
+
 
 if __name__=="__main__":unittest.main()
