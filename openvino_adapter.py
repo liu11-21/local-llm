@@ -277,7 +277,7 @@ class OpenVINOAdapter:
         with self.lock:
             if self.process is not None:
                 raise ValueError("OpenVINO 正在執行其他工作。")
-            command = [str(self.runtime/"python.exe"),"-I",str(Path(__file__).with_name("openvino_runner.py"))]
+            command = [str(self.runtime/"python.exe"),"-I","-B",str(Path(__file__).with_name("openvino_runner.py"))]
             process = external_process(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,
                                        creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
             self.process = process

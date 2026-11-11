@@ -11,6 +11,10 @@ from uuid import uuid4
 from io import BytesIO
 from hashlib import sha256
 from zipfile import ZipFile
+from contextlib import redirect_stdout
+from io import StringIO
+from unittest.mock import Mock
+import openvino_acceptance
 
 from desktop_worker import Desktop
 from openvino_adapter import OpenVINOAdapter, package_manifest
@@ -19,6 +23,29 @@ from task_manager import classify
 
 
 class OpenVINOAdapterTests(TestCase):
+    def test_acceptance_uses_a_temporary_database_instead_of_reopening_the_user_profile(self):
+        source = Path(self.folder.name)/"existing-profile"
+        runtime = source/"openvino"/("runtime-"+self.adapter.status()["version"])
+        runtime.mkdir(parents=True)
+        (runtime/"READY.json").write_text("{}")
+        database = source/"desktop.sqlite3"
+        database.write_bytes(b"existing profile must remain untouched")
+        worker = Mock()
+        worker.openvino.installed.return_value = True
+        worker.openvino.status.return_value = {"devices":["CPU"]}
+        worker.rpc.return_value = []
+        def create(directory):
+            self.assertNotEqual(directory,source.resolve())
+            return worker
+        output = StringIO()
+        with patch.object(sys,"argv",["openvino_acceptance.py","--data",str(source),"--device","NPU"]), \
+             patch("openvino_acceptance.Desktop",side_effect=create), \
+             patch("openvino_acceptance.wait",return_value={"state":"completed"}),redirect_stdout(output):
+            openvino_acceptance.main()
+        self.assertEqual(json.loads(output.getvalue())["status"],"NEEDS NPU")
+        self.assertEqual(database.read_bytes(),b"existing profile must remain untouched")
+        worker.close.assert_called_once()
+
     def test_unsafe_optional_directory_does_not_prevent_existing_workspace_use(self):
         directory = Path(self.folder.name)/"other-data"
         with patch("openvino_adapter.owned",return_value=False):

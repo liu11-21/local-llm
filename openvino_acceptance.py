@@ -5,8 +5,11 @@ from pathlib import Path
 import subprocess
 from time import monotonic, sleep
 from uuid import uuid4
+from tempfile import TemporaryDirectory
 
 from desktop_worker import Desktop
+from download_recovery import owned
+from openvino_adapter import VERSION
 
 FIXTURE = """
 import openvino as ov
@@ -38,7 +41,13 @@ def main():
     parser.add_argument("--model",help="An already-imported text model ID, or omit to create a small deterministic IR fixture")
     parser.add_argument("--output",type=Path)
     args = parser.parse_args()
-    worker = Desktop(args.data.resolve())
+    source = args.data.resolve()/"openvino"
+    runtime = source/("runtime-"+VERSION)
+    if not owned(runtime) or not (runtime/"READY.json").is_file():
+        raise ValueError("Install the optional OpenVINO Runtime before running acceptance.")
+    temporary = TemporaryDirectory(prefix="localllm-openvino-acceptance-")
+    worker = Desktop(Path(temporary.name).resolve())
+    worker.openvino.runtime = runtime
     try:
         if not worker.openvino.installed():
             raise ValueError("Install the optional OpenVINO Runtime in the app before running acceptance.")
@@ -48,7 +57,12 @@ def main():
             record = {"status":"NEEDS NPU" if args.device.startswith("NPU") else "NEEDS GPU",
                       "devices":status["devices"],"detection":detect["state"]}
         elif args.model:
-            job = wait(worker,"chat",{"runtime":"openvino","device":args.device,"model":args.model,
+            if len(args.model)!=16 or any(char not in "0123456789abcdef" for char in args.model):
+                raise ValueError("Invalid imported model ID")
+            imported = wait(worker,"openvino-import",{"directory":str(source/"models"/args.model)})
+            if imported["state"]!="completed":
+                raise RuntimeError("Acceptance model import failed")
+            job = wait(worker,"chat",{"runtime":"openvino","device":args.device,"model":imported["result"]["model"],
                                      "chat":uuid4().hex,"prompt":"Say hello in one short sentence.",
                                      "policy":"local","max_tokens":64})
             record = {"status":"PASS" if job["state"]=="completed" else "FAIL","scope":"text-generation-contract",
@@ -56,7 +70,7 @@ def main():
         else:
             folder = worker.openvino.root/"acceptance-fixture"
             folder.mkdir(exist_ok=True)
-            subprocess.run([str(worker.openvino.runtime/"python.exe"),"-I","-c",FIXTURE,
+            subprocess.run([str(worker.openvino.runtime/"python.exe"),"-I","-B","-c",FIXTURE,
                             str(folder/"openvino_model.xml")],check=True,timeout=30,
                            creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
             imported = wait(worker,"openvino-import",{"directory":str(folder)})
@@ -76,6 +90,7 @@ def main():
         print(encoded)
     finally:
         worker.close()
+        temporary.cleanup()
 
 
 if __name__=="__main__":

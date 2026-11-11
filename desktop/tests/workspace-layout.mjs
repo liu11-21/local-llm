@@ -384,7 +384,7 @@ try {
   await button('送出').click()
   await page.getByText('受控 OpenVINO 回答。',{exact:true}).waitFor()
   assert.equal(await page.getByText('需要重新連線',{exact:true}).count(),0)
-  await page.getByText(/OpenVINO ·/).waitFor()
+  await page.locator('.message .small').filter({hasText:/OpenVINO ·/}).waitFor()
   assert.equal(await page.getByRole('dialog',{name:'確認資料傳送'}).count(),0)
   console.log('PASS controlled OpenVINO Runtime selection, compute scheduling, local privacy and saved chat')
   assert.deepEqual(exceptions, [])
