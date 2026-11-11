@@ -59,8 +59,9 @@ class BenchmarkService:
 
     def submit(self, data):
         payload = self.prepare(data)
+        identity = payload["benchmark_id"]
         def snapshot(task):
-            record = self.store.get(payload["benchmark_id"])
+            record = self.store.get(identity)
             if task["state"] in ("cancelled","interrupted","failed") and record["state"] in ("queued","running"):
                 self.store.finish(record["id"],task["state"],"Benchmark 未完成，已保留原始量測。")
         try:

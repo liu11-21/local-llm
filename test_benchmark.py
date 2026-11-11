@@ -1,5 +1,6 @@
 """Controlled framework regressions; native hardware evidence is collected separately."""
 from contextlib import contextmanager
+import gc
 import json
 from pathlib import Path
 import sqlite3
@@ -7,6 +8,7 @@ from tempfile import TemporaryDirectory
 from threading import Event
 from types import SimpleNamespace
 import unittest
+import weakref
 from unittest.mock import patch
 
 from benchmark_adapters import Budget
@@ -110,11 +112,19 @@ class BenchmarkTests(unittest.TestCase):
         self.app.scheduler.submit("controlled",{})
         self.assertTrue(started.wait(2))
         try:
-            with patch.object(self.app.benchmarks,"plan",return_value={"models":[{"id":"text","kind":"text","engine":"openvino"}]}):
-                job = self.app.benchmarks.submit({"model":"text","engine":"openvino","devices":["CPU"],"confirmed":True})
+            class InputBuffer(list):
+                pass
+            private_inputs = InputBuffer([[[1,2,3]]])
+            retained = weakref.ref(private_inputs)
+            with patch.object(self.app.benchmarks,"plan",return_value={"models":[{"id":"tensor","kind":"tensor","engine":"openvino"}]}):
+                job = self.app.benchmarks.submit({"model":"tensor","engine":"openvino","devices":["CPU"],"confirmed":True,
+                                                  "workloads":[{"inputs":private_inputs}]})
+            del private_inputs
             self.assertEqual(self.app.scheduler.snapshot(job["id"])["state"],"queued")
             self.app.scheduler.snapshot(job["id"],cancel=True)
             self.assertEqual(self.app.benchmarks.store.get(job["benchmark_id"])["state"],"cancelled")
+            gc.collect()
+            self.assertIsNone(retained(),"Cancelled private tensor inputs must not be retained by task callbacks")
         finally:
             release.set()
             for task in list(self.app.scheduler.tasks.values()):

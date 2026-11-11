@@ -197,6 +197,8 @@ class TaskManager:
                 if task.public["state"] in {"queued", "paused"}:
                     task.public.update(state="cancelled", finished=timestamp(), message="已取消任務。")
                     self._persist(task)
+                    if task.public["action"] not in RETRYABLE:
+                        task.payload = {}
                     self._trim()
                 else:
                     task.public.update(message="正在取消…")
