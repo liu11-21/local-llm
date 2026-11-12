@@ -1,0 +1,143 @@
+{
+  "status": "PASS",
+  "build": {
+    "version": "0.7.0",
+    "channel": "Development",
+    "commit": "6d673b642a45fd8691c931789a5b7e1da0a16a97",
+    "target": "Windows x64",
+    "signed": false
+  },
+  "platform": "win32",
+  "cpu_threads": 16,
+  "scope": "process-cold; OS disk cache not flushed; production Worker/RPC with synthetic 2000 chats and 500 legal PNG files",
+  "ui_render_included": false,
+  "model_inference": false,
+  "measurements": {
+    "worker_first_identity": {
+      "unit": "ms",
+      "samples": [
+        318.57660000241594,
+        334.1837999978452,
+        331.157799999346,
+        325.02000000386033,
+        328.82960000279127
+      ],
+      "n": 5,
+      "mean": 327.55356000125175,
+      "median": 328.82960000279127,
+      "min": 318.57660000241594,
+      "max": 334.1837999978452
+    },
+    "info": {
+      "unit": "ms",
+      "samples": [
+        3768.8810999970883,
+        397.01310000236845,
+        399.4708999962313,
+        397.56019999913406,
+        399.8444000026211
+      ],
+      "n": 5,
+      "mean": 1072.5539399994886,
+      "median": 399.4708999962313,
+      "min": 397.01310000236845,
+      "max": 3768.8810999970883
+    },
+    "home_summary": {
+      "unit": "ms",
+      "samples": [
+        7.080999996105675,
+        3.3055000021704473,
+        3.3719999992172234,
+        3.74290000036126,
+        3.4034999989671633
+      ],
+      "n": 5,
+      "mean": 4.180979999364354,
+      "median": 3.4034999989671633,
+      "min": 3.3055000021704473,
+      "max": 7.080999996105675
+    },
+    "chats_page": {
+      "unit": "ms",
+      "samples": [
+        9.02469999709865,
+        3.98289999429835,
+        4.143400001339614,
+        4.0786999961710535,
+        3.946700002416037
+      ],
+      "n": 5,
+      "mean": 5.035279998264741,
+      "median": 4.0786999961710535,
+      "min": 3.946700002416037,
+      "max": 9.02469999709865
+    },
+    "chats_search": {
+      "unit": "ms",
+      "samples": [
+        6.623499997658655,
+        2.9716999997617677,
+        2.9325000068638474,
+        3.0581000028178096,
+        2.9159999976400286
+      ],
+      "n": 5,
+      "mean": 3.7003600009484217,
+      "median": 2.9716999997617677,
+      "min": 2.9159999976400286,
+      "max": 6.623499997658655
+    },
+    "works_page": {
+      "unit": "ms",
+      "samples": [
+        1864.9805999957607,
+        547.4123000021791,
+        551.79859999771,
+        550.3775000033784,
+        543.4567999982391
+      ],
+      "n": 5,
+      "mean": 811.6051599994535,
+      "median": 550.3775000033784,
+      "min": 543.4567999982391,
+      "max": 1864.9805999957607
+    },
+    "runtime_refresh": {
+      "unit": "ms",
+      "samples": [
+        445.47269999748096,
+        394.57830000174,
+        399.4751000063843,
+        400.4002000001492,
+        395.9257000024081
+      ],
+      "n": 5,
+      "mean": 407.1704000016325,
+      "median": 399.4751000063843,
+      "min": 394.57830000174,
+      "max": 445.47269999748096
+    },
+    "resource_sample": {
+      "unit": "ms",
+      "samples": [
+        1.6190000023925677,
+        0.8985999957076274,
+        1.090899997507222,
+        1.084299998183269,
+        1.0915999955614097
+      ],
+      "n": 5,
+      "mean": 1.1568799978704192,
+      "median": 1.090899997507222,
+      "min": 0.8985999957076274,
+      "max": 1.6190000023925677
+    }
+  },
+  "first_model_load": {
+    "status": "NOT RUN",
+    "reason": "No inference is started by baseline; llama.cpp currently blocked by OS application control. Use explicit real acceptance on a permitted model/runtime."
+  },
+  "comparison": "Baseline only; no improvement percentage claimed",
+  "source_state": "Group C working tree before directory-metadata optimization"
+}

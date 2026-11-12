@@ -173,6 +173,7 @@ class Desktop(Workspace):
                           '$.finished', ?, '$.message', '工作台已關閉。')
                           WHERE json_extract(snapshot,'$.state') IN ('queued','running','paused')""", (timestamp(),))
             db.execute("CREATE INDEX IF NOT EXISTS messages_chat ON messages(chat)")
+            db.execute("CREATE INDEX IF NOT EXISTS chats_touched ON chats(touched DESC)")
             self.agent_plans.initialize(db)
             self.team_store.initialize(db)
             Host.initialize(db)
@@ -313,7 +314,7 @@ class Desktop(Workspace):
         page = matches[offset:offset + 24]
         for item in page:
             if not item.get("dimensions"):
-                item["dimensions"] = media_metadata(self.outputs / item["name"])
+                item["dimensions"] = media_metadata(work_file(self.outputs,item["name"]))
         return {"items": page, "models": models, 'runtimes':runtimes,"total": len(matches)}
 
     def prepare(self, data, cancel, update):
@@ -1458,6 +1459,18 @@ class Desktop(Workspace):
                     db.execute("DELETE FROM chat_runtime WHERE chat=?", (chat,))
                     db.execute("DELETE FROM chats WHERE id=?", (chat,))
             return None
+        if op == 'chats-page':
+            offset=data.get('offset',0)
+            term=field(data,'query',180,optional=True)
+            if type(offset) is not int or not 0<=offset<=10**7:
+                raise ValueError('對話分頁位置無效。')
+            escaped=term.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')
+            with self.connect() as db:
+                where="WHERE title LIKE ? ESCAPE '\\'"
+                values=('%'+escaped+'%',)
+                total=db.execute('SELECT count(*) FROM chats '+where,values).fetchone()[0]
+                items=db.execute('SELECT id,title FROM chats '+where+' ORDER BY touched DESC,rowid DESC LIMIT 50 OFFSET ?',(*values,offset)).fetchall()
+            return {'items':items,'total':total}
         if op == "chats":
             with self.connect() as db:
                 return db.execute("SELECT id,title FROM chats ORDER BY touched DESC,rowid DESC LIMIT 100").fetchall()

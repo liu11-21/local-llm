@@ -1,5 +1,7 @@
 """Discovery and capability records used by the desktop application."""
 import re
+import os
+import stat
 import struct
 from datetime import datetime, timezone
 from pathlib import Path
@@ -168,11 +170,18 @@ def media_metadata(path):
 
 def recent_works(directory, limit=24):
     records = []
-    for path in directory.glob("*"):
-        try:
-            stat = work_file(directory, path.name).stat()
-        except (OSError, ValueError):
-            continue
-        records.append({"name":path.name, "kind":WORK_KINDS[path.suffix], "bytes":stat.st_size,
-                        "created":datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()})
+    # Discovery reads directory metadata only. Revalidate with work_file whenever opening a file.
+    if directory.resolve()!=directory.absolute():
+        return []
+    try:
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                if not re.fullmatch(r'[a-f0-9]{12}\.(png|webm|flac)',entry.name):continue
+                try: info=entry.stat(follow_symlinks=False)
+                except OSError:continue
+                if not stat.S_ISREG(info.st_mode) or getattr(info,'st_file_attributes',0)&0x400:continue
+                records.append({'name':entry.name,'kind':WORK_KINDS[Path(entry.name).suffix],'bytes':info.st_size,
+                                'created':datetime.fromtimestamp(info.st_mtime,timezone.utc).isoformat()})
+    except FileNotFoundError:
+        return []
     return sorted(records, key=lambda record: (record["created"], record["name"]), reverse=True)[:limit]

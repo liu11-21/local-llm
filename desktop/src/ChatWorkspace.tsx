@@ -40,6 +40,10 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   refreshRuntime: (runtime:string)=>Promise<void>
 }) {
   const [chats, setChats] = useState<Chat[]>([])
+  const [chatOffset,setChatOffset]=useState(0)
+  const [chatQuery,setChatQuery]=useState('')
+  const [chatTotal,setChatTotal]=useState(0)
+  const chatRequest=useRef(0)
   const [chat, setChat] = useState(identifier)
   const [messages, setMessages] = useState<Message[]>([])
   const [prompt, setPrompt] = useState('')
@@ -74,8 +78,12 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   useEffect(()=>{if(preferredChat && !locked.current)void open(preferredChat.id)},[preferredChat])
   useEffect(()=>{if(!selectedModel && info?.recent_model && models.includes(info.recent_model))setModel(info.recent_model)},[info?.recent_model])
 
-  async function refreshChats() { setChats(await rpc<Chat[]>('chats')) }
-  useEffect(() => { void refreshChats().catch(report) }, [])
+  async function refreshChats() {
+    const request=++chatRequest.current
+    const result=await rpc<{items:Chat[];total:number}>('chats-page',{offset:chatOffset,query:chatQuery})
+    if(request===chatRequest.current){setChats(result.items);setChatTotal(result.total)}
+  }
+  useEffect(() => { const timer=setTimeout(()=>void refreshChats().catch(report),150);return()=>{clearTimeout(timer);chatRequest.current++} }, [chatOffset,chatQuery])
   useEffect(() => {
     if (preferredRuntime && !locked.current) {setRuntime(preferredRuntime.id);setModel(preferredRuntime.model ?? '');setDevice('')}
   }, [preferredRuntime])
@@ -143,10 +151,13 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
     <aside className="chat-rail" aria-label="對話歷史">
       <button className="button primary full" disabled={!!pending} onClick={() => void open()}><Plus size={17}/>新對話</button>
       <h2>對話歷史</h2>
+      <input aria-label="搜尋對話" placeholder="搜尋對話" value={chatQuery} onChange={e=>{setChatQuery(e.target.value);setChatOffset(0)}}/>
       <div className="history">{chats.map(([id, name]) => <button key={id} type="button"
         className={chat === id ? 'history-item current' : 'history-item'} title={name} aria-current={chat === id ? 'true' : undefined}
         disabled={!!pending} onClick={() => void open(id)}><MessageSquare size={15}/><span>{name}</span></button>)}</div>
       {!chats.length && <p className="muted small">完成對話後，歷史會保存在這裡。</p>}
+      {chatTotal>50 && <div className="row"><button className="button" disabled={chatOffset===0 || !!pending} onClick={()=>setChatOffset(value=>Math.max(0,value-50))}>上一頁</button>
+        <small>{chatOffset+1}–{Math.min(chatOffset+50,chatTotal)} / {chatTotal}</small><button className="button" disabled={chatOffset+50>=chatTotal || !!pending} onClick={()=>setChatOffset(value=>value+50)}>下一頁</button></div>}
     </aside>
     <section className="chat-stage" aria-label="文字聊天">
       <header className="conversation-top">
