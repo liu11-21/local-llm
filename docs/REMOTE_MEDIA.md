@@ -1,5 +1,11 @@
 # 用已配對電腦生成圖片、影片與音樂
 
+## 0.7.0 硬體驗收入口
+
+遠端媒體繼續共用 E4 契約與傳輸；0.7.0 增加真正可重跑的 workspace_acceptance.py。預設診斷且不下載，execute 才生成，Client 額外 consent；已配對主機須先核對指紋。保存實際 Task／Job、能力、模型 revision、資源取樣、媒體雜湊；recover 僅下載原 Job，不重跑推理。
+
+本環境是 Iris Xe，未取得 RTX 5070 Ti／雙實體主機／完整 Wan 與 ACE 權重。協定與播放器 PASS 不等於真實生成；實機維持 NEEDS GPU／NEEDS REMOTE HOST。[可重跑步驟](HARDWARE_ACCEPTANCE_070.md) · [本輪證據](V070_DELIVERY.md)。
+
 目前支援 SD 1.5、Wan 2.1 T2V 1.3B 與 ACE-Step v1 的受管理 Workflow。遠端協定、傳輸、作品保存與播放器已完成；真實 Wan／ACE-Step GPU 生成及雙實體 Host 驗收仍待完整模型和相容硬體。[完整驗收](E4_E5_DELIVERY.md)。
 
 ## Host 準備

@@ -1,0 +1,29 @@
+{
+  "openvino_cpu_native": "PASS",
+  "gpu_benchmark": "Existing valid Intel GPU OpenVINO benchmark reused; no new GPU inference is claimed by CPU dispatch",
+  "wan21": "NEEDS GPU",
+  "ace_step_v1": "NEEDS GPU",
+  "npu": "NEEDS NPU",
+  "physical_dual_host": "NEEDS REMOTE HOST",
+  "paid_cloud": "NEEDS CLOUD AUTH",
+  "large_model_over_eight_gib": "NOT RUN",
+  "security_settings_changed": false,
+  "llama_cpp_version_probe": {
+    "returncode_hex": "0xc0e90002",
+    "stdout": "",
+    "stderr": ""
+  },
+  "llama_cpp_inference": "NOT RUN",
+  "openvino_cpu_text_contract": "PASS; requested CPU, GenAI per-subgraph placement unverified",
+  "openvino_cpu_text_load": {
+    "status": "PASS",
+    "n": 3,
+    "load_ms": [
+      2489.751,
+      2367.017,
+      2331.147
+    ],
+    "median_ms": 2367.017,
+    "scope": "Runner loaded event; runtime/pipeline/tokenizer; OS cache not flushed"
+  }
+}

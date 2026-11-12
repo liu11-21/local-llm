@@ -1,0 +1,164 @@
+{
+  "status": "PASS",
+  "version": "0.7.0",
+  "channel": "Development",
+  "commit": "90b10231ff07c9e0cbbcb2c9f95f1326f886cb46",
+  "run": 43238370438,
+  "artifact": 13952854621,
+  "exe_sha256": "be685798f25ce5721b5938d6aa16f068b29c0fd8a161ee78775a4a7377be645c",
+  "exe_bytes": 13237183,
+  "artifact_digest": "sha256:2d294a7176904b34d87b3126ad18dd35e99a880e3f2c384ede7912a096401d3e",
+  "downloaded_archive_sha256": "2d294a7176904b34d87b3126ad18dd35e99a880e3f2c384ede7912a096401d3e",
+  "build_identity_and_hashes_match": true,
+  "authenticode": "NotSigned",
+  "official_release": false,
+  "python_ci": {
+    "tests": 202,
+    "initial_pass": 201,
+    "initial_skipped_packaged": 1,
+    "packaged_after_build_pass": 1
+  },
+  "loopback_tls": "PASS clean runner; not skipped",
+  "installer_upgrade": "PASS genuine Workspace 0.6.2 -> 0.7.0 in place",
+  "shortcuts_webview_worker_cleanup_uninstall_data": "PASS",
+  "ci_jobs": [
+    {
+      "id": 131251767421,
+      "name": "windows-x64",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T14:33:15Z",
+      "completed_at": "2026-11-12T14:42:59Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:33:16Z",
+          "completed_at": "2026-11-12T14:33:18Z"
+        },
+        {
+          "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:33:18Z",
+          "completed_at": "2026-11-12T14:33:27Z"
+        },
+        {
+          "name": "Run actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:33:27Z",
+          "completed_at": "2026-11-12T14:33:34Z"
+        },
+        {
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:33:34Z",
+          "completed_at": "2026-11-12T14:33:34Z"
+        },
+        {
+          "name": "Pin toolchain and Python packager",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:33:34Z",
+          "completed_at": "2026-11-12T14:34:00Z"
+        },
+        {
+          "name": "Test Python and build the onedir worker",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:34:00Z",
+          "completed_at": "2026-11-12T14:35:09Z"
+        },
+        {
+          "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:35:09Z",
+          "completed_at": "2026-11-12T14:35:14Z"
+        },
+        {
+          "name": "Build actual Workspace 0.6.2 upgrade baseline",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:35:14Z",
+          "completed_at": "2026-11-12T14:39:51Z"
+        },
+        {
+          "name": "Exercise desktop layout in Chromium",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:39:51Z",
+          "completed_at": "2026-11-12T14:41:00Z"
+        },
+        {
+          "name": "Build Windows per-user installer (unsigned)",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:41:00Z",
+          "completed_at": "2026-11-12T14:42:25Z"
+        },
+        {
+          "name": "Verify installer inventory and produce checksums",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:42:25Z",
+          "completed_at": "2026-11-12T14:42:26Z"
+        },
+        {
+          "name": "Exercise the installed desktop app and uninstall",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:42:26Z",
+          "completed_at": "2026-11-12T14:42:51Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:42:51Z",
+          "completed_at": "2026-11-12T14:42:53Z"
+        },
+        {
+          "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:42:53Z",
+          "completed_at": "2026-11-12T14:42:55Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:42:55Z",
+          "completed_at": "2026-11-12T14:42:55Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:42:55Z",
+          "completed_at": "2026-11-12T14:42:56Z"
+        },
+        {
+          "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:42:56Z",
+          "completed_at": "2026-11-12T14:42:57Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-11-12T14:42:57Z",
+          "completed_at": "2026-11-12T14:42:58Z"
+        }
+      ]
+    }
+  ],
+  "ci_url": "https://github.com/liu11-21/local-llm/actions/runs/43238370438",
+  "artifact_url": "https://github.com/liu11-21/local-llm/actions/runs/43238370438/artifacts/13952854621"
+}

@@ -1,0 +1,18 @@
+2026-11-12T14:34:20.5804727Z test_binary_handles_utf8_and_returns_safe_ipc_errors (test_desktop_worker.PackagedWorkerTests.test_binary_handles_utf8_and_returns_safe_ipc_errors) ... skipped 'Build the Windows onedir worker first.'
+2026-11-12T14:34:56.8918013Z Ran 202 tests in 54.017s
+2026-11-12T14:34:56.8918253Z OK (skipped=1)
+2026-11-12T14:35:08.3941390Z test_binary_handles_utf8_and_returns_safe_ipc_errors (test_desktop_worker.PackagedWorkerTests.test_binary_handles_utf8_and_returns_safe_ipc_errors) ... ok
+2026-11-12T14:35:08.3942811Z Ran 1 test in 0.537s
+2026-11-12T14:40:21.2835779Z PASS controlled NPU presence, unknown monitoring, long names, four sizes and both themes
+2026-11-12T14:40:25.7275836Z PASS creation installation summary, work library filters, and saved settings replay
+2026-11-12T14:40:25.7276628Z PASS workspace layout in both themes at 1280, 1024, 800, and 650 px
+2026-11-12T14:40:36.0653725Z PASS Agent approval, SSE tool protocol, timeline, format error and cancellation; Team roles, modes, review, partial failure and cancellation
+2026-11-12T14:40:38.3021057Z PASS workspace shell, resource monitor, TLS provisioning and destination consent
+2026-11-12T14:40:41.4069882Z PASS first use resumes after reload, retries interrupted setup, and saves the first chat
+2026-11-12T14:40:43.4811773Z PASS remote image consent, verified transfer, and works-library provenance
+2026-11-12T14:40:45.2940388Z PASS controlled OpenVINO Runtime selection, compute scheduling, local privacy and saved chat
+2026-11-12T14:40:47.1492584Z PASS controlled Benchmark empty/failed/unknown states, non-equivalence, long names, no GPU/NPU, consent, cancel, keyboard and four sizes in both themes
+2026-11-12T14:40:49.2082669Z PASS shared device recommendation across chat Agent Team media model/runtime centres, stale/missing/offline evidence, manual override, no auto-dispatch, keyboard and four sizes/both themes
+2026-11-12T14:40:56.8464295Z PASS E4/E5 controlled remote video/audio, legal VP9/FLAC playback, consent, saved parameters/reuse, compact chat, narrow history, grid/list pagination, four sizes and both themes
+2026-11-12T14:41:00.3173633Z PASS 0.7.0 settings identity, mixed-worker rejection, paged searchable history, collapsed monitoring and repeated UI baselines
+2026-11-12T14:42:51.4583771Z PASS Workspace 0.6.2 -> 0.7.0 install/upgrade/shortcuts/worker/uninstall/data preservation

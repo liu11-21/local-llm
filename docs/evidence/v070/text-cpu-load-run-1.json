@@ -1,0 +1,86 @@
+{
+  "status": "PASS",
+  "scope": "text-generation-contract",
+  "task": {
+    "id": "55f6d0fc85e8461bb575be0e05243dec",
+    "action": "chat",
+    "kind": "chat",
+    "title": "",
+    "lane": "compute",
+    "runtime": "openvino",
+    "resources": [
+      "local-compute"
+    ],
+    "state": "completed",
+    "created": "2026-11-12T14:43:14+00:00",
+    "message": "\u56de\u7b54\u5df2\u5132\u5b58\u3002",
+    "started": "2026-11-12T14:43:14+00:00",
+    "finished": "2026-11-12T14:43:18+00:00",
+    "error": null,
+    "model": "6801f654268e3090",
+    "resource_request": {
+      "scope": "local",
+      "device": "legacy",
+      "engine": "legacy",
+      "ram": 0,
+      "vram": [],
+      "shared_memory": 0,
+      "cpu_load": 0,
+      "bandwidth": 0,
+      "exclusive": [
+        "local:*"
+      ],
+      "seconds": 600,
+      "limitations": []
+    },
+    "answer": "Hello! How can I assist you today?",
+    "usage": null,
+    "result": {
+      "answer": "Hello! How can I assist you today?",
+      "plan": null,
+      "usage": null,
+      "message": "\u56de\u7b54\u5df2\u5132\u5b58\u3002"
+    }
+  },
+  "device_placement": "unverified",
+  "runs": [
+    {
+      "id": "09bde2de86944c32b7cd92980f268b55",
+      "model": "6801f654268e3090",
+      "details": {
+        "requested_device": "CPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [],
+        "operator_allocation": "unknown",
+        "verified_inference": false,
+        "fallback": "unknown",
+        "backend": "OpenVINO",
+        "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+        "verification_limit": "GenAI pipeline does not expose per-subgraph placement through this adapter.",
+        "status": "completed",
+        "latency_ms": 493.685,
+        "model_hashes": {
+          "config.json": "6f0bc436feb9f89bfb69b8dc3a688ba7443a4bec2ac09e894e4580dc3e0b2910",
+          "generation_config.json": "80b8ec6e7991b64763e4ff29b59a9cd2968b390d0736e0dc586585da04bad013",
+          "tokenizer_config.json": "74ecb08f77f4d27fdc01b86c03038bf0102b1395c28f2016334af062ce1ec5be",
+          "special_tokens_map.json": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+          "openvino_model.xml": "4f85bed86d9187e9af0fd4acbfa9f305ba49db1fc022badda79049bb7241ac83",
+          "openvino_model.bin": "bdffb86766b3da0a24c9de9f9da92ed79acb2b59fc93a5dd12cae6b2d1d48d04",
+          "openvino_tokenizer.xml": "6b16b5976fce749bcedf72dc4f77c4d72a6bcc39543685e69954afd82e6db073",
+          "openvino_tokenizer.bin": "6e3a56216ade1ed29c7744b5e6bc27ffdc85038747766e838b3d881713fc0633",
+          "openvino_detokenizer.xml": "74daf63bcf5b4159faa6ad19e6d463e68c604dbf7cf47d41fd593026beec0b01",
+          "openvino_detokenizer.bin": "3ca47601554a3b871c1e45e8f31aa6e17d726365c075fb430d1a2089484ae8d6"
+        },
+        "memory_limit": 8589934592,
+        "timeout_seconds": 180,
+        "cache_policy": "managed-cache"
+      },
+      "created": "2026-11-12T14:43:18+00:00"
+    }
+  ],
+  "source_commit": "90b10231ff07c9e0cbbcb2c9f95f1326f886cb46",
+  "workspace_version": "0.7.0"
+}

@@ -22,7 +22,7 @@ React／Tauri Windows AI 工作台，整合文字聊天、Agent、Team、圖片�
 
 工作台只檢查 `workspace-vX.Y.Z` 的正式發行，與舊桌面版 `vX.Y.Z` 分流；沒有可校驗的較新 Workspace Release 時不提供更新，不自動安裝。設定頁顯示 App／Worker 版本、Development、建置 SHA 與目標；版本混搭會拒絕啟動工作。
 
-Workspace 與舊桌面版為不同產品，不能把舊版 Setup 當成 Workspace 升級包。兩者歷史上使用 `%LOCALAPPDATA%\LocalLLM` 的模型／作品目錄；請先關閉兩套程式並備份資料。Workspace 0.6.2 → 0.7.0 是同產品的原地升級路徑，資料及安裝驗收詳見本輪測試報告。
+Workspace 與舊桌面版為不同產品，不能把舊版 Setup 當成 Workspace 升級包。兩者歷史上使用 `%LOCALAPPDATA%\LocalLLM` 的模型／作品目錄；請先關閉兩套程式並備份資料。Workspace 0.6.2 → 0.7.0 是同產品的原地升級路徑，原資料庫保留，0.7.0 使用獨立 workspace.sqlite3；升級前自動建立校驗快照。[升級與恢復](docs/UPGRADE_070.md) · [0.7.0 完整交付](docs/V070_DELIVERY.md)。
 
 開發：Python 3.12、Node 24、Rust／MSVC／WebView2；執行 `python check_workspace_version.py`、`python -m unittest -v`、`python build_desktop_worker.py`，再於 desktop 執行 `npm ci`、`npm run tauri -- dev`。只預覽 UI 可用 `npm run dev`；完整安裝包由 Windows CI 產生。main 的既有發行與說明不變。
 

@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "model_inference": false,
+  "version": "0.7.0",
+  "channel": "Development",
+  "mixed_worker_operations_blocked": true,
+  "chat_page_size": 50,
+  "chat_search": true,
+  "collapsed_monitor_unmounted": true,
+  "packaged_csp_png_cache": true,
+  "timings": {
+    "home_render_ms": [
+      83.79669999999987,
+      41.134900000000016,
+      53.94589999999971
+    ],
+    "runtime_selector_ms": [
+      60.87559999999985,
+      56.776900000000296,
+      53.97410000000036
+    ]
+  },
+  "scope": "Real React and production RPC; controlled Runtime, not model load/remote hardware performance"
+}

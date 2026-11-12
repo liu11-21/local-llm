@@ -1,5 +1,11 @@
 # 桌面工作台架構
 
+## 0.7.0 Development
+
+App、npm、Cargo、Tauri 與 Worker 統一 0.7.0；workspace_version 提供建置識別，Rust 啟動握手及 React 初始 RPC 拒絕版本／通道／封裝來源 SHA 混搭。CI 比對實際封裝 Worker、安裝 EXE 與 BUILD.json，不修改第三方版本。更新來源仍限 workspace-v，main 的 v0.6.2 Stable 保留。
+
+workspace_storage 先備份／檢查再採用舊 desktop.sqlite3，0.7.0 使用 workspace.sqlite3，schema 上限 14 並記錄最低 reader；失敗保留原檔、部分檔及校驗快照。聊天分頁 50、作品分頁 24；作品 discovery 使用不跟隨連結的目錄 metadata，開原檔仍重新驗證。錯誤有 summary／recovery／detail，TaskManager 與 IPC 共用；本機 OpenVINO 模型刷新不走外部 Provider。[本輪交付](V070_DELIVERY.md) · [升級](UPGRADE_070.md)。
+
 ## E3-F／E4–E5 現行架構
 
 推薦憑證連接既有 Benchmark 與 dispatch_runs，採用及開始時重新驗證。resource_policy 使用實體 RAM、OS 餘量、使用者上限與模型／Backend 估計，TaskManager 原子准入；ComfyUI 的有限 Job Object 與可信閒置獨顯映射才允許縮小常駐鎖。

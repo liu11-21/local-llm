@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "version": "0.7.0",
+  "channel": "Development",
+  "versions": {
+    "npm": "0.7.0",
+    "npm_lock": "0.7.0",
+    "npm_lock_root": "0.7.0",
+    "cargo": "0.7.0",
+    "cargo_lock": "0.7.0",
+    "tauri": "0.7.0",
+    "worker": "0.7.0",
+    "identity": "0.7.0",
+    "build": "0.7.0"
+  },
+  "artifact": {
+    "version": "0.7.0",
+    "worker_version": "0.7.0",
+    "installer_version": "0.7.0",
+    "channel": "Development",
+    "commit": "90b10231ff07c9e0cbbcb2c9f95f1326f886cb46",
+    "target": "x86_64-pc-windows-msvc",
+    "authenticode": "NotSigned"
+  }
+}

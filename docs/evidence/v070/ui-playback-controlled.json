@@ -1,0 +1,51 @@
+{
+  "status": "PASS",
+  "model_inference": false,
+  "flows": [
+    {
+      "flow": "prepared-remote-video",
+      "status": "PASS-controlled-protocol-and-real-playback",
+      "semantic_actions": 7,
+      "manual_technical_parameters": 0,
+      "metadata": {
+        "duration": 1,
+        "width": 160,
+        "height": 96
+      }
+    },
+    {
+      "flow": "prepared-remote-music",
+      "status": "PASS-controlled-protocol-and-real-playback",
+      "semantic_actions": 8,
+      "manual_technical_parameters": 0,
+      "metadata": {
+        "duration": 1,
+        "width": null,
+        "height": null
+      }
+    }
+  ],
+  "viewports": [
+    [
+      1280,
+      900
+    ],
+    [
+      1024,
+      768
+    ],
+    [
+      800,
+      600
+    ],
+    [
+      650,
+      720
+    ]
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "gallery_page_size": 24
+}

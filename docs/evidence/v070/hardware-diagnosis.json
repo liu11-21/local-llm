@@ -3,7 +3,7 @@
   "build": {
     "version": "0.7.0",
     "channel": "Development",
-    "commit": "04faf5949e41afecdf14dc1d2f0ffec4be0bf79c",
+    "commit": "0e6bb9f701ae2ef441552023dcb4d8f3d1db9b11",
     "target": "Windows x64",
     "signed": false
   },
@@ -14,21 +14,33 @@
   "expected_gpu": "RTX 5070 Ti",
   "npu": "NEEDS NPU",
   "tasks": [],
-  "inventory_error": {
-    "code": "WORK_FAILED",
-    "summary": "工作無法完成。",
-    "recovery": "請查看任務詳情，確認設定後手動重試。",
-    "detail": "Windows inventory unavailable"
-  },
-  "local_devices": [],
+  "local_devices": [
+    {
+      "id": "PCI\\VEN_8086&DEV_46A6&SUBSYS_11BD1043&REV_0C\\3&11583659&0&10",
+      "name": "Intel(R) Iris(R) Xe Graphics",
+      "class": "Display",
+      "problem": 0,
+      "vendor": "Intel Corporation",
+      "driver": "31.0.101.5590"
+    }
+  ],
   "host": {
     "hardware": {
       "cpu_threads": 16,
       "ram_total": 16781869056,
-      "ram_available": 6656139264,
-      "disk_available": 186947891200
+      "ram_available": 6593409024,
+      "disk_available": 186919608320
     },
-    "devices": [],
+    "devices": [
+      {
+        "id": "PCI\\VEN_8086&DEV_46A6&SUBSYS_11BD1043&REV_0C\\3&11583659&0&10",
+        "name": "Intel(R) Iris(R) Xe Graphics",
+        "class": "Display",
+        "problem": 0,
+        "vendor": "Intel Corporation",
+        "driver": "31.0.101.5590"
+      }
+    ],
     "profile": "NVIDIA GPU",
     "bundle": "D:\\antigravity\\REA\\local-llm\\build\\v070-diagnosis\\comfyui\\ComfyUI_windows_portable_nvidia-v0.44.0",
     "torch": {
@@ -96,7 +108,7 @@
             "status": "missing"
           }
         ],
-        "free": 186947891200,
+        "free": 186919608320,
         "needed": 2132696762,
         "conflict": false,
         "unavailable": false,
@@ -203,7 +215,7 @@
             "status": "missing"
           }
         ],
-        "free": 186947891200,
+        "free": 186919608320,
         "needed": 9828025775,
         "conflict": false,
         "unavailable": false,
@@ -271,7 +283,7 @@
             "status": "missing"
           }
         ],
-        "free": 186947891200,
+        "free": 186919608320,
         "needed": 7699743341,
         "conflict": false,
         "unavailable": false,

@@ -1,5 +1,11 @@
 # Windows 安全與發行
 
+## 0.7.0 Development 發行檢查
+
+新工作台獨立於 main 的 v0.6.2 Stable。CI 核對 npm／Cargo／Tauri／Python、封裝 Worker 握手、UI、NSIS FileVersion 及 BUILD.json 的 version／channel／commit，產物只上傳 Actions，不建立正式 Release 或 Tag，不自動安裝。
+
+Windows CI 從固定 4354605 重新建立真正 Workspace 0.6.2 安裝包，再安裝目前 0.7.0，檢查原地升級、捷徑、Worker／WebView、資料備份與卸載保留。舊 Tk Inno 安裝包不是此升級來源。Authenticode 與安全軟體原則保持現狀，不保證未簽章開發包不被攔截。[升級](UPGRADE_070.md) · [完整交付](V070_DELIVERY.md)。
+
 ## v0.6.1 稽核
 
 公開 [v0.6.1](https://github.com/liu11-21/local-llm/releases/tag/v0.6.1) 的 x64 EXE 為 54,519,100 bytes，SHA-256 `67eaf5c6b44a8ad7fce784ac55a0e2449399d10eed9ec08357d350b322705f7e`，重新下載與 GitHub 資產一致。Authenticode 為 `NotSigned`。未執行此舊檔。靜態 PyInstaller CArchive 可列出 `python312.dll`、`base_library.zip`、Tk 元件、llama.cpp 和授權。嵌入引擎的 25 個二進位或其他授權檔與固定的 b11810 官方 ZIP 一致；改名後的 MIT 授權與同版官方來源相同。

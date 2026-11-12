@@ -1,5 +1,35 @@
 # 桌面工作台測試紀錄
 
+## Workspace 0.7.0 Development（2026-11-12）
+
+基準 dcab454，V dbdd817、A 04faf59、B 6d673b6、C 626b678、D 0e6bb9f、E e0b1b3a，整合／安裝／UI 修正 d6a5a97、db32081、e794108、4bdeb54、診斷文字 80ce6b5、桌面 CSP 90b1023。版本已提升 0.7.0 Development，第一方 npm／Cargo／Tauri／Worker／UI 一致，main Stable v0.6.2 保留。[完整交付](V070_DELIVERY.md)。
+
+| 狀態 | 驗收 |
+|---|---|
+| PASS | 本機完整 Python 201 項、194 通過、7 項 Norton 回環 TLS 明確跳過；新增完整 schema 安裝等待測試另通過。乾淨 CI 必須實跑 TLS 及封裝 Worker。 |
+| PASS | TypeScript／Vite、Actionlint、完整 Chromium，四尺寸／深淺色／鍵盤／Reduced Motion、Agent／Team、Benchmark、新手流程與遠端媒體回歸。保留約 721 kB 主 bundle 提醒。 |
+| PASS | App／Worker 0.7.0 Development 識別、建置 UI、混搭拒絕；有效較新 Workspace 更新可辨識，舊版／等版／不可信發行不提供更新。[來源版本](evidence/v070/version-consistency.json) · [實際 UI](evidence/v070/ui-stability.json)。 |
+| PASS | 真實 OpenVINO CPU 推理及採用推薦證據鏈，既有有效 CPU／Intel GPU Benchmark 參與同條件比較，沒有自動重測。[原生紀錄](evidence/v070/recommendation-native-real.json)。 |
+| PASS | 現有 Qwen2.5-Coder 0.5B IR 真實 CPU 指定文字生成三次；另三次 GenAI loaded 事件中位 2367.017 ms，含 Runtime／pipeline／tokenizer 初始化。算子放置與量化未完整驗證，無 GPU／NPU 冒稱。[原始基線](evidence/v070/text-cpu-load-baseline.json)。 |
+| PASS | 五次 Worker／IPC 基線、2000 對話／500 小 PNG、50 筆聊天分頁與搜尋、有界作品 metadata 查詢；三次真實 React 首頁／受控來源切換。不宣稱整體或推理加速百分比。 |
+| PASS | 舊 0.6.2 原始 Worker → 0.7.0 資料庫移轉，18 表及檔案指紋、原檔與備份完整；WAL、空間、損毀、未支援 schema／reader、失敗恢復測試。[資料證據](evidence/v070/upgrade-worker-local.json)。 |
+| PASS | 影音協定與合法 VP9／FLAC 的播放、保存及重用；這是受控 Host，非 Wan／ACE-Step 真實生成。 |
+| NEEDS GPU | RTX 5070 Ti 不可存取；完整影音模型／GPU 推理、ComfyUI 真實獨顯＋CPU 並行待實機。[診斷](evidence/v070/hardware-diagnosis.json)。 |
+| NEEDS NPU | 本機沒有已確認 NPU，沒有 CPU fallback 冒充。 |
+| NEEDS REMOTE HOST | 雙實體 Host／Client 長時生成、LAN／VPN 斷線／重啟恢復；已交付 opt-in 驗收工具。 |
+| NEEDS CLOUD AUTH | 真實付費 API／Colab 授權，未啟用。 |
+| NOT RUN | llama.cpp 探測 0xc0e90002、實際大模型 >8 GiB 載入、llama.cpp 文字模型載入效能、HETERO、正式簽章／Release。 |
+
+Windows 最終 **PASS**：[Run 43238370438](https://github.com/liu11-21/local-llm/actions/runs/43238370438)，來源 `90b10231ff07c9e0cbbcb2c9f95f1326f886cb46`。Python 202 項初跑 201 通過、1 項封裝測試待建置，Worker 建置後該項通過；乾淨 runner 的 TLS 案例均實跑。TypeScript／Vite、Rust／Cargo、Chromium、版本／BUILD／NSIS FileVersion、真正 0.6.2 → 0.7.0 升級、桌面及開始選單捷徑、WebView／Worker、程序收尾、三次啟動與卸載保留資料全部通過。
+
+[下載 Windows x64 0.7.0 Development](https://github.com/liu11-21/local-llm/actions/runs/43238370438/artifacts/13952854621)（Actions 保留 14 天，可能需登入）。解壓後執行 `Local LLM Workspace_0.7.0_x64-setup.exe`，13,237,183 bytes；其餘 JSON／SHA256SUMS 為建置及驗收記錄，不是原始碼下載。未簽章，不是正式 Release。
+
+EXE SHA-256：`be685798f25ce5721b5938d6aa16f068b29c0fd8a161ee78775a4a7377be645c`。
+
+ZIP SHA-256：`2d294a7176904b34d87b3126ad18dd35e99a880e3f2c384ede7912a096401d3e`。已核對官方 artifact digest、BUILD 來源／版本、EXE hash、SHA256SUMS 及實際安裝的 Worker 版本。[建置](evidence/v070/windows-build.json) · [CI／雜湊核對](evidence/v070/windows-verification.json) · [真正舊 Worker](evidence/v070/windows-baseline-worker.json) · [升級 18 表](evidence/v070/windows-upgrade-verification.json) · [卸載後](evidence/v070/windows-upgrade-after-uninstall.json) · [捷徑與啟動](evidence/v070/windows-installer-smoke.json) · [封裝 Worker 基線](evidence/v070/windows-performance-packaged-worker.json) · [原始測試節錄](evidence/v070/windows-test-excerpt.log)。
+
+最終文件／證據提交不更改安裝包應用程式；其 HEAD 見 Git 紀錄及對話交付報告。以下 0.6.2 安裝包均為歷史紀錄，不是本輪下載。
+
 ## E3-F、E4–E5 完整整合（2026-11-12）
 
 基準 db6f6f8，版本 0.6.2。F 44a9931、A 50dd40c、B ad15eb2、C 45fb36e、E4-D df213ee、E5 8decf9a、資源識別修正 25c3edd、媒體收尾 4354605。[完整交付與限制](E4_E5_DELIVERY.md)。

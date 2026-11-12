@@ -1,5 +1,11 @@
 # 桌面工作台路線圖
 
+## 0.7.0 Development 整合
+
+V／A／B／C／D／E 已實作：版本一致性與握手、Runtime 任務門檻、可理解的錯誤恢復、明確 opt-in 的硬體驗收、重複效能基線、歷史分頁、SQLite 備份／移轉／降級隔離及 UI 收尾。Windows CI 驗證真正 Workspace 0.6.2 → 0.7.0 安裝升級，結果依最新 TEST_REPORT。
+
+下一階段優先是 RTX 5070 Ti 實體 Host 的固定權重生成、與 Iris Xe 筆電的 LAN／VPN 長時間恢復。NPU、其他 GPU／多 GPU、大型模型真實載入與雲端授權仍依證據區分。main、正式 Tag／Release、簽章不在本輪。[完整交付與阻擋](V070_DELIVERY.md)。
+
 ## E4–E5 目前交付狀態
 
 E3-F、E4-A～D 協定／傳輸／管理與 E5-A～C 介面已交付。真實 OpenVINO CPU／Intel GPU Benchmark→推薦採用→派送已串聯；遠端影片／音訊以合法媒體完成協定與播放器驗收。

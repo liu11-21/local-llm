@@ -18,7 +18,7 @@ python workspace_acceptance.py --data "$env:LOCALAPPDATA/LocalLLM" --output host
 python workspace_acceptance.py --data "$env:LOCALAPPDATA/LocalLLM" --output host-cancel.json --execute --kind video --cancel-after 15
 ```
 
-Host 報告保存實際 GPU／驅動、PyTorch／CUDA、各權重清單、版本／revision、Task ID、Job 事件、輸出雜湊與媒體 metadata。每秒保存 RAM／nvidia-smi 取樣；取樣最大值是觀察峰值，不宣稱硬體真峰值。ComfyUI 原始日誌位於該便攜版目錄 `local-llm-comfyui.log`，連同報告與輸出媒體保留。結束時關閉工具所啟動的 ComfyUI，保存收尾狀態。工具不會停別台 Host 的服務。
+Host 報告保存實際 GPU／驅動、PyTorch／CUDA、各權重清單、版本／revision、Task ID、Job 事件、輸出雜湊與媒體 metadata。每秒保存系統 RAM／各 GPU 的 nvidia-smi 取樣，包含其他程序的使用量，未當作單一模型的專屬佔用；取樣最大值是觀察峰值，不宣稱硬體真峰值。ComfyUI 原始日誌位於該便攜版目錄 `local-llm-comfyui.log`，連同報告與輸出媒體保留。結束時關閉工具所啟動的 ComfyUI，保存收尾狀態。工具不會停別台 Host 的服務。
 
 ## 私人網路雙機
 

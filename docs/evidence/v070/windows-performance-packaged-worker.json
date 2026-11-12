@@ -1,0 +1,126 @@
+{
+  "status": "PASS",
+  "build": {
+    "version": "0.7.0",
+    "channel": "Development",
+    "commit": "90b10231ff07c9e0cbbcb2c9f95f1326f886cb46",
+    "target": "Windows x64",
+    "signed": false
+  },
+  "platform": "win32",
+  "cpu_threads": 4,
+  "scope": "process-cold; OS disk cache not flushed; production Worker/RPC with synthetic 2000 chats and 500 legal PNG files",
+  "ui_render_included": false,
+  "model_inference": false,
+  "measurements": {
+    "worker_first_identity": {
+      "unit": "ms",
+      "samples": [
+        248.96960000000945,
+        262.25749999991876,
+        243.51230000002033
+      ],
+      "n": 3,
+      "mean": 251.57979999998284,
+      "median": 248.96960000000945,
+      "min": 243.51230000002033,
+      "max": 262.25749999991876
+    },
+    "info": {
+      "unit": "ms",
+      "samples": [
+        282.67860000005385,
+        288.03530000004685,
+        262.54499999993186
+      ],
+      "n": 3,
+      "mean": 277.75296666667754,
+      "median": 282.67860000005385,
+      "min": 262.54499999993186,
+      "max": 288.03530000004685
+    },
+    "home_summary": {
+      "unit": "ms",
+      "samples": [
+        2.6968999999326115,
+        2.776100000005499,
+        2.6669999999739957
+      ],
+      "n": 3,
+      "mean": 2.7133333333040355,
+      "median": 2.6968999999326115,
+      "min": 2.6669999999739957,
+      "max": 2.776100000005499
+    },
+    "chats_page": {
+      "unit": "ms",
+      "samples": [
+        6.610700000010183,
+        3.6671999999953186,
+        3.72129999993831
+      ],
+      "n": 3,
+      "mean": 4.66639999998127,
+      "median": 3.72129999993831,
+      "min": 3.6671999999953186,
+      "max": 6.610700000010183
+    },
+    "chats_search": {
+      "unit": "ms",
+      "samples": [
+        2.3913999999649604,
+        2.1209000000226297,
+        2.1687999999358
+      ],
+      "n": 3,
+      "mean": 2.2270333333077965,
+      "median": 2.1687999999358,
+      "min": 2.1209000000226297,
+      "max": 2.3913999999649604
+    },
+    "works_page": {
+      "unit": "ms",
+      "samples": [
+        25.167600000031598,
+        21.320899999977883,
+        23.14139999998588
+      ],
+      "n": 3,
+      "mean": 23.20996666666512,
+      "median": 23.14139999998588,
+      "min": 21.320899999977883,
+      "max": 25.167600000031598
+    },
+    "runtime_refresh": {
+      "unit": "ms",
+      "samples": [
+        48.155699999938406,
+        38.6990000000651,
+        64.56489999993664
+      ],
+      "n": 3,
+      "mean": 50.47319999998005,
+      "median": 48.155699999938406,
+      "min": 38.6990000000651,
+      "max": 64.56489999993664
+    },
+    "resource_sample": {
+      "unit": "ms",
+      "samples": [
+        0.7440000000542568,
+        0.6498000000192405,
+        0.7048999999597072
+      ],
+      "n": 3,
+      "mean": 0.6995666666777348,
+      "median": 0.7048999999597072,
+      "min": 0.6498000000192405,
+      "max": 0.7440000000542568
+    }
+  },
+  "first_model_load": {
+    "status": "NOT RUN",
+    "reason": "No inference is started by this baseline. Model/runtime availability and OS policy must be checked separately by explicit real acceptance."
+  },
+  "comparison": "Baseline only; no improvement percentage claimed"
+}

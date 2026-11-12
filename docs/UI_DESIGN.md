@@ -1,5 +1,11 @@
 # 桌面 UI 設計
 
+## 0.7.0 最後精修
+
+首頁預設僅硬體摘要，監控可展開／收合，收合時卸載該面板的前端輪詢。內顯明列專用與共享 RAM，128 MiB 不代表全部可用容量，共享上限不重複加到 RAM。切換頁面回頂端；聊天保留串流／Markdown／程式碼／Token／歷史，新增每頁 50 與搜尋。設定頁明列 0.7.0 Development、Worker、建置 SHA、Windows x64、Signed No；更新失敗不影響其他頁面。
+
+之前：[E4/E5 首頁](ui-preview/e4e5/home-daily-controlled.png)。之後：[收合監控](ui-preview/v070/home-monitor-collapsed.png)、[分頁歷史](ui-preview/v070/chat-history-paged.png)、[版本](ui-preview/v070/settings-version.png)、[影片](ui-preview/v070/remote-video-playback-controlled.png)、[音樂](ui-preview/v070/remote-music-playback-controlled.png)。均為真實 React；影音頁為受控 Host 與合法測試檔，非模型生成。四尺寸、深淺色、鍵盤、Reduced Motion 及既有工作流程保留。[量測與限制](V070_DELIVERY.md)。
+
 ## E5 實際介面
 
 聊天改為可展開模型／來源操作列，650px 預設隱藏歷史；設定、推薦與 Benchmark 能力保留。任務主列呈現工作／模型／來源／進度，完整 ID、資源、推薦憑證及錯誤置於進階區。首頁依首次、日常、活躍工作與配對主機調整內容。新手操作列固定於底部，完成後輕量提示。

@@ -1,5 +1,11 @@
 # 本機資料與保存政策
 
+## 0.7.0 升級保存
+
+0.7.0 使用 workspace.sqlite3，首次採用 desktop.sqlite3 前建立包含 WAL 的 SQLite 快照及 SHA-256／完整性記錄；原檔不改寫。備份與失敗部分檔保存在 backups，不自動清除唯一備份。版本／最低 reader／schema 不相容時拒絕寫入。內建備份僅資料庫，不涵蓋大型模型及作品原檔，也不是額外加密。
+
+舊版不會取得新資料庫的後續寫入，不能無條件降回 0.6.2。模型／作品仍在原目錄；舊 Tk 與 Workspace 不宜同時修改它們。備份含對話、Prompt、Lyrics、配對資料及 DPAPI 密文，分享前須自行檢查。硬體工具預設不下載、不推理；遠端 execute／recover 需要明確 consent，報告不存 Token 或配對邀請。[恢復步驟](UPGRADE_070.md)。
+
 ## E4–E5 保存與清理
 
 SQLite 14 延續資料遷移；推薦憑證只有模型／工作量／政策與效能證據，沒有對話提示詞。Client 媒體工作保存私人 Prompt、Negative、Lyrics、種子與設定，SQLite 為未加密本機資料。Host 的 RemoteJobs 沒有 Prompt／Lyrics 欄位，但 artifact 參數可含 Negative，ComfyUI 的原始檔 metadata／日誌也可能保留輸入內容；外傳前仍須當次同意。

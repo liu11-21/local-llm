@@ -1,0 +1,753 @@
+{
+  "status": "PASS",
+  "source": "real-react-adoption-and-native-openvino",
+  "recommender_started_benchmark": false,
+  "recommendation": {
+    "schema": 1,
+    "preference": "speed",
+    "objective": "latency",
+    "usage": {
+      "workload": "input-1",
+      "workload_sha256": "c493379c3b41f1ebfdba39019799f30bff5a692859603c4010f9cdcc06456618",
+      "parameters": {
+        "batch": 1,
+        "temperature": 0,
+        "do_sample": false,
+        "ignore_eos": true,
+        "warmup": 3,
+        "iterations": 10,
+        "timeout": 180,
+        "memory_mib": 4096,
+        "max_tokens": 32,
+        "context": 2048
+      },
+      "reference_only": true
+    },
+    "recommended": "openvino|openvino|CPU",
+    "comparison": {
+      "scope": "僅限指定模型與固定工作量、參數及 Backend。",
+      "objective": "latency",
+      "ordered_candidates": [
+        "openvino|openvino|CPU",
+        "openvino|openvino|GPU"
+      ],
+      "condition_key": "2586ce083b89648becf46bcb337a1c9cea7ff5d5cf7b46e044cc37c5d74a4d9c"
+    },
+    "candidates": [
+      {
+        "id": "local|llama.cpp|CPU",
+        "runtime": "local",
+        "device": "CPU",
+        "engine": "llama.cpp",
+        "model": "2be7d6055f735f29",
+        "label": "本機 CPU／GPU · CPU",
+        "availability": "incompatible",
+        "executable": false,
+        "network": false,
+        "cost": "no-api-fee",
+        "needs_consent": false,
+        "reasons": [
+          "此 Runtime 尚未支援這個任務。",
+          "模型未安裝或格式不適用此 Backend，不會自動轉換或下載。"
+        ],
+        "risks": [],
+        "uncertainty": [
+          "需求或可用 RAM 尚未可靠確認。",
+          "沒有此模型與工作量的 Benchmark，缺少資料不代表較慢。"
+        ],
+        "resource": {
+          "ram_estimate": null,
+          "vram_estimate": null,
+          "memory_type": "unknown",
+          "physical_device": null,
+          "ram_available": {
+            "value": 5828648960,
+            "unit": "bytes",
+            "source": "detected",
+            "checked_at": 1794489041,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "shared_memory_included_in_ram": true
+        },
+        "identity": {
+          "resources": {
+            "ram_available": {
+              "value": 5828648960,
+              "unit": "bytes",
+              "source": "detected",
+              "checked_at": 1794489041,
+              "status": "available",
+              "evidence": "detected"
+            },
+            "vram_available": null
+          }
+        },
+        "evidence": [],
+        "performance": null,
+        "performance_group": null,
+        "confidence": "unknown",
+        "evidence_level": "capability-only",
+        "recommended": false
+      },
+      {
+        "id": "openvino|openvino|CPU",
+        "runtime": "openvino",
+        "device": "CPU",
+        "engine": "openvino",
+        "model": "2be7d6055f735f29",
+        "label": "本機 OpenVINO · CPU",
+        "availability": "ready",
+        "executable": true,
+        "network": false,
+        "cost": "no-api-fee",
+        "needs_consent": false,
+        "reasons": [
+          "可用 RAM 達到估計，仍需由 Backend 實際載入驗證。",
+          "在同一固定 Benchmark 條件下，此指標較佳；不能代表其他提示詞或輸出長度。"
+        ],
+        "risks": [],
+        "uncertainty": [
+          "完整算子分配未驗證。",
+          "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+        ],
+        "resource": {
+          "ram_estimate": 538971156,
+          "vram_estimate": null,
+          "memory_type": "unknown",
+          "physical_device": null,
+          "ram_available": {
+            "value": 5828648960,
+            "unit": "bytes",
+            "source": "detected",
+            "checked_at": 1794489041,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "shared_memory_included_in_ram": true
+        },
+        "identity": {
+          "model": "2be7d6055f735f29",
+          "model_hashes": {
+            "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+            "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+          },
+          "quantization": "unknown",
+          "format": "OpenVINO IR",
+          "bytes": 1050122,
+          "kind": "tensor",
+          "ram": 538971156,
+          "npu_candidate": true,
+          "engine": "openvino",
+          "device": "CPU",
+          "device_identity": {
+            "kind": "cpu",
+            "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+            "machine": "AMD64"
+          },
+          "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+          "executable_sha256": null,
+          "driver": null,
+          "mapping": {
+            "state": "unknown",
+            "windows_id": null,
+            "driver": null
+          },
+          "precision": "f32",
+          "resources": {
+            "ram_available": {
+              "value": 5828648960,
+              "unit": "bytes",
+              "source": "detected",
+              "checked_at": 1794489041,
+              "status": "available",
+              "evidence": "detected"
+            },
+            "vram_available": null
+          }
+        },
+        "evidence": [
+          {
+            "schema": 1,
+            "session": "31746158980847c1938ef5335a5fd293",
+            "run": "7da179a8469f4892b65d7290d89b49ac",
+            "device": "CPU",
+            "freshness": "current",
+            "comparability": "partially_comparable",
+            "eligible_for_ranking": true,
+            "changed": [],
+            "stale_reasons": [],
+            "missing": [],
+            "differences": [],
+            "limitations": [
+              "完整算子分配未驗證。",
+              "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+            ],
+            "age_days": 0.13871579997241498,
+            "age_advisory_days": 30,
+            "benchmark_completed": true,
+            "output_correct": true,
+            "execution_device_verified": true,
+            "full_operator_allocation_verified": false,
+            "backend_configured": true,
+            "cpu_fallback": false,
+            "mapping": {
+              "state": "unknown",
+              "windows_id": null,
+              "driver": null,
+              "method": null
+            },
+            "summary": {
+              "count": 10,
+              "mean_ms": 0.19659000099636614,
+              "stddev_ms": 0.04319392219237613,
+              "p50_ms": 0.1768000001902692,
+              "p95_ms": 0.2619250000861939,
+              "requests_per_second": 5086.728698976325
+            },
+            "precision": "f32",
+            "memory": {
+              "peak_ram_bytes": 130285568,
+              "peak_vram_bytes": null,
+              "current": {
+                "ram_available": {
+                  "value": 5828648960,
+                  "unit": "bytes",
+                  "source": "detected",
+                  "checked_at": 1794489041,
+                  "status": "available",
+                  "evidence": "detected"
+                },
+                "vram_available": null
+              },
+              "verified_minimum_requirement": false
+            },
+            "condition_key": "2586ce083b89648becf46bcb337a1c9cea7ff5d5cf7b46e044cc37c5d74a4d9c",
+            "performance": {
+              "count": 10,
+              "mean_ms": 0.19659000099636614,
+              "stddev_ms": 0.04319392219237613,
+              "p50_ms": 0.1768000001902692,
+              "p95_ms": 0.2619250000861939,
+              "requests_per_second": 5086.728698976325,
+              "load_ms": 104.3197000035434,
+              "model_start_ms": 105.99620000721188,
+              "ttft_ms": null,
+              "decode_tokens_per_s": null,
+              "peak_ram_bytes": 130285568
+            }
+          },
+          {
+            "schema": 1,
+            "session": "d0f1a81ad6df446e8e122fea439507da",
+            "run": "b8fee8a7792842b896ca4c8c9498710b",
+            "device": "CPU",
+            "freshness": "current",
+            "comparability": "partially_comparable",
+            "eligible_for_ranking": true,
+            "changed": [],
+            "stale_reasons": [],
+            "missing": [],
+            "differences": [],
+            "limitations": [
+              "完整算子分配未驗證。",
+              "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+            ],
+            "age_days": 1.014039874046489,
+            "age_advisory_days": 30,
+            "benchmark_completed": true,
+            "output_correct": true,
+            "execution_device_verified": true,
+            "full_operator_allocation_verified": false,
+            "backend_configured": true,
+            "cpu_fallback": false,
+            "mapping": {
+              "state": "unknown",
+              "windows_id": null,
+              "driver": null,
+              "method": null
+            },
+            "summary": {
+              "count": 10,
+              "mean_ms": 0.13590999878942966,
+              "stddev_ms": 0.01774330701713178,
+              "p50_ms": 0.13564999972004443,
+              "p95_ms": 0.1602850021299673,
+              "requests_per_second": 7357.810381187161
+            },
+            "precision": "f32",
+            "memory": {
+              "peak_ram_bytes": 130641920,
+              "peak_vram_bytes": null,
+              "current": {
+                "ram_available": {
+                  "value": 5828648960,
+                  "unit": "bytes",
+                  "source": "detected",
+                  "checked_at": 1794489041,
+                  "status": "available",
+                  "evidence": "detected"
+                },
+                "vram_available": null
+              },
+              "verified_minimum_requirement": false
+            },
+            "condition_key": "2586ce083b89648becf46bcb337a1c9cea7ff5d5cf7b46e044cc37c5d74a4d9c",
+            "performance": {
+              "count": 10,
+              "mean_ms": 0.13590999878942966,
+              "stddev_ms": 0.01774330701713178,
+              "p50_ms": 0.13564999972004443,
+              "p95_ms": 0.1602850021299673,
+              "requests_per_second": 7357.810381187161,
+              "load_ms": 25.272799997765105,
+              "model_start_ms": 25.706000000354834,
+              "ttft_ms": null,
+              "decode_tokens_per_s": null,
+              "peak_ram_bytes": 130641920
+            }
+          }
+        ],
+        "performance": {
+          "count": 10,
+          "mean_ms": 0.19659000099636614,
+          "stddev_ms": 0.04319392219237613,
+          "p50_ms": 0.1768000001902692,
+          "p95_ms": 0.2619250000861939,
+          "requests_per_second": 5086.728698976325,
+          "load_ms": 104.3197000035434,
+          "model_start_ms": 105.99620000721188,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "peak_ram_bytes": 130285568
+        },
+        "performance_group": "2586ce083b89648becf46bcb337a1c9cea7ff5d5cf7b46e044cc37c5d74a4d9c",
+        "confidence": "limited",
+        "evidence_level": "verified-benchmark",
+        "recommended": true
+      },
+      {
+        "id": "openvino|openvino|GPU",
+        "runtime": "openvino",
+        "device": "GPU",
+        "engine": "openvino",
+        "model": "2be7d6055f735f29",
+        "label": "本機 OpenVINO · GPU",
+        "availability": "ready",
+        "executable": true,
+        "network": false,
+        "cost": "no-api-fee",
+        "needs_consent": false,
+        "reasons": [
+          "可用 RAM 達到估計，仍需由 Backend 實際載入驗證。"
+        ],
+        "risks": [],
+        "uncertainty": [
+          "統一／共享或未映射記憶體，不能把共享上限與專用 VRAM 當成可分配容量。",
+          "完整算子分配未驗證。",
+          "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+        ],
+        "resource": {
+          "ram_estimate": 2147483648,
+          "vram_estimate": null,
+          "memory_type": "unified",
+          "physical_device": "00000000_00012c24",
+          "ram_available": {
+            "value": 5828648960,
+            "unit": "bytes",
+            "source": "detected",
+            "checked_at": 1794489041,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "shared_memory_included_in_ram": true
+        },
+        "identity": {
+          "model": "2be7d6055f735f29",
+          "model_hashes": {
+            "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+            "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+          },
+          "quantization": "unknown",
+          "format": "OpenVINO IR",
+          "bytes": 1050122,
+          "kind": "tensor",
+          "ram": 538971156,
+          "npu_candidate": true,
+          "engine": "openvino",
+          "device": "GPU",
+          "device_identity": {
+            "kind": "physical",
+            "id": "00000000_00012c24"
+          },
+          "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+          "executable_sha256": null,
+          "driver": "31.0.101.5590",
+          "mapping": {
+            "state": "verified",
+            "windows_id": "00000000_00012c24",
+            "driver": "31.0.101.5590"
+          },
+          "precision": "f32",
+          "resources": {
+            "ram_available": {
+              "value": 5828648960,
+              "unit": "bytes",
+              "source": "detected",
+              "checked_at": 1794489041,
+              "status": "available",
+              "evidence": "detected"
+            },
+            "vram_available": {
+              "value": 134217728,
+              "unit": "bytes",
+              "source": "estimated",
+              "checked_at": 1794489040,
+              "status": "available",
+              "evidence": "estimated"
+            }
+          }
+        },
+        "evidence": [
+          {
+            "schema": 1,
+            "session": "31746158980847c1938ef5335a5fd293",
+            "run": "249988523f6b4121be52de0a90036058",
+            "device": "GPU",
+            "freshness": "current",
+            "comparability": "partially_comparable",
+            "eligible_for_ranking": true,
+            "changed": [],
+            "stale_reasons": [],
+            "missing": [],
+            "differences": [],
+            "limitations": [
+              "完整算子分配未驗證。",
+              "Warm 延遲不含載入；模型啟動值僅包含已回報載入與首次推理，不含程序建立／IPC，OS 檔案快取未清空。"
+            ],
+            "age_days": 0.13871579997241498,
+            "age_advisory_days": 30,
+            "benchmark_completed": true,
+            "output_correct": true,
+            "execution_device_verified": true,
+            "full_operator_allocation_verified": false,
+            "backend_configured": true,
+            "cpu_fallback": false,
+            "mapping": {
+              "state": "verified",
+              "windows_id": "00000000_00012c24",
+              "driver": "31.0.101.5590",
+              "method": "OpenVINO DEVICE_LUID equals DXGI LUID"
+            },
+            "summary": {
+              "count": 10,
+              "mean_ms": 0.43069000021205284,
+              "stddev_ms": 0.11542785266052277,
+              "p50_ms": 0.3786999986914452,
+              "p95_ms": 0.6586800027434946,
+              "requests_per_second": 2321.8556258739322
+            },
+            "precision": "f32",
+            "memory": {
+              "peak_ram_bytes": 246226944,
+              "peak_vram_bytes": null,
+              "current": {
+                "ram_available": {
+                  "value": 5828648960,
+                  "unit": "bytes",
+                  "source": "detected",
+                  "checked_at": 1794489041,
+                  "status": "available",
+                  "evidence": "detected"
+                },
+                "vram_available": {
+                  "value": 134217728,
+                  "unit": "bytes",
+                  "source": "estimated",
+                  "checked_at": 1794489040,
+                  "status": "available",
+                  "evidence": "estimated"
+                }
+              },
+              "verified_minimum_requirement": false
+            },
+            "condition_key": "2586ce083b89648becf46bcb337a1c9cea7ff5d5cf7b46e044cc37c5d74a4d9c",
+            "performance": {
+              "count": 10,
+              "mean_ms": 0.43069000021205284,
+              "stddev_ms": 0.11542785266052277,
+              "p50_ms": 0.3786999986914452,
+              "p95_ms": 0.6586800027434946,
+              "requests_per_second": 2321.8556258739322,
+              "load_ms": 259.88130000041565,
+              "model_start_ms": 262.533799999801,
+              "ttft_ms": null,
+              "decode_tokens_per_s": null,
+              "peak_ram_bytes": 246226944
+            }
+          },
+          {
+            "schema": 1,
+            "session": "d0f1a81ad6df446e8e122fea439507da",
+            "run": "7e9709653f8d4241b4573701d4ab4866",
+            "device": "GPU",
+            "freshness": "invalidated",
+            "comparability": "not_comparable",
+            "eligible_for_ranking": false,
+            "changed": [
+              "device_identity"
+            ],
+            "stale_reasons": [],
+            "missing": [],
+            "differences": [],
+            "limitations": [
+              "完整算子分配未驗證。"
+            ],
+            "age_days": 1.014039874046489,
+            "age_advisory_days": 30,
+            "benchmark_completed": true,
+            "output_correct": true,
+            "execution_device_verified": true,
+            "full_operator_allocation_verified": false,
+            "backend_configured": true,
+            "cpu_fallback": false,
+            "mapping": {
+              "state": "verified",
+              "windows_id": "00000000_0001298d",
+              "driver": "31.0.101.5590",
+              "method": "OpenVINO DEVICE_LUID equals DXGI LUID"
+            },
+            "summary": null,
+            "precision": "f32",
+            "memory": {
+              "peak_ram_bytes": 246599680,
+              "peak_vram_bytes": null,
+              "current": {
+                "ram_available": {
+                  "value": 5828648960,
+                  "unit": "bytes",
+                  "source": "detected",
+                  "checked_at": 1794489041,
+                  "status": "available",
+                  "evidence": "detected"
+                },
+                "vram_available": {
+                  "value": 134217728,
+                  "unit": "bytes",
+                  "source": "estimated",
+                  "checked_at": 1794489040,
+                  "status": "available",
+                  "evidence": "estimated"
+                }
+              },
+              "verified_minimum_requirement": false
+            },
+            "condition_key": "2586ce083b89648becf46bcb337a1c9cea7ff5d5cf7b46e044cc37c5d74a4d9c"
+          }
+        ],
+        "performance": {
+          "count": 10,
+          "mean_ms": 0.43069000021205284,
+          "stddev_ms": 0.11542785266052277,
+          "p50_ms": 0.3786999986914452,
+          "p95_ms": 0.6586800027434946,
+          "requests_per_second": 2321.8556258739322,
+          "load_ms": 259.88130000041565,
+          "model_start_ms": 262.533799999801,
+          "ttft_ms": null,
+          "decode_tokens_per_s": null,
+          "peak_ram_bytes": 246226944
+        },
+        "performance_group": "2586ce083b89648becf46bcb337a1c9cea7ff5d5cf7b46e044cc37c5d74a4d9c",
+        "confidence": "limited",
+        "evidence_level": "verified-benchmark",
+        "recommended": false
+      },
+      {
+        "id": "colab|Google Cloud|remote",
+        "runtime": "colab",
+        "device": "remote",
+        "engine": "Google Cloud",
+        "model": "2be7d6055f735f29",
+        "label": "Colab Enterprise · remote",
+        "availability": "incompatible",
+        "executable": false,
+        "network": true,
+        "cost": "may-charge",
+        "needs_consent": true,
+        "reasons": [
+          "此 Runtime 尚未支援這個任務。",
+          "端點離線或能力已過期，請重新連線。",
+          "端點未列出此模型。",
+          "外部 API 需要手動運算政策及此次資料傳送確認。",
+          "只提供建議，實際傳送仍需此次任務的目的地與費用確認。"
+        ],
+        "risks": [],
+        "uncertainty": [
+          "沒有此模型與工作量的 Benchmark，缺少資料不代表較慢。"
+        ],
+        "resource": {
+          "ram_estimate": null,
+          "vram_estimate": null,
+          "memory_type": "unknown",
+          "physical_device": null,
+          "ram_available": {
+            "value": null,
+            "unit": "unknown",
+            "source": "unknown",
+            "checked_at": null,
+            "status": "unknown",
+            "evidence": "unknown"
+          },
+          "shared_memory_included_in_ram": true
+        },
+        "identity": {
+          "resources": {
+            "ram_available": {
+              "value": null,
+              "unit": "unknown",
+              "source": "unknown",
+              "checked_at": null,
+              "status": "unknown",
+              "evidence": "unknown"
+            },
+            "vram_available": null
+          }
+        },
+        "evidence": [],
+        "performance": null,
+        "performance_group": null,
+        "confidence": "unknown",
+        "evidence_level": "capability-only",
+        "recommended": false
+      }
+    ],
+    "automatic_dispatch": false,
+    "benchmark_started": false,
+    "explanation": "推薦後由使用者選擇並確認；未比較的候選沒有被視為較慢。",
+    "recommendation_id": "86fed88dda7047aa8702fab2001ecb0a"
+  },
+  "dispatch": {
+    "id": "338b6663d4894e49b98fd333707aff38",
+    "task": "bdfae8b9d98f4e43adb1dd6966e7fc9d",
+    "state": "completed",
+    "details": {
+      "runtime": "openvino",
+      "engine": "openvino",
+      "model": "2be7d6055f735f29",
+      "requested_device": "CPU",
+      "model_hashes": {
+        "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be",
+        "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876"
+      },
+      "engine_sha256": null,
+      "resources": {
+        "scope": "local",
+        "device": "openvino:CPU",
+        "engine": "openvino",
+        "ram": 1073741824,
+        "vram": [],
+        "shared_memory": 0,
+        "cpu_load": 60,
+        "bandwidth": 40,
+        "exclusive": [
+          "cpu:host",
+          "engine:openvino:CPU"
+        ],
+        "seconds": 600,
+        "limitations": [
+          "歷史 Benchmark 已過期、不相容或證據不足，未用於效能排序。"
+        ]
+      },
+      "recommendation": {
+        "recommendation_id": "86fed88dda7047aa8702fab2001ecb0a",
+        "candidate": "openvino|openvino|CPU",
+        "benchmarks": [
+          {
+            "benchmark_id": "31746158980847c1938ef5335a5fd293",
+            "benchmark_run_id": "7da179a8469f4892b65d7290d89b49ac",
+            "condition_key": "2586ce083b89648becf46bcb337a1c9cea7ff5d5cf7b46e044cc37c5d74a4d9c",
+            "freshness": "current",
+            "comparability": "partially_comparable"
+          }
+        ],
+        "usage": {
+          "workload": "input-1",
+          "workload_sha256": "c493379c3b41f1ebfdba39019799f30bff5a692859603c4010f9cdcc06456618",
+          "parameters": {
+            "batch": 1,
+            "temperature": 0,
+            "do_sample": false,
+            "ignore_eos": true,
+            "warmup": 3,
+            "iterations": 10,
+            "timeout": 180,
+            "memory_mib": 4096,
+            "max_tokens": 32,
+            "context": 2048
+          },
+          "reference_only": true
+        },
+        "objective": "latency",
+        "reference_only": true,
+        "actual_prompt_is_benchmark": false
+      },
+      "dispatch_id": "338b6663d4894e49b98fd333707aff38",
+      "task_id": "bdfae8b9d98f4e43adb1dd6966e7fc9d",
+      "execution_device_verified": true,
+      "actual_device": [
+        "CPU"
+      ],
+      "evidence": {
+        "requested_device": "CPU",
+        "available_devices": [
+          "CPU",
+          "GPU"
+        ],
+        "execution_devices": [
+          "CPU"
+        ],
+        "operator_allocation": [
+          {
+            "node": "Parameter",
+            "execution_type": "unknown_f32",
+            "status": "Status.NOT_RUN"
+          },
+          {
+            "node": "FullyConnected",
+            "execution_type": "gemm_mlas_f32",
+            "status": "Status.EXECUTED"
+          },
+          {
+            "node": "Result",
+            "execution_type": "unknown_f32",
+            "status": "Status.NOT_RUN"
+          }
+        ],
+        "verified_inference": true,
+        "fallback": "none-reported",
+        "backend": "OpenVINO",
+        "backend_version": "2025.4.1-20426-82bbf0292c5-releases/2025/4",
+        "status": "completed",
+        "latency_ms": 0.347,
+        "model_hashes": {
+          "openvino_model.xml": "6a8c741b3639d2befab18206fffbb6285c1db927fe850569901d3ee7322e5876",
+          "openvino_model.bin": "0d636e8e771ccb42c5de5df4bc7255c00083aa590ba2a3f283f13a562eb442be"
+        },
+        "memory_limit": 1073741824,
+        "timeout_seconds": 180,
+        "cache_policy": "managed-cache"
+      },
+      "job_memory": {
+        "limit_bytes": 1073741824,
+        "peak_commit_bytes": 647827456,
+        "source": "Windows Job Object"
+      }
+    },
+    "created": "2026-11-12T13:10:41+00:00",
+    "finished": "2026-11-12T13:10:41+00:00"
+  },
+  "output_correct": true,
+  "source_commit": "e0b1b3a00569ce2dbd4f6d13b321ab8c2019dae6",
+  "workspace_version": "0.7.0"
+}

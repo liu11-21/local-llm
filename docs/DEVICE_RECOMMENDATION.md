@@ -1,5 +1,11 @@
 # Device Recommendation · E3-D1–D4
 
+## 0.7.0 驗收與基線
+
+沿用既有有效 Benchmark、推薦憑證及動態資源政策，不自動重跑量測。0.7.0 真實 React 採用→TaskManager→OpenVINO CPU 張量結果已保存；Intel GPU 的既有有效 Benchmark 可參與同條件比較，不把 CPU 任務算成新的 GPU 推理。[本輪原生鏈](evidence/v070/recommendation-native-real.json)。
+
+動態 RAM、未知資源、ComfyUI 可信閒置／全域回退、取消及排程回歸保留。>8 GiB 模型程序的實際載入仍 NOT RUN，ComfyUI 獨顯／CPU 並行 NEEDS GPU。效能為多次基線，沒有整體加速百分比。[報告](V070_DELIVERY.md)。
+
 ## E3-F 現行推薦與資源政策
 
 runtime-recommend 另保存本機推薦憑證；實際採用／派送保存原 Benchmark ID、Run ID、Recommendation ID、Task ID 與 Dispatch ID。採用後 15 分鐘內仍需在開始時重新通過原條件，模型／設備／驅動／證據變動時拒絕舊憑證。未採用的手動設備選擇不偽裝為 Benchmark 推薦。

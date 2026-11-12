@@ -1,5 +1,11 @@
 # 共用任務準備
 
+## 0.7.0 整合
+
+初始 RPC 先驗證 App／Worker 識別，不一致時不送出產品操作；Worker 意外退出後由使用者重新連線並查原任務，不自動重送。同步錯誤與 TaskManager 失敗共用結構化恢復資訊，詳細錯誤仍保留供 Agent／Team 及進階紀錄；保留原有取消／中斷／依賴語意與權限代碼。
+
+Remote Host 在線不等於影音就緒，影音候選必須有 Media v2、固定 Workflow 與完整權重驗證；Colab 仍僅 notebook、雲端依現有 chat 能力，不擴張為任意任務。OpenVINO 刷新模型清單走本機 Adapter。[整合與硬體驗收](V070_DELIVERY.md)。
+
 ## E3-F／E4／E5 任務流程
 
 推薦查詢不執行工作；採用附本機 Recommendation ID，TaskManager 開始前重新驗證模型／環境／Benchmark，dispatch_runs 保存完整鏈。未知或失效時拒絕舊憑證，手動改設備可重新確認。模型 Job Object 使用與資源預留一致的動態記憶體額度。

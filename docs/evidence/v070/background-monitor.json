@@ -1,0 +1,77 @@
+{
+  "status": "PASS",
+  "source_commit": "e794108b38b852d2b0b7da70942ee70c73779cb3",
+  "identity": {
+    "version": "0.7.0",
+    "channel": "Development",
+    "commit": "e794108b38b852d2b0b7da70942ee70c73779cb3",
+    "target": "Windows x64",
+    "signed": false
+  },
+  "model_inference": false,
+  "cpu_threads": 16,
+  "scope": "Windows GetProcessTimes for Worker only, after up to 25s inventory warmup; excludes WebView, external processes and startup; no CPU improvement percentage claimed",
+  "poll_interval_seconds": 3.5,
+  "samples": [
+    {
+      "mode": "idle",
+      "wall_seconds": 7.046999999998661,
+      "worker_cpu_ms": 0.0,
+      "cpu_percent_one_core": 0.0,
+      "cpu_percent_all_logical_cores": 0.0,
+      "rpc_ms": []
+    },
+    {
+      "mode": "poll",
+      "wall_seconds": 7.0,
+      "worker_cpu_ms": 15.625,
+      "cpu_percent_one_core": 0.22321428571428573,
+      "cpu_percent_all_logical_cores": 0.013950892857142858,
+      "rpc_ms": [
+        0.0,
+        16.00000000325963
+      ]
+    },
+    {
+      "mode": "idle",
+      "wall_seconds": 7.0,
+      "worker_cpu_ms": 0.0,
+      "cpu_percent_one_core": 0.0,
+      "cpu_percent_all_logical_cores": 0.0,
+      "rpc_ms": []
+    },
+    {
+      "mode": "poll",
+      "wall_seconds": 7.01600000000326,
+      "worker_cpu_ms": 15.625,
+      "cpu_percent_one_core": 0.2227052451538304,
+      "cpu_percent_all_logical_cores": 0.0139190778221144,
+      "rpc_ms": [
+        16.00000000325963,
+        16.00000000325963
+      ]
+    },
+    {
+      "mode": "idle",
+      "wall_seconds": 7.030999999995402,
+      "worker_cpu_ms": 0.0,
+      "cpu_percent_one_core": 0.0,
+      "cpu_percent_all_logical_cores": 0.0,
+      "rpc_ms": []
+    },
+    {
+      "mode": "poll",
+      "wall_seconds": 7.0,
+      "worker_cpu_ms": 0.0,
+      "cpu_percent_one_core": 0.0,
+      "cpu_percent_all_logical_cores": 0.0,
+      "rpc_ms": [
+        16.00000000325963,
+        0.0
+      ]
+    }
+  ],
+  "hardware_inventory_ready": null,
+  "inventory_note": "Completion flag not recorded in initial run; rerunnable script records it on subsequent runs.",
+  "counter_resolution_notice": "Windows process accounting can report zero for sub-tick work; this is not proof of zero overhead."
+}

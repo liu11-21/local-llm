@@ -5,7 +5,7 @@
   "tables": {
     "chats": {
       "rows": 1,
-      "sha256": "af11442b6e529bac60e540b49b803bc058fed16c9ba97d3ac287239b7d188a43"
+      "sha256": "264cebf98b6e19700a89c839d9a4cacc5aa44501fddb3fcae425f5319bf6722a"
     },
     "messages": {
       "rows": 2,
@@ -13,7 +13,7 @@
     },
     "agent_reports": {
       "rows": 1,
-      "sha256": "619e40cf0acfca06b438fc7c6244e608fdbcabb71d13e79f6963628e9225e22b"
+      "sha256": "4925607f15b49f0fee20634fa1f34a300e409c24abdeec75742046e41f674ee3"
     },
     "agent_plans": {
       "rows": 1,
@@ -53,23 +53,23 @@
     },
     "remote_host_identity": {
       "rows": 1,
-      "sha256": "8b7efe89a2bd62d06ee7d9dbc9ba5d17f7788082ea874da2c59a1efcf0b35625"
+      "sha256": "76706a33c5096ba9ef9e40ec43abccba703082b1e58138f07f5085913e8e69f4"
     },
     "remote_host_grants": {
-      "rows": 0,
-      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "rows": 1,
+      "sha256": "b94b6487cfca0c84dcab138102ecd249297bcef440b6d239e771fdc010b7e6ab"
     },
     "remote_client_hosts": {
       "rows": 1,
       "sha256": "194ee40b122367ab223c4bec17c0c83d98ce59019335d9047c32a9400b0e7d68"
     },
     "remote_client_secrets": {
-      "rows": 0,
-      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "rows": 1,
+      "sha256": "a11a92ace54a4623d4d5467b22c4252d8c7ef8893eefd77f8a0360e78230bab8"
     },
     "remote_tls": {
-      "rows": 0,
-      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "rows": 1,
+      "sha256": "3c221c66d5c21bb752a09a61151e3a96ce7f3cb551873f82b99f64760772fbb9"
     },
     "creations": {
       "rows": 1,
@@ -87,8 +87,8 @@
     "version": "0.7.0",
     "database": "workspace.sqlite3",
     "status": "adopted-legacy",
-    "backup": "C:\\Users\\HSUAN\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\AC\\#!sandbox.{1e2096bf-5831-4c9c-89c0-b126568d7042}\\Temp\\v070-upgrade-3m94q8fv\\backups\\workspace-pre-070-20261112T125155-f46ab1462bdf.sqlite3",
-    "backup_sha256": "973aa10455ffcb21efcac1eb9555f7cbb5138479d737c019b1130376d3bdfd58",
+    "backup": "C:\\Users\\HSUAN\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\AC\\#!sandbox.{37754d3d-6f93-4faf-985d-c586dd62a16d}\\Temp\\v070-upgrade-ab62oa0t\\backups\\workspace-pre-070-20261112T130529-65cc08f3bdf7.sqlite3",
+    "backup_sha256": "4bdfdbfa65d615ca882f95fcf2c5884993efd05e6727fb80059db4ad70e3ca27",
     "source": "desktop.sqlite3",
     "source_schema": 14,
     "integrity": "PASS"
