@@ -86,8 +86,8 @@ class DeviceExecution:
         pools=((physical,resource["vram_estimate"]),) if gpu and physical and resource["memory_type"]=="dedicated" and resource["vram_estimate"] else ()
         seconds=selection.get("seconds",600)
         if type(seconds) is not int or not 15<=seconds<=600:raise ValueError("裝置任務時間上限須為 15–600 秒。")
-        physical=detect_hardware(self.app.data)
-        policy=memory_policy(physical.ram_total,physical.ram_available,user_mib=configured(self.app),required=ram)
+        capacity=detect_hardware(self.app.data)
+        policy=memory_policy(capacity.ram_total,capacity.ram_available,user_mib=configured(self.app),required=ram)
         if not policy['feasible']:raise ValueError('RAM_CAPACITY · 需求超過實體 RAM 安全容量或使用者上限，請選擇較小模型／其他 Runtime。')
         memory=policy['job_limit']
         demand=ResourceDemand(device=physical or f"{engine}:{device}",engine=engine,ram=memory,vram=pools,

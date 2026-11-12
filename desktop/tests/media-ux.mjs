@@ -71,11 +71,16 @@ export async function exerciseMediaUX(page) {
       await go('作品庫')
     }
   }
+  await page.locator('.works-grid .work-link').first().waitFor()
+  await page.locator('.works-grid .work-link').first().click()
+  await page.locator('.works-grid .work-thumb').first().waitFor()
   await shot('works-grid-light-650-controlled')
   await page.setViewportSize({width:1280,height:900});await go('任務中心')
   await page.locator('.task-evidence').first().locator('summary').click()
   await shot('tasks-evidence-controlled')
-  await go('首頁');await shot('home-daily-controlled')
+  await go('首頁');await page.locator('.home-host').first().waitFor()
+  await page.locator('.resource-board header').getByText('即時取樣',{exact:true}).waitFor()
+  if(shots)await page.screenshot({path:join(shots,'home-daily-controlled.png'),fullPage:true})
   if(process.env.LOCALLLM_MEDIA_EVIDENCE) {
     await mkdir(process.env.LOCALLLM_MEDIA_EVIDENCE,{recursive:true})
     await writeFile(join(process.env.LOCALLLM_MEDIA_EVIDENCE,'ui-playback-controlled.json'),JSON.stringify({status:'PASS',model_inference:false,flows,viewports:[[1280,900],[1024,768],[800,600],[650,720]],themes:['dark','light'],gallery_page_size:24},null,2))

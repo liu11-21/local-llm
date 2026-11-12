@@ -17,6 +17,8 @@ class ResourceDemand:
     limitations: tuple = ()
 
     def __post_init__(self):
+        if any(not isinstance(value,str) or not value or len(value)>300 for value in (self.device,self.engine)):
+            raise ValueError('裝置與引擎識別必須為有效文字。')
         if self.scope not in ("local","remote","control") or any(type(value) is not int or value<0 for value in
                 (self.ram,self.shared_memory,self.cpu_load,self.bandwidth,self.seconds)):
             raise ValueError("排程資源需求無效。")

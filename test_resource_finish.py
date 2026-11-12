@@ -7,9 +7,23 @@ from unittest.mock import patch
 from desktop_worker import Desktop
 from resource_policy import memory_policy,GIB
 from comfy_resources import reservation
+from device_resources import ResourceDemand
 
 
 class ResourceFinishTests(TestCase):
+    def test_dynamic_memory_calculation_preserves_scalar_device_identity(self):
+        with self.assertRaises(ValueError):ResourceDemand(device={'ram_total':32*GIB})
+        with TemporaryDirectory() as folder:
+            app=Desktop(Path(folder))
+            candidate={'runtime':'openvino','device':'CPU','availability':'ready','engine':'openvino','identity':{},'uncertainty':[],
+                'resource':{'ram_estimate':GIB,'physical_device':None,'memory_type':'unknown','vram_estimate':None}}
+            try:
+                with patch.object(app.device_recommendations,'query',return_value={'candidates':[candidate]}):
+                    target=app.device_execution.prepare('chat',{'runtime':'openvino','model':'fixture','execution':{'device':'CPU','confirmed':True}})
+                self.assertEqual(target.demand.device,'openvino:CPU')
+                self.assertIsInstance(target.demand.public()['device'],str)
+            finally:app.close()
+
     def test_dynamic_limit_can_exceed_eight_gib_but_never_physical_or_user_cap(self):
         policy=memory_policy(32*GIB,24*GIB,required=12*GIB)
         self.assertTrue(policy['feasible']);self.assertEqual(policy['job_limit'],12*GIB)

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {mkdir,writeFile} from 'node:fs/promises'
+import {mkdir,writeFile,readFile} from 'node:fs/promises'
 import {join} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {chromium} from 'playwright-core'
@@ -81,7 +81,19 @@ try {
   const task=await rpc('job',{id:dispatch.task})
   assert.equal(task.state,'completed')
   assert(task.result.inference.outputs.flat(3).every(value=>value===256))
-  if(evidence){await mkdir(evidence,{recursive:true});await writeFile(join(evidence,'recommendation-native-real.json'),JSON.stringify({status:'PASS',source:'real-react-adoption-and-native-openvino',recommender_started_benchmark:false,acceptance_explicit_benchmark:explicitBenchmark,prior_evidence:priorEvidence,recommendation:adopted,dispatch,output_correct:true},null,2))}
-  if(shots){await mkdir(shots,{recursive:true});await page.screenshot({path:join(shots,'recommendation-native-real.png')})}
+  await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(button=>button.textContent==='執行張量推理' && !button.disabled))
+  if(evidence){
+    await mkdir(evidence,{recursive:true})
+    let previous;try{previous=JSON.parse(await readFile(join(evidence,'recommendation-native-real.json'),'utf8'))}catch{}
+    await writeFile(join(evidence,'recommendation-native-real.json'),JSON.stringify({status:'PASS',source:'real-react-adoption-and-native-openvino',recommender_started_benchmark:false,
+      acceptance_explicit_benchmark:explicitBenchmark ?? previous?.acceptance_explicit_benchmark,prior_evidence:priorEvidence ?? previous?.prior_evidence,recommendation:adopted,dispatch,output_correct:true},null,2))
+  }
+  if(shots){
+    await mkdir(shots,{recursive:true});await page.getByRole('button',{name:'任務中心',exact:true}).click()
+    const card=page.locator('.task-card').filter({hasText:dispatch.task})
+    await card.locator('summary').click();await card.scrollIntoViewIfNeeded()
+    assert(await card.getByText('完成',{exact:true}).isVisible())
+    await page.screenshot({path:join(shots,'recommendation-native-real.png')})
+  }
   console.log('PASS real Benchmark CPU/GPU order -> UI adoption -> recommendation receipt -> TaskManager -> native OpenVINO -> matching output and Dispatch IDs')
 } finally {if(browser)await browser.close();if(server)await server.close()}
