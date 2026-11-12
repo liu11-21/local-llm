@@ -141,6 +141,10 @@ if __name__ == "__main__":
                 return super().perform(action,data,cancel,update)
 
             def rpc(self, op, data):
+                if op=='fixture-many-chats':
+                    with self.connect() as db:
+                        db.executemany('INSERT OR IGNORE INTO chats(id,title) VALUES(?,?)',[(f'{n+10000:032x}',f'Volume history {n:03d}') for n in range(135)])
+                    return True
                 if op=='fixture-remote-media':
                     from remote_media import media_input,descriptor,MEDIA_TYPES,MEDIA_WORKFLOWS
                     id='6'*32

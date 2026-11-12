@@ -18,6 +18,8 @@ class IntegrationTests(unittest.TestCase):
                 result=explain(error);self.assertEqual(result['code'],code)
                 self.assertTrue(result['recovery']);self.assertNotIn('Python Exception',user_message(result))
         policy=OSError('blocked');policy.winerror=4551
+        self.assertIn('下載中斷',user_message(explain(RuntimeError('下載中斷，已保存片段。'))))
+        self.assertEqual(explain(OSError('受控下載中斷'))['code'],'DOWNLOAD_INTERRUPTED')
         self.assertEqual(explain(policy)['code'],'POLICY_BLOCKED')
         result=explain(HTTPError('https://host.invalid/?token=private',401,'Bearer secret-value',{},None))
         self.assertNotIn('private',str(result));self.assertNotIn('secret-value',str(result))

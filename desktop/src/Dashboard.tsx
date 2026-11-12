@@ -47,7 +47,7 @@ function Resources({info, tasks}: {info?: Info; tasks: Task[]}) {
     {label:'RAM', value:usage(sample?.ram_used, sample?.ram_total), detail:sample?.ram_used != null ?
       gb(sample.ram_used) + ' / ' + gb(sample.ram_total) : undefined},
     {label:'GPU', value:gpu?.utilization.value},
-    {label:'VRAM', value:usage(gpu?.vram_used.value,gpu?.vram_total.value),detail:gpu?.vram_used.value!=null ?
+    {label:gpu?.memory_type==='unified' ? '專用記憶體' : '專用顯存', value:usage(gpu?.vram_used.value,gpu?.vram_total.value),detail:gpu?.vram_used.value!=null ?
       gb(gpu.vram_used.value)+' / '+gb(gpu.vram_total.value) : undefined},
   ]
   return <section className="resource-board" aria-label="本機資源">
@@ -62,6 +62,8 @@ function Resources({info, tasks}: {info?: Info; tasks: Task[]}) {
           <meter min={0} max={100} value={value} aria-label={label + ' 使用率'}/>}
         {detail && <small>{detail}</small>}
       </div>)}</div>
+    {gpu?.memory_type==='unified' && <p className="small section-note">內建 GPU 使用共享 RAM，專用記憶體不是全部可用容量。共享使用 {gb(gpu.shared_used?.value)}／上限 {gb(gpu.shared_limit?.value)}；共享上限已包含於系統 RAM，不另行加總。</p>}
+    {gpu?.memory_type==='unknown' && <p className="small section-note">GPU 記憶體類型尚未確認，未將未知容量視為可用顯存。</p>}
     <div className="resource-foot"><Server size={15}/><p className="pre">{model?.label || info?.active?.[0] ||
       (info?.comfy_running ? 'ComfyUI 運作中' : '尚未載入本機模型')}</p>
       <span>{running.length ? [...new Set(running.map(task => task.runtime === 'local' || !task.runtime ? '本機' : '外部'))].join('、') : '運算待命'}</span></div>
@@ -77,6 +79,7 @@ export function Dashboard({ info, tasks, works, go, openWork, openGuide,openChat
   openRemote:(runtime:string,task:'chat'|'image'|'video'|'music',model:string)=>void
 }) {
   const count = tasks.filter(activeTask).length
+  const [resourcesOpen,setResourcesOpen]=useState(false)
   const [recent,setRecent]=useState<{chats:[string,string][];first_use:boolean;recent_model?:string}>()
   useEffect(()=>{if(info)void rpc<NonNullable<typeof recent>>('home-summary').then(setRecent,()=>setRecent(undefined))},[!!info,count,works.length,info?.recent_model])
   const hosts=info?.providers.filter(provider=>provider.kind==='paired') ?? []
@@ -93,7 +96,11 @@ export function Dashboard({ info, tasks, works, go, openWork, openGuide,openChat
           <button className="button" disabled={!info} onClick={openGuide}>新手引導</button>
         </div>
       </header>
-      <Resources info={info} tasks={tasks}/>
+      <aside className="resource-summary" aria-label="硬體摘要">
+        <button className="button full" aria-expanded={resourcesOpen} onClick={()=>setResourcesOpen(value=>!value)}>硬體監控 · {resourcesOpen ? '收合':'展開'}</button>
+        {resourcesOpen ? <Resources info={info} tasks={tasks}/> : <p className="small muted section-note">CPU {info?.hardware.cpu_threads ?? '未知'} 執行緒 · RAM {gb(info?.hardware.ram_total)}<br/>
+          {info?.hardware_capabilities?.devices.filter(device=>device.kind==='gpu').map(device=>device.name).join(' · ') || 'GPU 詳情請展開檢視'}</p>}
+      </aside>
     </div>
     <section aria-labelledby="workspace-destinations">
       <div className="workspace-section-title"><h2 id="workspace-destinations">選擇任務</h2><button className="button" aria-label="前往模型與應用" onClick={()=>go('library')}>模型與應用 <ArrowRight size={14}/></button></div>

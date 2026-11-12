@@ -1,4 +1,5 @@
 import json
+import os
 from hashlib import sha256
 from pathlib import Path
 import subprocess
@@ -9,7 +10,7 @@ from time import monotonic, sleep
 import unittest
 from unittest.mock import patch
 
-from desktop_worker import Desktop, ENGINE_LICENSE_HASH
+from desktop_worker import Desktop, ENGINE_LICENSE_HASH, WORKSPACE_VERSION
 from media import ComfyClient
 from runtime_provider import ColabAdapter, OpenAIProvider, Providers, endpoint, route
 
@@ -205,11 +206,19 @@ class ConversationTests(unittest.TestCase):
 class PackagedWorkerTests(unittest.TestCase):
     def test_binary_handles_utf8_and_returns_safe_ipc_errors(self):
         with TemporaryDirectory() as directory:
-            requests = b'{"op":"colab","data":{}}\n{"op":"missing","data":{}}\n'
-            completed = subprocess.run([str(PACKAGED), "--data", directory],
-                                       input=requests, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE, timeout=20, check=True)
-            first, second = [json.loads(row) for row in completed.stdout.splitlines()]
+            requests = b'{"op":"build-info","data":{}}\n{"op":"colab","data":{}}\n{"op":"missing","data":{}}\n'
+            try:
+                completed = subprocess.run([str(PACKAGED), "--data", directory],
+                                           input=requests, stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE, timeout=20, check=True)
+            except OSError as error:
+                if getattr(error,'winerror',None)==4551 and os.environ.get('GITHUB_ACTIONS')!='true':
+                    self.skipTest('Local Windows application control blocks the newly built worker; clean CI must execute it.')
+                raise
+            identity, first, second = [json.loads(row) for row in completed.stdout.splitlines()]
+            self.assertTrue(identity['ok'])
+            self.assertEqual(identity['value']['version'],WORKSPACE_VERSION)
+            self.assertEqual(identity['value']['channel'],'Development')
             self.assertTrue(first["ok"])
             self.assertFalse(first["value"]["available"])
             self.assertFalse(second["ok"])

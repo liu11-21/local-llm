@@ -9,6 +9,7 @@ import { exerciseWorkflows } from './workflow-ui.mjs'
 import { exerciseBenchmarks } from './benchmark-ui.mjs'
 import {exerciseDevices} from './device-ui.mjs'
 import {exerciseMediaUX} from './media-ux.mjs'
+import {exerciseStability} from './stability-ui.mjs'
 
 const desktop = fileURLToPath(new URL('../', import.meta.url))
 const root = await realpath(tmpdir())
@@ -34,6 +35,17 @@ try {
       'Google', 'Chrome', 'Application', 'chrome.exe'),
   })
   const page = await browser.newPage({viewport:{width:1280,height:900}, colorScheme:'dark', reducedMotion:'reduce'})
+  if(process.env.LOCALLLM_STABILITY_ONLY==='1') {
+    await page.goto(url)
+    await page.evaluate(async()=>{
+      for(const op of ['fixture-openvino','fixture-many-chats']){
+        const result=await(await fetch('/__desktop_dev_rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op,data:{}})})).json()
+        if(!result.ok)throw Error(result.error)
+      }
+    })
+    await page.reload();await page.getByText('本機工作台已連線').waitFor()
+    await exerciseStability(page)
+  } else {
   const exceptions = []
   page.on('pageerror', exception => exceptions.push(exception.message))
   let started = false
@@ -75,6 +87,7 @@ try {
   }
   await page.goto(url)
   await page.getByText('本機工作台已連線').waitFor()
+  await page.getByRole('button',{name:'硬體監控 · 展開',exact:true}).click()
   await page.getByRole('region',{name:'本機資源'}).getByLabel('CPU 使用率').waitFor()
   await capture('home-dark')
   await button('收合側邊欄').click()
@@ -396,7 +409,9 @@ try {
   await exerciseBenchmarks(page,navigate)
   await exerciseDevices(page,navigate)
   await exerciseMediaUX(page)
+  await exerciseStability(page)
   assert.deepEqual(exceptions, [])
+  }
 } finally {
   if (browser) await browser.close()
   if (server) await server.close()

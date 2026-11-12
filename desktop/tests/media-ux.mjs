@@ -81,6 +81,7 @@ export async function exerciseMediaUX(page) {
   await page.locator('.task-evidence').first().locator('summary').click()
   await shot('tasks-evidence-controlled')
   await go('首頁');await page.locator('.home-host').first().waitFor()
+  await page.getByRole('button',{name:'硬體監控 · 展開',exact:true}).click()
   await page.locator('.resource-board header').getByText('即時取樣',{exact:true}).waitFor()
   if(shots)await page.screenshot({path:join(shots,'home-daily-controlled.png'),fullPage:true})
   if(process.env.LOCALLLM_MEDIA_EVIDENCE) {

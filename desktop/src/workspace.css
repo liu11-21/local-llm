@@ -147,6 +147,9 @@
 .chat-model-summary > span { color:var(--muted);font-size:12px;overflow-wrap:anywhere;text-align:right; }
 .chat-config-body { max-height:40dvh;overflow:auto;padding:8px 2px; }
 .history-toggle { display:none; }
+.resource-summary { min-width:0;align-self:start; }
+.resource-summary .resource-board { margin-top:12px; }
+.chat-rail > input { width:100%;min-width:0; }
 .task-card { align-items:start;gap:12px; }
 .task-card > span:first-child { min-width:0;flex:1; }
 .task-card small { display:block;overflow-wrap:anywhere; }

@@ -1,7 +1,9 @@
 import unittest
+import hashlib
+from urllib.parse import quote
 from check_workspace_version import check
 from workspace_version import VERSION, build_info, require_identity
-from app_update import select_workspace_update
+from app_update import select_workspace_update, RELEASES
 
 
 class WorkspaceVersionTests(unittest.TestCase):
@@ -16,3 +18,13 @@ class WorkspaceVersionTests(unittest.TestCase):
         self.assertIsNone(select_workspace_update([], VERSION))
         self.assertIsNone(select_workspace_update([{'tag_name':'v0.6.2'}, {'tag_name':'v9.9.9'},
                                                   {'tag_name':'workspace-v0.7.0'}], VERSION))
+
+    def test_only_verified_newer_workspace_release_is_selected(self):
+        name='Local LLM Workspace_0.7.1_x64-setup.exe';tag='workspace-v0.7.1'
+        asset={'name':name,'state':'uploaded','size':100,'digest':'sha256:'+hashlib.sha256(b'fixture').hexdigest(),
+               'browser_download_url':f'{RELEASES}/download/{tag}/{quote(name)}'}
+        release={'tag_name':tag,'assets':[asset]}
+        self.assertEqual(select_workspace_update([{'tag_name':'v99.0.0'},release],VERSION).tag,tag)
+        self.assertIsNone(select_workspace_update([{**release,'prerelease':True}],VERSION))
+        asset['browser_download_url']='https://example.invalid/untrusted.exe'
+        self.assertIsNone(select_workspace_update([release],VERSION))

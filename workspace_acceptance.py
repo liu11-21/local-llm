@@ -14,7 +14,7 @@ from comfy_runtime import install_directory, PROFILES
 from desktop_worker import Desktop
 from download_recovery import exclusive
 from hardware import detect_hardware
-from hardware_monitor import windows_inventory
+from hardware_monitor import windows_inventory, npu_devices
 from media import DEFAULT_WORKFLOWS, ComfyClient
 from media_install import install_plan, manifest
 from registries import media_metadata
@@ -114,13 +114,15 @@ def main():
                     app.close()
                     report['local_managed_comfy_stopped']=not app.comfy.running()
             cleanup.callback(shutdown)
-            try: devices=windows_inventory()
+            try:
+                inventory=windows_inventory()
+                devices=[row for row in inventory if row.get('class')=='Display']+npu_devices(inventory)
             except OSError as error: devices=[];report['inventory_error']=explain(error)
             report['local_devices']=devices
             if args.mode=='host':
                 report['host']=host_diagnosis(args.data,args.profile,devices)
                 matched=gpu_matches(devices,args.expected_gpu)
-                if not matched:report['status']='NEEDS GPU'
+                if not matched:report['status']='NOT RUN' if report.get('inventory_error') else 'NEEDS GPU'
                 elif not args.execute:report['status']='NOT RUN'
                 else:
                     torch=report['host']['torch'].get('evidence',{})

@@ -22,6 +22,10 @@ def explain(error):
         code, summary, recovery = 'ACCESS_DENIED', '沒有執行這項工作的權限。', '請確認檔案權限、API 金鑰或 Host 配對與任務擁有者。'
     elif isinstance(error, TimeoutError) or 'timeout' in lower or '逾時' in detail:
         code, summary, recovery = 'TIMEOUT', '工作等候超過時間上限。', '請到任務中心確認原工作狀態；遠端任務不要直接重送，可先查詢或恢復下載。'
+    elif '下載中斷' in detail:
+        code, summary, recovery = 'DOWNLOAD_INTERRUPTED', detail, '已保留可恢復的下載資料，請檢查網路後從原任務重試下載。'
+    elif getattr(error,'errno',None)==28 or '磁碟空間' in detail:
+        code, summary, recovery = 'DISK_FULL', '磁碟空間不足，工作尚未完成。', '請釋出空間並保留原檔及下載片段，再從原任務重試。'
     elif any(word in lower for word in ('sha-256','sha256','校驗','損毀','corrupt')):
         code, summary, recovery = 'INTEGRITY_FAILED', '檔案完整性檢查失敗。', '請核對來源與磁碟，從下載頁恢復或重新下載；未驗證的檔案不會使用。'
     elif any(word in lower for word in ('ram','vram','out of memory','記憶體不足','顯存不足','安全容量')):
@@ -34,7 +38,7 @@ def explain(error):
         code, summary, recovery = 'CONNECTION_LOST', '無法連線至運算來源。', '請確認網路與 Host 健康狀態；已提交的工作先查詢原 Job，避免重複生成。'
     elif '455' in lower and 'winerror' in lower:
         code, summary = 'ENGINE_START_FAILED', '引擎無法啟動。'
-    elif isinstance(error, ValueError) and re.search(r'[\u4e00-\u9fff]', detail):
+    elif isinstance(error, (ValueError, RuntimeError, InterruptedError)) and re.search(r'[\u4e00-\u9fff]', detail):
         summary = detail
     return {'code':code, 'summary':summary, 'recovery':recovery, 'detail':detail}
 
