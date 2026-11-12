@@ -1,17 +1,27 @@
-"""Shared limits and allow-list for paired ComfyUI image generation."""
+"""Versioned paired media contract and one bounded atomic transfer path."""
 from hashlib import sha256
 import json
 import os
 import re
+import shutil
+from datetime import datetime,timezone,timedelta
 from time import monotonic
 
 from download_recovery import exclusive, owned
-from media import FORMATS, MODELS, workflow_options
-from registries import work_file
+from media import FORMATS, MODELS, WORKFLOWS, workflow_options
+from registries import work_file,media_metadata
 from task_manager import timestamp
 
 IMAGE_WORKFLOWS = ("sd15", "sd15-preview")
 REMOTE_IMAGE_LIMIT = 32 * 1024**2
+MEDIA_SCHEMA=2
+MEDIA_LIMITS={'image':REMOTE_IMAGE_LIMIT,'video':2*1024**3,'audio':512*1024**2}
+MEDIA_TYPES={'image':('image','.png','image/png'),'video':('video','.webm','video/webm'),'audio':('music','.flac','audio/flac')}
+MEDIA_WORKFLOWS={'image':IMAGE_WORKFLOWS,'video':('wan21',),'audio':('ace-step',)}
+STAGING_QUOTA=4*1024**3
+HOST_QUOTA=8*1024**3
+DISK_RESERVE=256*1024**2
+RETENTION_DAYS=7
 CHUNK = 256 * 1024
 
 
@@ -27,28 +37,39 @@ class ClientMedia:
                    host TEXT NOT NULL, job TEXT NOT NULL, workflow TEXT NOT NULL, model TEXT NOT NULL,
                    prompt TEXT NOT NULL, options TEXT NOT NULL, submitted TEXT NOT NULL,
                    state TEXT NOT NULL, work TEXT, PRIMARY KEY(host,job))""")
+        columns={row[1] for row in db.execute('PRAGMA table_info(client_media_jobs)')}
+        for column,declaration in (('kind',"TEXT NOT NULL DEFAULT 'image'"),('lyrics',"TEXT NOT NULL DEFAULT ''"),
+                                   ('updated','TEXT'),('download_status',"TEXT NOT NULL DEFAULT 'pending'")):
+            if column not in columns:db.execute(f'ALTER TABLE client_media_jobs ADD COLUMN {column} {declaration}')
+        if db.execute('PRAGMA user_version').fetchone()[0]<14:db.execute('PRAGMA user_version=14')
         if db.execute("PRAGMA user_version").fetchone()[0] < 9:
             db.execute("PRAGMA user_version=9")
 
     def submit(self, host, job, payload):
         with self.connect() as db:
-            db.execute("INSERT INTO client_media_jobs VALUES(?,?,?,?,?,?,?,'submitted',NULL)",
-                       (host, job, payload["workflow"], MODELS["image"][1], payload["prompt"],
-                        json.dumps(payload["options"]), timestamp()))
+            kind=payload.get('kind','image')
+            app_kind=MEDIA_TYPES[kind][0]
+            db.execute("""INSERT INTO client_media_jobs(host,job,workflow,model,prompt,options,submitted,state,work,kind,lyrics,updated)
+                          VALUES(?,?,?,?,?,?,?,'submitted',NULL,?,?,?)""",
+                       (host, job, payload["workflow"], MODELS[app_kind][1], payload["prompt"],
+                        json.dumps(payload["options"]), timestamp(),kind,payload.get('lyrics',''),timestamp()))
 
     def get(self, host, job):
         with self.connect() as db:
-            row = db.execute("""SELECT workflow,model,prompt,options,submitted,state,work
+            row = db.execute("""SELECT workflow,model,prompt,options,submitted,state,work,kind,lyrics,updated,download_status
                                 FROM client_media_jobs WHERE host=? AND job=?""", (host,job)).fetchone()
         if row is None:
             return None
-        value = dict(zip(("workflow","model","prompt","options","submitted","state","work"),row))
+        value = dict(zip(("workflow","model","prompt","options","submitted","state","work","kind","lyrics","updated","download_status"),row))
         value["options"] = json.loads(value["options"])
         return value
 
     def complete(self, db, host, job, artifact, work):
-        db.execute("""UPDATE client_media_jobs SET state='saved',options=?,work=? WHERE host=? AND job=?""",
-                   (json.dumps(artifact["options"]),work,host,job))
+        db.execute("""UPDATE client_media_jobs SET state='saved',download_status='verified',updated=?,options=?,work=? WHERE host=? AND job=?""",
+                   (timestamp(),json.dumps(artifact["options"]),work,host,job))
+
+    def downloads(self,host,job,state):
+        with self.connect() as db:db.execute('UPDATE client_media_jobs SET download_status=?,updated=? WHERE host=? AND job=?',(state,timestamp(),host,job))
 
     def available(self, host, job, artifact):
         with self.connect() as db:
@@ -58,12 +79,28 @@ class ClientMedia:
 
 
 def image_input(data):
+    if data.get('kind','image')!='image':raise ValueError('只允許圖片工作流程。')
+    return media_input(data)
+
+
+def media_input(data):
+    if not isinstance(data,dict):raise ValueError('媒體輸入格式無效。')
+    kind=data.get('kind','image')
+    kind='audio' if kind=='music' else kind
     workflow, prompt = data.get("workflow"), data.get("prompt")
-    if (set(data) - {"request","kind","workflow","prompt","options"} or workflow not in IMAGE_WORKFLOWS
+    if (set(data) - {"request","kind","workflow","prompt","options","lyrics","schema"} or kind not in MEDIA_TYPES
+            or workflow not in MEDIA_WORKFLOWS[kind] or type(data.get('schema',2)) is not int or data.get('schema',2) not in (1,2)
+            or data.get('schema')==1 and kind!='image'
             or not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 12000):
-        raise ValueError("只允許內建 Stable Diffusion 1.5 流程及提示詞。")
-    return {"kind":"image", "workflow":workflow, "prompt":prompt.strip(),
-            "options":workflow_options("image",workflow,data.get("options"))}
+        raise ValueError("只允許受管理的媒體流程、版本及提示詞。")
+    lyrics=data.get('lyrics','')
+    if not isinstance(lyrics,str) or len(lyrics)>12000 or kind!='audio' and lyrics:raise ValueError('此流程不接受歌詞。')
+    options=workflow_options(MEDIA_TYPES[kind][0],workflow,data.get('options'))
+    if kind=='video' and options['width']*options['height']*options['frames']>16*1024**2:
+        raise ValueError('影片解析度與影格總量超過主機安全上限。')
+    result={"kind":kind,"workflow":workflow,"prompt":prompt.strip(),"options":options}
+    if kind=='audio':result['lyrics']=lyrics
+    return result
 
 
 def checksum(path, cancel):
@@ -76,33 +113,73 @@ def checksum(path, cancel):
     return digest.hexdigest()
 
 
-def descriptor(path, workflow, options, created, cancel):
+def validate_content(path,kind):
+    app_kind,suffix,_=MEDIA_TYPES[kind]
+    if path.suffix not in (suffix,'.part'):raise ValueError('媒體副檔名不符。')
+    with path.open('rb') as stream:header=stream.read(64)
+    if not header.startswith(FORMATS[app_kind][1]):raise ValueError('媒體內容格式不符。')
+    if kind=='image' and (len(header)<24 or header[12:16]!=b'IHDR' or not any(header[16:24])):
+        raise ValueError('PNG 內容格式不符。')
+    # Metadata parsers are bounded. Staging files deliberately have no trusted suffix.
+    if kind=='audio':
+        if len(header)<42 or header[4]&127!=0 or header[5:8]!=b'\x00\x00\x22':raise ValueError('FLAC STREAMINFO 無效。')
+        packed=int.from_bytes(header[18:26],'big')
+        if not packed>>44 or not packed&(2**36-1):raise ValueError('FLAC 時長或取樣率無效。')
+    if kind=='video':
+        from registries import webm_metadata
+        with path.open('rb') as stream:metadata=webm_metadata(stream,path.stat().st_size)
+        if b'webm' not in header or not metadata.get('width') or not metadata.get('height'):
+            raise ValueError('WebM 標頭或影像軌無效。')
+
+
+def descriptor(path, workflow, options, created, cancel, *, owner=None,host=None,job=None):
+    app_kind=WORKFLOWS[workflow][0]
+    kind='audio' if app_kind=='music' else app_kind
     size = path.stat().st_size
-    if not 24 <= size <= REMOTE_IMAGE_LIMIT:
-        raise ValueError("遠端圖片超出可傳輸的大小。")
-    return {"id":path.name, "bytes":size, "sha256":checksum(path,cancel), "kind":"image",
-            "model":MODELS["image"][1], "workflow":workflow, "options":options, "created":created}
+    if not 24 <= size <= MEDIA_LIMITS[kind]:raise ValueError('遠端媒體超出可傳輸的大小。')
+    validate_content(path,kind)
+    expires=(datetime.fromisoformat(created)+timedelta(days=RETENTION_DAYS)).isoformat()
+    return {"schema":2,"id":path.name,"media_id":path.stem,"job_id":job,"owner_client_id":owner,'host_id':host,'runtime_id':host,
+            "bytes":size,"sha256":checksum(path,cancel),"kind":kind,'mime':MEDIA_TYPES[kind][2],'extension':MEDIA_TYPES[kind][1],
+            "model":MODELS[app_kind][1],"model_id":MODELS[app_kind][1],"workflow":workflow,"options":options,"created":created,
+            'updated':created,'completed':created,'status':'completed','download_status':'available',
+            'retention':{'days':RETENTION_DAYS,'expires':expires}}
 
 
 def validate_artifact(value):
-    if (not isinstance(value, dict) or value.get("kind") != "image"
-            or not re.fullmatch(r"[a-f0-9]{12}\.png", str(value.get("id","")))
+    if not isinstance(value,dict):raise ValueError('遠端作品資訊無效。')
+    kind=value.get('kind')
+    schema=value.get('schema',1)
+    if kind not in MEDIA_TYPES or type(schema) is not int or schema not in (1,2) or schema==1 and kind!='image':raise ValueError('媒體契約版本無效。')
+    app_kind,suffix,mime=MEDIA_TYPES[kind]
+    if (not re.fullmatch(r"[a-f0-9]{12}"+re.escape(suffix), str(value.get("id","")))
             or not re.fullmatch(r"[a-f0-9]{64}", str(value.get("sha256","")))
-            or type(value.get("bytes")) is not int or not 24 <= value["bytes"] <= REMOTE_IMAGE_LIMIT
-            or value.get("workflow") not in IMAGE_WORKFLOWS):
+            or type(value.get("bytes")) is not int or not 24 <= value["bytes"] <= MEDIA_LIMITS[kind]
+            or value.get("workflow") not in MEDIA_WORKFLOWS[kind]
+            or schema==2 and (value.get('mime')!=mime or value.get('extension')!=suffix)):
         raise ValueError("遠端作品資訊無效。")
-    return {key:value[key] for key in ("id","bytes","sha256","kind","workflow")} | {
-        "model":MODELS["image"][1], "options":workflow_options("image",value["workflow"],value.get("options"))}
+    return {**value,'schema':schema,'mime':mime,'extension':suffix,'app_kind':app_kind,
+        "model":MODELS[app_kind][1],"options":workflow_options(app_kind,value["workflow"],value.get("options"))}
 
 
 def fetch_image(client, request, artifact, output, staging, cancel, update):
+    staging.mkdir(parents=True,exist_ok=True)
+    if not owned(staging):raise ValueError('作品下載目錄不安全。')
+    # One quota transaction across hosts, no partial reservations or overcommit.
+    with exclusive(staging/'.quota.lock'):
+        return _fetch_media(client,request,artifact,output,staging,cancel,update)
+
+
+def _fetch_media(client, request, artifact, output, staging, cancel, update):
     artifact = validate_artifact(artifact)
+    if artifact.get('schema')==2 and (artifact.get('host_id')!=client.id or artifact.get('job_id')!=request):
+        raise ValueError('媒體來源主機或任務不符。')
     key = sha256(f"{client.id}:{request}".encode()).hexdigest()
     output.mkdir(parents=True,exist_ok=True)
     staging.mkdir(parents=True,exist_ok=True)
     if not owned(output) or not owned(staging):
         raise ValueError("作品下載目錄不安全。")
-    target = output / f"{key[:12]}.png"
+    target = output / (key[:12]+artifact['extension'])
     part = staging / f"{key[:32]}-{artifact['sha256'][:24]}.part"
     size, expected = artifact["bytes"], artifact["sha256"]
     with exclusive(staging / f"{key[:32]}.lock"):
@@ -114,6 +191,9 @@ def fetch_image(client, request, artifact, output, staging, cancel, update):
         if not owned(part) or part.exists() and (not part.is_file() or part.stat().st_nlink != 1):
             raise ValueError("作品下載暫存檔不安全。")
         offset = part.stat().st_size if part.exists() else 0
+        occupied=sum(item.stat().st_size for item in staging.glob('*.part') if item.is_file() and not item.is_symlink())
+        if occupied+max(0,size-offset)>STAGING_QUOTA:raise OSError('遠端媒體暫存配額不足。請完成或取消既有下載後再試。')
+        if shutil.disk_usage(staging).free<max(0,size-offset)+DISK_RESERVE:raise OSError('作品下載磁碟空間不足。')
         if offset > size:
             part.unlink()
             offset = 0
@@ -124,6 +204,7 @@ def fetch_image(client, request, artifact, output, staging, cancel, update):
                         or response.getheader("Content-Length") != str(size-offset)
                         or offset and response.getheader("Content-Range") != f"bytes {offset}-{size-1}/{size}"):
                     raise ValueError("遠端作品長度或續傳範圍不符。")
+                if response.getheader('Content-Type') not in (None,artifact['mime']):raise ValueError('遠端媒體 MIME 不符。')
                 with part.open("ab") as stream:
                     while offset < size:
                         if cancel.is_set():
@@ -134,11 +215,13 @@ def fetch_image(client, request, artifact, output, staging, cancel, update):
                         stream.write(data)
                         offset += len(data)
                         update(message="下載遠端作品…",received=offset,total=size)
-        with part.open("rb") as stream:
-            header = stream.read(24)
-        if not header.startswith(FORMATS["image"][1]) or header[12:16] != b"IHDR" or checksum(part,cancel) != expected:
+        if checksum(part,cancel) != expected:
             part.unlink(missing_ok=True)
             raise ValueError("遠端圖片內容未通過 SHA-256 或 PNG 格式驗證。")
+        try:validate_content(part,artifact['kind'])
+        except ValueError:
+            part.unlink(missing_ok=True)
+            raise
         if cancel.is_set():
             raise InterruptedError("已取消發布作品。")
         if os.name == "nt":
@@ -150,7 +233,7 @@ def fetch_image(client, request, artifact, output, staging, cancel, update):
 
 
 def await_image(client, request, cancel, update):
-    deadline = monotonic() + 900
+    deadline = monotonic() + 7200
     while not cancel.wait(0.45) and monotonic() < deadline:
         job = client.job(request)
         if job["state"] == "completed":

@@ -17,7 +17,9 @@ from uuid import uuid4
 from download_recovery import exclusive
 from runtime_contract import capability
 from remote_jobs import RemoteJobs
-from remote_media import CHUNK, image_input
+from remote_media import CHUNK, image_input,media_input,MEDIA_TYPES,MEDIA_LIMITS,HOST_QUOTA,DISK_RESERVE
+from datetime import datetime,timezone
+import shutil
 from registries import work_file
 from task_manager import ACTIVE
 
@@ -260,15 +262,18 @@ class Host:
         if not isinstance(request, str) or not re.fullmatch(r"[a-f0-9]{32}", request):
             raise ProtocolError(400, "缺少有效的任務識別碼。")
         kind = data.get("kind","chat")
-        if kind not in ("chat","image"):
+        if kind not in ("chat","image","video","audio","music"):
             raise ProtocolError(400,"不支援的遠端任務。")
         try:
-            payload = image_input(data) if kind=="image" else inference_input(data)
+            payload = media_input(data) if kind!='chat' else inference_input(data)
+            kind=payload.get('kind','chat')
         except ProtocolError:
             raise
         except ValueError as error:
             raise ProtocolError(400,str(error)) from None
         signature = sha256(json.dumps(payload, sort_keys=True).encode()).digest()
+        if self.media_output:
+            with self.connect() as cleanup_db:self.cleanup_media(cleanup_db)
         with self.lock, self.connect() as db:
             if self.state != "ready" or not db.execute("SELECT 1 FROM remote_host_grants WHERE id=?", (peer,)).fetchone():
                 raise ProtocolError(401, "配對已撤銷或服務已停止。")
@@ -283,9 +288,16 @@ class Host:
                 if payload["model"] not in self.model_names():
                     raise ProtocolError(404, "主機沒有這個模型。請重新整理模型清單。")
             else:
-                image = self.media()
+                media = self.media()
+                image=media.get(kind,media if kind=='image' else {})
                 if image.get("state") != "ready" or payload["workflow"] not in image.get("workflows",[]):
                     raise ProtocolError(503,"主機的 ComfyUI、節點或權重尚未就緒。")
+                if self.media_output:
+                    self.media_output.mkdir(parents=True,exist_ok=True)
+                    occupied=sum(path.stat().st_size for path in self.media_output.iterdir() if path.is_file() and not path.is_symlink())
+                    budget=MEDIA_LIMITS[kind]
+                    if occupied+budget>HOST_QUOTA or shutil.disk_usage(self.media_output).free<budget+DISK_RESERVE:
+                        raise ProtocolError(507,'主機作品配額或磁碟空間不足。')
             for key, (task,timer) in list(self.jobs.items()):
                 if not self.job_active(task):
                     timer.cancel()
@@ -296,10 +308,10 @@ class Host:
                 writer = self.records.writer(peer, request, signature, kind,
                                              payload.get("model","Stable Diffusion 1.5"),payload.get("workflow"))
                 task = self.scheduler.submit("remote-host-chat" if kind=="chat" else "remote-host-media",
-                                             payload, on_snapshot=writer)["id"]
+                                             {**payload,**({'_owner':peer,'_host':self.id,'_request':request} if kind!='chat' else {})}, on_snapshot=writer)["id"]
             except ValueError:
                 raise ProtocolError(429, "主機暫時無法接收新任務。") from None
-            timer = Timer(840 if kind=="image" else 240, self.cancel, (task,))
+            timer = Timer(7200 if kind!='chat' else 240, self.cancel, (task,))
             timer.daemon = True
             self.jobs[(peer, request)] = (task, timer)
             timer.start()
@@ -348,6 +360,20 @@ class Host:
         except (OSError,ValueError):
             raise ProtocolError(404,"找不到完整的遠端作品。") from None
         return path,info
+
+    def cleanup_media(self,db):
+        """Only expired managed Host results; never client works or user models."""
+        if not self.media_output:return
+        now=datetime.now(timezone.utc)
+        for owner,request,encoded in db.execute("SELECT owner,request,artifact FROM remote_jobs WHERE artifact IS NOT NULL"):
+            try:
+                artifact=json.loads(encoded)
+                expires=artifact.get('retention',{}).get('expires')
+                if not expires or datetime.fromisoformat(expires)>now:continue
+                path=work_file(self.media_output,artifact['id'])
+                path.unlink()
+            except (ValueError,OSError,KeyError,TypeError):continue
+            db.execute("UPDATE remote_jobs SET artifact=NULL,message='主機結果保留期已到，請重新生成。' WHERE owner=? AND request=?",(owner,request))
 
 
 class HostServer(ThreadingHTTPServer):
@@ -460,14 +486,15 @@ class Handler(BaseHTTPRequestHandler):
         try:
             path,info = host.artifact(peer,request)
             header = self.headers.get("Range")
-            match = re.fullmatch(r"bytes=([0-9]{1,9})-",header or "")
+            match = re.fullmatch(r"bytes=([0-9]{1,12})-",header or "")
             offset = int(match.group(1)) if match else 0
             if header is not None and (not match or offset>=info["bytes"]):
                 raise ProtocolError(416,"續傳範圍無效。")
             with path.open("rb") as stream:
                 stream.seek(offset)
                 self.send_response(206 if header else 200)
-                self.send_header("Content-Type","image/png")
+                self.send_header("Content-Type",info.get('mime','image/png'))
+                self.send_header('X-Content-Type-Options','nosniff')
                 self.send_header("Cache-Control","no-store")
                 self.send_header("ETag",f'"{info["sha256"]}"')
                 remaining = info["bytes"]-offset

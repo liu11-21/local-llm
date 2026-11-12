@@ -115,6 +115,7 @@ class RemoteClient:
                         426: "遠端協定版本不相容。請確認兩台電腦的 Local LLM 版本。",
                         429: "主機佇列已滿。請等候其他工作完成。",
                         503: "主機引擎目前不可用。請在主機檢查模型、資源與引擎。",
+                        507: '主機作品配額或磁碟空間不足。',
                     }
                     message = errors.get(response.status, "主機拒絕這次請求。")
                     if response.status in (401, 426):

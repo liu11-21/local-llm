@@ -54,7 +54,7 @@ from registries import media_metadata, model_identity, recent_works, work_file, 
 from remote_client import RemoteClients
 from remote_tls import ManagedTLS, inspect_invite
 from remote_host import ANSWER_LIMIT, Host
-from remote_media import ClientMedia, IMAGE_WORKFLOWS, REMOTE_IMAGE_LIMIT, await_image, descriptor, fetch_image, image_input, validate_artifact
+from remote_media import ClientMedia, IMAGE_WORKFLOWS, REMOTE_IMAGE_LIMIT, await_image, descriptor, fetch_image, image_input, validate_artifact,media_input,MEDIA_TYPES,MEDIA_LIMITS,MEDIA_WORKFLOWS
 from media_install import install_plan, install_weights, required_nodes
 from runtime_provider import POLICIES, Providers, route
 from runtime_contract import capability, colab_capability, external_capability, fresh, local_capability, observed, task_health
@@ -316,7 +316,7 @@ class Desktop(Workspace):
         native = data.get("native_tools") is True
         if mode not in ("auto", "cpu") or context not in (2048, 4096, 8192):
             raise ValueError("請選擇有效的運算模式與上下文長度。")
-        if self.comfy.running():
+        if self.comfy.running() and not getattr(self,'execution_scoped',False):
             raise ValueError("請先停止 ComfyUI，釋放記憶體後再載入文字模型。")
         path, executable = self.model(name), self.engine()
         if (self.active and self.active[:3] == (name, mode, context) and self.active_native == native
@@ -550,7 +550,8 @@ class Desktop(Workspace):
             path = ComfyClient(self.comfy.port).generate("image",data["prompt"],"",self.remote_output,cancel,
                                                        lambda message:update(message=message),
                                                        workflow_id=data["workflow"],options=options,limit=REMOTE_IMAGE_LIMIT)
-            return {"message":"圖片已生成，可下載作品。","artifact":descriptor(path,data["workflow"],options,timestamp(),cancel)}
+            return {"message":"圖片已生成，可下載作品。","artifact":descriptor(path,data["workflow"],options,timestamp(),cancel,
+                owner=data.get('_owner'),host=data.get('_host'),job=data.get('_request'))}
         except Exception:
             if cancel.is_set():
                 return None
@@ -873,7 +874,7 @@ class Desktop(Workspace):
             if action=="openvino-infer":
                 if self.local.running() or self.active:
                     self.stop_local()
-                if self.comfy.running():
+                if self.comfy.running() and not getattr(self,'execution_scoped',False):
                     raise ValueError("請先停止 ComfyUI，再執行 OpenVINO。")
                 result = self.openvino.infer(field(data,"model",16),field(data,"device",16),cancel,
                                             lambda event:update(message="OpenVINO 已載入模型。") if event.get("event")=="loaded" else None,
@@ -959,7 +960,7 @@ class Desktop(Workspace):
                 plan = None
                 if self.local.running() or self.active:
                     self.stop_local()
-                if self.comfy.running():
+                if self.comfy.running() and not getattr(self,'execution_scoped',False):
                     raise ValueError("請先停止 ComfyUI，再使用 OpenVINO。")
             elif chosen != "local":
                 provider = paired or self.providers.get(chosen)
