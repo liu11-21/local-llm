@@ -150,6 +150,9 @@
 .resource-summary { min-width:0;align-self:start; }
 .resource-summary .resource-board { margin-top:12px; }
 .chat-rail > input { width:100%;min-width:0; }
+.chat-rail { display:flex;flex-direction:column;max-height:calc(100dvh - 120px);align-self:start; }
+.chat-rail > .history { min-height:0;overflow-y:auto;flex:1; }
+.chat-stage { grid-template-columns:minmax(0,1fr); }
 .task-card { align-items:start;gap:12px; }
 .task-card > span:first-child { min-width:0;flex:1; }
 .task-card small { display:block;overflow-wrap:anywhere; }
