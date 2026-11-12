@@ -97,6 +97,10 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
         connect = True
         unknown.append("需要重新連線或更新能力資料。")
     image = record.get("media",{}).get('audio' if task=='music' else task) if task in ('image','video','music') and not local else None
+    if task in ('video','music') and record['kind']=='remote-host' and (
+            not image or image.get('schema')!=2 or not image.get('weights_verified')):
+        incompatible = True
+        reasons.append('遠端影音需要已驗證的 Media v2 工作流程與完整權重。')
     if image and image["state"]!="ready":
         risks.append("遠端 ComfyUI 或圖片權重尚未就緒。")
     health = task_health(record, task)

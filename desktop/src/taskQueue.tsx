@@ -90,6 +90,7 @@ export function TaskCenter({ tasks, cancel, retry, compact, loadError,info,onRes
       <span><b>{labels[task.kind] || labels[task.action] || task.action}{task.title && ` · ${task.title}`}</b>
         <small className="pre">{task.model} · {info?.providers.find(provider=>provider.id===task.runtime)?.label || (task.runtime==='openvino' ? '本機 OpenVINO' : task.runtime==='local' || !task.runtime ? '本機' : task.runtime)}</small>
         <small>{task.message.slice(0,180)}</small>
+        {task.error_info && <small className="pre">{task.error_info.recovery}</small>}
         {!compact && <small>{task.started ? '開始 '+new Date(task.started).toLocaleString() : '尚未開始'}</small>}
         {!compact && <details className="task-evidence"><summary>執行證據與完整紀錄</summary>
         <small className="pre">Job ID {task.id} · Dispatch ID {task.execution?.dispatch_id || '此任務無隔離 Dispatch'}</small>

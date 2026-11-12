@@ -155,6 +155,8 @@ def fresh(record, now=None):
 
 
 def task_health(record, task):
+    if task not in record['tasks']:
+        return 'unknown'
     if record["connected"] is False:
         return "offline"
     if task in record.get("task_health", {}):

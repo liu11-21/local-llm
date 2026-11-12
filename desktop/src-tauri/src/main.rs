@@ -101,13 +101,13 @@ impl Worker {
 
     fn request(&mut self, mut bytes: Vec<u8>) -> Result<Value, String> {
         bytes.push(b'\n');
-        let error = |e: std::io::Error| format!("工作程序連線中斷：{e}");
+        let error = |_e: std::io::Error| "工作程序連線中斷。請重新連線，先查看任務中心原工作狀態；不會自動重送。".to_string();
         self.input.write_all(&bytes).map_err(error)?;
         self.input.flush().map_err(error)?;
         let mut line = Vec::new();
         self.output.by_ref().take(RESPONSE_LIMIT).read_until(b'\n', &mut line).map_err(error)?;
         if line.last() != Some(&b'\n') {
-            return Err("工作程序已停止或回應超出上限。請重試。".into());
+            return Err("工作程序已停止或回應超出上限。請重新連線並查看原任務狀態，避免重複提交。".into());
         }
         serde_json::from_slice(&line).map_err(|_| "工作程序回應格式不正確。".into())
     }

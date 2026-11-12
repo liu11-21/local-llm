@@ -66,6 +66,7 @@ from team_workflow import ROLES as TEAM_ROLES, TeamStore, run_team as run_team_w
 from tool_registry import builtins as agent_tools
 from web_bridge import Workspace, engine_path, field
 from workspace_version import build_info
+from workspace_errors import explain, user_message
 
 ENGINE_VERSION = "b11810"
 ENGINE_FILE = f"llama-{ENGINE_VERSION}-bin-win-vulkan-x64.zip"
@@ -1530,7 +1531,8 @@ def worker_loop(directory):
                     raise ValueError("工作資料格式不正確。")
                 result = {"ok": True, "value": worker.rpc(request.get("op"), request["data"])}
             except Exception as error:
-                result = {"ok": False, "error": str(error).strip()[:1500] or "工作無法完成。"}
+                info = explain(error)
+                result = {"ok": False, "error": user_message(info), "error_info": info}
             sys.stdout.buffer.write(json.dumps(result, ensure_ascii=False).encode("utf-8") + b"\n")
             sys.stdout.buffer.flush()
     finally:

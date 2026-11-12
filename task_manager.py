@@ -202,8 +202,10 @@ class TaskManager:
             result = self.execute(task.public["action"], task.payload, task.stop, progress)
         except Exception as error:
             failure = error
+        from workspace_errors import explain, user_message
+        info = explain(failure) if failure else None
         with self.lock:
-            detail = (str(failure).strip()[:1500] or "本機工作失敗。") if failure else None
+            detail = info['detail'] if info else None
             if task.timed_out and not self.closed:
                 state,message="failed","SCHEDULER_TIMEOUT · 任務已到達時間上限，資源已釋放。"
                 detail=message
@@ -213,11 +215,13 @@ class TaskManager:
             elif isinstance(failure, PauseTask):
                 state, message = "paused", detail
             elif failure:
-                state, message = "failed", detail
+                state, message = "failed", user_message(info)
             else:
                 state, message = "completed", (result or {}).get("message") or "已完成。"
             task.public.update(state=state, finished=None if state == "paused" else timestamp(), message=message, result=result,
                                error=detail if state == "failed" else None)
+            if state == 'failed' and info:
+                task.public['error_info'] = info
             if result and result.get('file'):task.public['result_file']=result['file']
             if state != "paused" and (task.public["action"] not in RETRYABLE or state == "completed"):
                 task.payload = {}

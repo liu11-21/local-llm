@@ -70,6 +70,7 @@ export type Chat = [string, string]
 export type Message = { role: string; content: string; runtime?: string; model?: string; provider?: string }
 export type TaskState = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted'
 export type Task = {
+  error_info?:{code:string;summary:string;recovery:string;detail:string};
   model?:string;result_file?:string;
   parent_id?:string;resource_request?:{device:string;engine:string;ram:number;exclusive:string[]};
   execution?:{dispatch_id?:string;requested_device:string;actual_device:string|string[];execution_device_verified:boolean;recommendation?:{recommendation_id:string;benchmarks:{benchmark_id:string;benchmark_run_id:string;freshness:string;comparability:string}[]}};
