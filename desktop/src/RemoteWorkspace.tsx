@@ -90,7 +90,8 @@ export function RemoteWorkspace({info, refresh, openChat, run}: {
           <strong className="pre">{peer.label}</strong>
           <p className="small pre">{peer.host}:{peer.port} · {peer.connected ? '已連線' : '尚未連線'} · 文字聊天 · {peer.models.length} 個文字模型
             {cap?.task_health?.chat==='unhealthy' ? ' · 文字引擎需修復' : ''}</p>
-          {cap?.media?.image?.workflows.length ? <p className="small">遠端圖片 · {cap.media.image.state==='ready' ? '已就緒' : '需要準備 ComfyUI'}</p> : null}
+          {(['image','video','audio'] as const).map(kind=>cap?.media?.[kind]?.workflows.length ? <p key={kind} className="small">
+            遠端{kind==='image' ? '圖片' : kind==='video' ? '影片' : '音樂'} · {cap.media[kind]?.state==='ready' ? '已就緒' : '需要準備 ComfyUI／完整權重'}</p> : null)}
           {cap?.hardware && <p className="small">NPU · {cap.hardware.npu_present.value===true ? '主機偵測到裝置，推理待驗證' :
             cap.hardware.npu_present.value===false ? '主機未偵測到' : '未知'} · 硬體取樣 {new Date(cap.hardware.checked_at*1000).toLocaleTimeString()}</p>}
           <p className="small pre">RAM 可用 {cap?.resources.ram_available?.value != null ? gb(Number(cap.resources.ram_available.value)) : '未知'} ·

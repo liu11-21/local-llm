@@ -561,7 +561,7 @@ class Desktop(Workspace):
 
     def host_media_capabilities(self):
         result={'image':self.host_image_capability()}
-        for kind in ('video',):
+        for kind in ('video','music'):
             contract_kind='audio' if kind=='music' else kind
             workflows=list(MEDIA_WORKFLOWS[contract_kind])
             value={'installed':False,'state':'unavailable','workflows':workflows,'formats':[MEDIA_TYPES[contract_kind][1][1:]],
