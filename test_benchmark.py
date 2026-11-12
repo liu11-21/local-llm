@@ -73,7 +73,7 @@ class BenchmarkTests(unittest.TestCase):
         with self.app.connect() as db:
             BenchmarkStore.initialize(db)
             self.assertEqual(db.execute("SELECT title FROM chats WHERE id='keep'").fetchone()[0],"old chat")
-            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],12)
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0],13)
         result = store.get(identity)
         self.assertEqual(result["state"],"interrupted")
         self.assertEqual(result["runs"][0]["state"],"interrupted")

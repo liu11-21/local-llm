@@ -76,7 +76,7 @@ class InventoryGateTests(unittest.TestCase):
         info={"models":[],"devices":[],"engine":False,"openvino":{"installed":True,"devices":["CPU","GPU","NPU"],"models":[{"id":"model"}]},
               "hardware_capabilities":hardware}
         record=capability("openvino","OV","local","OpenVINO",tasks=["chat"],connected=True,models=["model"],network=False,cost="no-api-fee",
-                          resources={"ram_available":observed(ram,unit="bytes",checked_at=now)})
+                          resources={"ram_available":observed(ram,unit="bytes",checked_at=now),"ram_total":observed(16*1024**3,unit="bytes",checked_at=now)})
         app=SimpleNamespace(rpc=lambda *_:info,runtime_capabilities=lambda *_:[record])
         service=DeviceRecommendations(app)
         descriptor={"kind":"text","ram":1024**3,"bytes":100*1024**2,"npu_candidate":npu}

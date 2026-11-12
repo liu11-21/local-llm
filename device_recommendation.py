@@ -14,6 +14,7 @@ from resource_contract import fresh_measure
 from runtime_contract import fresh,task_health
 from runtime_recommendation import TASK_FORMAT,compare,recommend
 from web_bridge import engine_path,field
+from resource_policy import configured,memory_policy
 
 
 class DeviceRecommendations:
@@ -181,10 +182,10 @@ class DeviceRecommendations:
                 incompatible = available=="incompatible"
                 ram = record["resources"]["ram_available"]
                 total_ram=record["resources"]["ram_total"]["value"]
-                if local and required is not None and not media and (required>8*1024**3 or total_ram is not None and required+256*1024**2>total_ram):
+                if local and required is not None and not media and not memory_policy(total_ram,user_mib=configured(self.app),required=required)['feasible']:
                     available,executable="incompatible",False
                     incompatible=True
-                    reasons.append("需求超過隔離執行的 8 GiB 上限或系統總 RAM；可保留既有單工作模式或選擇較小模型。")
+                    reasons.append("需求超過實體 RAM 安全容量或使用者記憶體上限；請選擇較小模型或其他 Runtime。")
                 if required is not None and fresh_measure(ram):
                     if ram["value"]<required:
                         available,executable="uncertain",False;risks.append("目前可用 RAM 低於需求估計，可等候釋放或改選較小模型。")

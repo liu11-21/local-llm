@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {mkdir} from 'node:fs/promises'
+import {mkdir,writeFile} from 'node:fs/promises'
 import {join} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {chromium} from 'playwright-core'
@@ -19,6 +19,12 @@ try {
   browser=await chromium.launch({executablePath:process.env.LOCALLLM_BROWSER || join(process.env.ProgramFiles || 'C:\\Program Files','Google','Chrome','Application','chrome.exe')})
   const page=await browser.newPage({viewport:{width:1280,height:900},colorScheme:'dark',reducedMotion:'reduce'})
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
+  let adopted
+  page.on('response',async response=>{
+    if(response.url().includes('/__desktop_dev_rpc') && response.request().postDataJSON()?.op==='runtime-recommend') {
+      const reply=await response.json();if(reply.ok)adopted=reply.value
+    }
+  })
   await page.goto('http://127.0.0.1:1434')
   await page.getByText('本機工作台已連線').waitFor()
   const guide=page.getByRole('dialog',{name:'開始使用 Local LLM'})
@@ -61,6 +67,11 @@ try {
   assert.equal(execution?.state,'completed')
   assert.equal(execution.details.requested_device,'Vulkan0')
   assert.equal(execution.details.execution_device_verified,false)
+  assert.equal(execution.details.recommendation.recommendation_id,adopted.recommendation_id)
+  assert(execution.details.recommendation.benchmarks.length>0,'Must retain eligible original Benchmark IDs')
+  const chosen=adopted.candidates.find(item=>item.id===adopted.recommended)
+  for(const ref of execution.details.recommendation.benchmarks)assert(chosen.evidence.some(entry=>entry.session===ref.benchmark_id && entry.run===ref.benchmark_run_id && entry.eligible_for_ranking))
+  if(process.env.LOCALLLM_RECEIPT_EVIDENCE)await writeFile(process.env.LOCALLLM_RECEIPT_EVIDENCE,JSON.stringify({status:'PASS',source:'real-native-react-rpc',recommendation:adopted,dispatch:execution},null,2))
   await page.getByRole('button',{name:'送出',exact:true}).waitFor()
   await page.locator('.message.assistant .markdown').last().waitFor()
   assert((await page.locator('.message.assistant .markdown').last().textContent()).trim().length>0)

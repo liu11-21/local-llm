@@ -7,14 +7,14 @@ type Candidate={id:string;runtime:string;device:string;engine:string;model:strin
   evidence_level:string;confidence:string;network:boolean;needs_consent:boolean;cost:string;reasons:string[];risks:string[];uncertainty:string[];
   resource:{ram_estimate:number|null;vram_estimate:number|null;memory_type:string};performance?:{mean_ms:number;model_start_ms?:number|null;load_ms?:number|null;ttft_ms?:number|null;decode_tokens_per_s?:number|null};
   identity:{driver?:string;backend_version?:string;format?:string;quantization?:string;mapping?:{state:string}};evidence:Evidence[]}
-type Result={recommended:string|null;comparison:unknown;candidates:Candidate[];explanation:string}
+type Result={recommendation_id?:string;recommended:string|null;comparison:unknown;candidates:Candidate[];explanation:string}
 const availability:Record<string,string>={ready:'可執行',uncertain:'待確認','needs-setup':'需要準備',incompatible:'不相容'}
 const levels:Record<string,string>={'capability-only':'能力資料','verified-benchmark':'已量測並驗證裝置','backend-benchmark-limited':'已量測 Backend，裝置分配有限'}
 const preferences={auto:'自動建議',speed:'速度優先','low-memory':'低記憶體',energy:'省電優先',privacy:'隱私優先','local-first':'本機優先',cost:'節省費用'}
 
-export function DeviceChoice({info,task,runtime,model,policy='auto',device='',onDevice,onRuntime,disabled=false,title='運算建議'}:{
+export function DeviceChoice({info,task,runtime,model,policy='auto',device='',onDevice,onRuntime,onRecommendation,disabled=false,title='運算建議'}:{
   info?:Info;task:string;runtime:string;model:string;policy?:string;device?:string;onDevice?:(device:string)=>void;
-  onRuntime?:(runtime:string)=>void;disabled?:boolean;title?:string
+  onRuntime?:(runtime:string)=>void;onRecommendation?:(id:string|undefined)=>void;disabled?:boolean;title?:string
 }) {
   const id=useId()
   const [result,setResult]=useState<Result>()
@@ -39,6 +39,7 @@ export function DeviceChoice({info,task,runtime,model,policy='auto',device='',on
     if(candidate.runtime!==runtime && !onRuntime)return
     onRuntime?.(candidate.runtime)
     onDevice?.(candidate.device)
+    onRecommendation?.(candidate.id===result?.recommended ? result.recommendation_id : undefined)
   }
   return <section className="device-choice" aria-label={title}>
     {local && !media && onDevice && <label htmlFor={id+'-device'}>執行裝置<select aria-label="執行裝置" id={id+'-device'} value={device} disabled={disabled}

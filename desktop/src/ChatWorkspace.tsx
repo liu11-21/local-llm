@@ -53,6 +53,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const [temperature, setTemperature] = useState(0.4)
   const [mode, setMode] = useState('auto')
   const [device,setDevice]=useState('')
+  const [recommendation,setRecommendation]=useState<string>()
   const [openvinoDevice,setOpenvinoDevice] = useState('CPU')
   const [title, setTitle] = useState<string>()
   const [opening, setOpening] = useState(false)
@@ -65,6 +66,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const models = runtime === 'local' ? info?.models ?? [] : runtime==='openvino' ?
     info?.openvino?.models.filter(item=>item.kind==='text').map(item=>item.id) ?? [] : provider?.models ?? []
   const model = models.includes(selectedModel) ? selectedModel : models[0] || ''
+  useEffect(()=>{setRecommendation(undefined)},[model,runtime,policy])
   const canSend = !pending && !opening && !!model && (runtime === 'local' ? !!info?.engine :
     runtime==='openvino' ? !!info?.openvino?.installed : !!provider?.connected)
   const current = chats.find(([id]) => id === chat)
@@ -105,7 +107,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
       if (!regenerate) setPrompt('')
       const result = await run('chat', { chat, prompt:text, model, runtime, policy, consent, context, mode,
         max_tokens:runtime==='openvino' ? Math.min(budget,512) : budget, temperature, regenerate,
-        device:openvinoDevice,...(device && ['local','openvino'].includes(runtime) ? {execution:{device,confirmed:true}} : {}) }, setJob)
+        device:openvinoDevice,...(device && ['local','openvino'].includes(runtime) ? {execution:{device,confirmed:true,recommendation_id:recommendation}} : {}) }, setJob)
       if (result?.answer) {
         const rows = await rpc<Message[]>('history', {chat,with_runtime:true})
         setPending(undefined); setJob(undefined); setMessages(rows)
@@ -159,7 +161,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
             refresh={refreshRuntime} change={value => {setRuntime(value);setModel('');setDevice('')}}/></label>
         </div>
         <TaskFit key={`${runtime}:${model}:${policy}`} task="chat" runtime={runtime} model={model} policy={policy}/>
-        <DeviceChoice info={info} task="chat" runtime={runtime} model={model} policy={policy} device={device} onDevice={setDevice}
+        <DeviceChoice info={info} task="chat" runtime={runtime} model={model} policy={policy} device={device} onDevice={value=>{setDevice(value);setRecommendation(undefined)}} onRecommendation={setRecommendation}
           onRuntime={value=>{setRuntime(value);setDevice('')}} disabled={!!pending}/>
         {runtime === 'local' && <TextSetup info={info} run={run} cancel={cancel} openModels={()=>go('library')}/>}
         {runtime !== 'local' && runtime!=='openvino' && !provider?.connected && <PreparationNotice title="需要重新連線">

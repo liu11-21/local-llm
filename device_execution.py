@@ -14,6 +14,7 @@ from engine_health import EngineHealth
 from hardware import detect_hardware
 from resource_contract import fresh_measure
 from task_manager import PauseTask,timestamp
+from resource_policy import configured,memory_policy
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,7 @@ class DispatchTarget:
     memory: int
     hashes: tuple = ()
     binary_sha256: str | None = None
+    recommendation: dict | None = None
 
 
 class DeviceExecution:
@@ -40,16 +42,19 @@ class DeviceExecution:
 
     def snapshot(self):
         hardware=self.app.hardware_monitor.snapshot()
-        free=detect_hardware(self.app.data).ram_available
+        physical=detect_hardware(self.app.data)
+        policy=memory_policy(physical.ram_total,physical.ram_available,user_mib=configured(self.app))
+        free=policy['admission_available']
         vram={item["id"]:item["vram_available"]["value"] for item in hardware["devices"] if
               item.get("memory_type")=="dedicated" and fresh_measure(item["vram_available"])}
         external=[]
         if self.app.comfy.running():
-            external.append(("comfyui-resident",ResourceDemand(engine="ComfyUI",exclusive=("local:*",))))
+            _,claim=self.app.comfy_resources.snapshot()
+            external.append(("comfyui-resident",claim or ResourceDemand(engine='ComfyUI')))
         active=self.app.active
         if self.app.local.running() and active and active[-1].get("layers",0)>0:
             external.append(("legacy-llama-resident",ResourceDemand(engine="llama.cpp",exclusive=("gpu:*",))))
-        return {"ram_available":max(0,free-256*1024**2) if free is not None else None,"vram":vram,"external":external}
+        return {"ram_available":free,"vram":vram,"external":external}
 
     def prepare(self, task, data, *, confirmed=True):
         selection=data.get("execution")
@@ -81,14 +86,18 @@ class DeviceExecution:
         pools=((physical,resource["vram_estimate"]),) if gpu and physical and resource["memory_type"]=="dedicated" and resource["vram_estimate"] else ()
         seconds=selection.get("seconds",600)
         if type(seconds) is not int or not 15<=seconds<=600:raise ValueError("裝置任務時間上限須為 15–600 秒。")
-        memory=min(8192*1024**2,max(ram,1024**3))
-        if ram>memory:raise ValueError("模型需求超過目前隔離程序的 8 GiB 上限。")
+        physical=detect_hardware(self.app.data)
+        policy=memory_policy(physical.ram_total,physical.ram_available,user_mib=configured(self.app),required=ram)
+        if not policy['feasible']:raise ValueError('RAM_CAPACITY · 需求超過實體 RAM 安全容量或使用者上限，請選擇較小模型／其他 Runtime。')
+        memory=policy['job_limit']
         demand=ResourceDemand(device=physical or f"{engine}:{device}",engine=engine,ram=memory,vram=pools,
             shared_memory=memory if unified else 0,cpu_load=60 if cpu else 20,bandwidth=40 if cpu else 60 if unified and gpu else 50 if unified else 20,
             exclusive=tuple(locks),seconds=seconds,limitations=tuple(candidate["uncertainty"]))
         threads=max(1,min(8,(self.app.info()["hardware"]["cpu_threads"] or 2)//2)) if cpu else 2
+        receipt=selection.get('recommendation_id')
+        recommendation=self.app.recommendation_receipts.verify(receipt,runtime,device,data['model']) if receipt else None
         return DispatchTarget(runtime,device,data["model"],engine,demand,threads,memory,
-            tuple(sorted(candidate["identity"].get("model_hashes",{}).items())),candidate["identity"].get("executable_sha256"))
+            tuple(sorted(candidate["identity"].get("model_hashes",{}).items())),candidate["identity"].get("executable_sha256"),recommendation)
 
     def submit(self,action,data,*,target=None,**options):
         target=target or self.prepare("chat" if action=="chat" else action,data)
@@ -96,6 +105,8 @@ class DeviceExecution:
 
     @contextmanager
     def scope(self,target,task_id,cancel):
+        if target.recommendation:
+            self.app.recommendation_receipts.verify(target.recommendation['recommendation_id'],target.runtime,target.device,target.model)
         if target.hashes:
             if target.engine=="llama.cpp":
                 actual={"gguf":self.app.device_recommendations.digest(self.app.model(target.model))}
@@ -118,7 +129,8 @@ class DeviceExecution:
         identity=uuid4().hex
         details={"runtime":target.runtime,"engine":target.engine,"model":target.model,"requested_device":target.device,
                  "model_hashes":dict(target.hashes),"engine_sha256":target.binary_sha256,
-                 "resources":target.demand.public(),"execution_device_verified":False,"actual_device":"unknown"}
+                 "resources":target.demand.public(),"recommendation":target.recommendation,
+                 "dispatch_id":identity,"task_id":task_id,"execution_device_verified":False,"actual_device":"unknown"}
         with self.app.connect() as db:
             db.execute("INSERT INTO dispatch_runs VALUES(?,?,?,?,?,?)",(identity,task_id,"running",json.dumps(details),timestamp(),None))
         with self.lock:self.scopes[identity]=scoped

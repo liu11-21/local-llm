@@ -39,6 +39,9 @@ from benchmark_service import BenchmarkService
 from benchmark_core import comparable
 from device_recommendation import DeviceRecommendations
 from device_execution import DeviceExecution,DispatchTarget
+from recommendation_receipts import RecommendationReceipts
+from comfy_resources import ComfyResources
+from resource_policy import configured,memory_policy,load as load_memory_policy,save as save_memory_policy
 from openvino_adapter import memory_limit
 from load_plan import block_count
 from device_resources import ResourceDemand
@@ -184,7 +187,10 @@ class Desktop(Workspace):
         self.openvino = OpenVINOAdapter(self.data,self.connect)
         self.benchmarks = BenchmarkService(self)
         self.device_recommendations = DeviceRecommendations(self)
+        self.device_memory_mib=load_memory_policy(self)
+        self.recommendation_receipts = RecommendationReceipts(self)
         self.device_execution = DeviceExecution(self)
+        self.comfy_resources = ComfyResources(self)
         self.scheduler.resource_snapshot=self.device_execution.snapshot
         self.scheduler.dynamic_resources=True
 
@@ -1068,7 +1074,12 @@ class Desktop(Workspace):
 
     def rpc(self, op, data):
         if op=="runtime-recommend":
-            return self.device_recommendations.query(data)
+            return self.recommendation_receipts.issue(data)
+        if op=='resource-policy':
+            if 'user_limit_mib' in data:save_memory_policy(self,data['user_limit_mib'])
+            physical=detect_hardware(self.data)
+            return memory_policy(physical.ram_total,physical.ram_available,user_mib=configured(self))
+        if op=='comfy-resources':return self.comfy_resources.snapshot()[0]
         if op=="dispatch-runs":
             with self.connect() as db:
                 return [{"id":identity,"task":task,"state":state,"details":json.loads(details),"created":created,"finished":finished}
@@ -1419,6 +1430,7 @@ class Desktop(Workspace):
         raise ValueError("未支援的操作。")
 
     def close(self):
+        self.comfy_resources.close()
         self.scheduler.close()
         self.device_execution.close()
         self.openvino.close()
