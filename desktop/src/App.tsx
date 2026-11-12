@@ -60,6 +60,7 @@ export function App() {
     finally {await refresh()}
   }
   useEffect(() => { void refresh() }, [])
+  useEffect(() => { window.scrollTo(0,0) }, [page])
   useEffect(()=>{
     if (!info) return
     if (['hardware','choose','prepare'].includes(guide.stage) ||

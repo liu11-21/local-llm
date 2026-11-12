@@ -1,5 +1,9 @@
 import ssl
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+from desktop_worker import Desktop
 from urllib.error import HTTPError
 from workspace_errors import explain, user_message
 from runtime_contract import capability, external_capability, colab_capability, task_health
@@ -7,6 +11,13 @@ from runtime_recommendation import compare
 
 
 class IntegrationTests(unittest.TestCase):
+    def test_openvino_model_refresh_never_looks_up_an_external_provider(self):
+        with TemporaryDirectory() as folder:
+            app=Desktop(Path(folder))
+            try:
+                with patch.object(app.openvino,'status',return_value={'installed':True,'models':[{'id':'local-model'}]}),patch.object(app.providers,'get',side_effect=AssertionError('must remain local')):
+                    self.assertEqual(app.rpc('runtime-models-refresh',{'runtime':'openvino'}),{'id':'openvino','models':['local-model'],'connected':True})
+            finally:app.close()
     def test_recoverable_errors_are_understandable_and_redacted(self):
         cases=[(FileNotFoundError('missing.gguf'),'NOT_INSTALLED'), (PermissionError('denied'),'ACCESS_DENIED'),
             (ssl.SSLError('certificate expired'),'TLS_VERIFY_FAILED'), (TimeoutError(),'TIMEOUT'),

@@ -1183,6 +1183,9 @@ class Desktop(Workspace):
             runtime = field(data, "runtime", 32)
             if runtime == "local":
                 return {"id":runtime,"models":self.rpc("info", {})["models"],"connected":True}
+            if runtime == 'openvino':
+                status=self.openvino.status()
+                return {'id':runtime,'models':[model['id'] for model in status['models']],'connected':status['installed']}
             provider = self.remote_clients.items.get(runtime) or self.providers.get(runtime)
             provider.discover()
             return provider.summary()

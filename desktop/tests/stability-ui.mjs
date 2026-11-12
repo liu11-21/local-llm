@@ -18,6 +18,7 @@ export async function exerciseStability(page) {
   await page.getByText(/Worker：0.7.0/).waitFor()
   if(shots)await page.screenshot({path:join(shots,'settings-version.png'),fullPage:true})
   const timings={home_render_ms:[],runtime_selector_ms:[]}
+  if(await page.getByTitle('關閉訊息').isVisible())await page.getByTitle('關閉訊息').click()
   for(let n=0;n<3;n++){
     await go('文字聊天');let started=performance.now();await go('首頁')
     await page.getByRole('heading',{name:'繼續你的工作',exact:true}).waitFor()
@@ -33,6 +34,7 @@ export async function exerciseStability(page) {
     const select=page.locator('.chat-config').getByLabel('運算環境',{exact:true})
     started=performance.now();await select.selectOption('openvino');await page.waitForFunction(()=>!document.querySelector('.chat-config select[aria-label="運算環境"]').disabled)
     timings.runtime_selector_ms.push(performance.now()-started)
+    assert.equal(await page.getByRole('alert').count(),0,'Local OpenVINO refresh must not report an external endpoint error')
     await select.selectOption('local');await page.waitForFunction(()=>!document.querySelector('.chat-config select[aria-label="運算環境"]').disabled)
   }
   await rpc('fixture-many-chats')
@@ -52,6 +54,7 @@ export async function exerciseStability(page) {
   await page.waitForFunction(()=>document.querySelectorAll('.history-item').length===50)
   if(shots)await page.screenshot({path:join(shots,'chat-history-paged.png')})
   await go('首頁');await page.getByRole('heading',{name:'繼續你的工作',exact:true}).waitFor()
+  await page.waitForFunction(()=>scrollY===0)
   if(shots)await page.screenshot({path:join(shots,'home-monitor-collapsed.png'),fullPage:true})
   const forwarded=[]
   const mismatch=async route=>{
