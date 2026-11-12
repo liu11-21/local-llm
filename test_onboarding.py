@@ -5,6 +5,14 @@ from runtime_contract import capability
 
 
 class OnboardingTests(unittest.TestCase):
+    def test_remote_video_and_audio_first_use_preserves_privacy_and_media_task_mapping(self):
+        for task,kind,workflow in [('video','video','wan21'),('music','audio','ace-step')]:
+            remote=capability('p','Media desk','remote-host','Local LLM',connected=True,health='unhealthy',tasks=['chat',task],
+                task_health={'chat':'unhealthy',task:'ready'},media={kind:{'state':'ready','installed':True,'workflows':[workflow],'schema':2}})
+            selected=onboarding_plan(self.info(),[remote],task,'auto')['choices'][0]
+            self.assertEqual((selected['runtime'],selected['model'],selected['actions']),('p',workflow,[]))
+            self.assertEqual(len(onboarding_plan(self.info(),[remote],task,'privacy')['choices']),1)
+
     def info(self, installed=(), engine=False):
         return {"hardware":{"ram_available":None}, "registry":{"models":list(installed)}, "engine":engine,
                 "recommended":[{"name":"small.gguf","repo":"owner/Small","description":"輕量中文對話",

@@ -125,6 +125,9 @@ def validate_content(path,kind,*,strict=True):
     if not header.startswith(FORMATS[app_kind][1]):raise ValueError('媒體內容格式不符。')
     if kind=='image' and (len(header)<24 or header[12:16]!=b'IHDR' or not any(header[16:24])):
         raise ValueError('PNG 內容格式不符。')
+    if kind=='image':
+        width,height=struct.unpack('>II',header[16:24])
+        if not 1<=width<=4096 or not 1<=height<=4096:raise ValueError('PNG 解碼尺寸超出安全範圍。')
     if kind=='image' and strict:
         with path.open('rb') as stream:
             stream.seek(8);seen=set()
@@ -149,12 +152,15 @@ def validate_content(path,kind,*,strict=True):
     if kind=='audio':
         if len(header)<42 or header[4]&127!=0 or header[5:8]!=b'\x00\x00\x22':raise ValueError('FLAC STREAMINFO 無效。')
         packed=int.from_bytes(header[18:26],'big')
-        if not packed>>44 or not packed&(2**36-1):raise ValueError('FLAC 時長或取樣率無效。')
+        rate,samples=packed>>44,packed&(2**36-1)
+        if not 8000<=rate<=192000 or not 0<samples/rate<=600:raise ValueError('FLAC 時長或取樣率無效。')
     if kind=='video':
         from registries import webm_metadata
         with path.open('rb') as stream:metadata=webm_metadata(stream,path.stat().st_size)
         if b'webm' not in header or not metadata.get('width') or not metadata.get('height'):
             raise ValueError('WebM 標頭或影像軌無效。')
+        if not 1<=metadata['width']<=4096 or not 1<=metadata['height']<=4096 or metadata.get('duration',1)>7200:
+            raise ValueError('WebM 解碼尺寸或時長超出安全範圍。')
 
 
 def descriptor(path, workflow, options, created, cancel, *, owner=None,host=None,job=None):

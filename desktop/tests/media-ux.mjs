@@ -52,6 +52,8 @@ export async function exerciseMediaUX(page) {
     await page.getByText('受控影音主機 · 傳輸驗收',{exact:true}).waitFor()
     await page.getByRole('button',{name:'重新使用設定',exact:true}).click()
     assert.equal(await page.getByLabel('提示詞',{exact:true}).inputValue(),'Legal synthetic '+kind+' playback fixture; not model inference')
+    assert.equal(await page.locator('.creation').getByLabel('運算環境',{exact:true}).inputValue(),host,'Reusing work must preserve the original Host')
+    if(kind==='music')assert.equal(await page.getByLabel('歌詞（選填）',{exact:true}).inputValue(),'Controlled lyrics saved in the client library')
     flows.push({flow:'prepared-remote-'+kind,status:'PASS-controlled-protocol-and-real-playback',semantic_actions:kind==='music' ? 8 : 7,manual_technical_parameters:0,metadata})
   }
   await rpc('fixture-many-works')

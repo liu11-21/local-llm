@@ -8,7 +8,7 @@ type Host = {
   error?: string; label?: string; address?: string; port?: number; models?: string[]; listening: boolean
   peers: {id:string; label:string}[]
   fingerprint?: string
-  media?: {state:string;workflows?:string[]}
+  media?: {state?:string;workflows?:string[];image?:{state:string;workflows?:string[]};video?:{state:string;workflows?:string[]};audio?:{state:string;workflows?:string[]}}
   engine?: {installed:boolean; accepting:boolean; busy:boolean; error?:string; engine_state:string; model_loaded:boolean}
 }
 type Networks = {addresses: string[]; address?: string; fingerprint?: string; expires?: number; has_peers: boolean}
@@ -36,7 +36,7 @@ export function RemoteWorkspace({info, refresh, openChat, run}: {
   const [recoveryHost, setRecoveryHost] = useState('')
   const [request, setRequest] = useState('')
   const [recovered, setRecovered] = useState<{state:string; answer?:string; message?:string; runtime:string; request:string;
-    artifact?:{bytes:number}; saved_local?:boolean}>()
+    artifact?:{bytes:number;kind?:string}; saved_local?:boolean}>()
   const peers = info?.providers.filter(item => item.kind === 'paired') ?? []
   const running = host?.listening === true
   const selectedNetwork = network || (networks?.address && networks.addresses.includes(networks.address) ?
@@ -131,7 +131,7 @@ export function RemoteWorkspace({info, refresh, openChat, run}: {
           <button className="button section-note" disabled={busy}>查詢任務</button>
         </form>
         {recovered && <div role="status" className="pre"><p>{recovered.state} · {recovered.message}</p><p>{recovered.answer}</p>
-          {recovered.artifact && <p>遠端圖片 · {recovered.saved_local ? '已保存到本機' : '尚未下載'} · {gb(recovered.artifact.bytes)}</p>}
+          {recovered.artifact && <p>遠端{recovered.artifact.kind==='video' ? '影片' : recovered.artifact.kind==='audio' ? '音樂' : '圖片'} · {recovered.saved_local ? '已保存到本機' : '尚未下載'} · {gb(recovered.artifact.bytes)}</p>}
           {recovered.artifact && !recovered.saved_local && <button className="button" disabled={busy} onClick={()=>void change(async()=>{
             const result = await run('remote-fetch-work',{runtime:recovered.runtime,request:recovered.request})
             if (result?.file) setRecovered({...recovered,saved_local:true})
@@ -190,6 +190,8 @@ export function RemoteWorkspace({info, refresh, openChat, run}: {
           本機可用 RAM {info?.hardware.ram_available != null ? gb(info.hardware.ram_available) : '未知'}</p>
         {host?.media?.workflows?.length ? <p className="small">圖片工作流程 · {host.media.state==='ready' ?
           '已就緒' : '等待 ComfyUI、權重與節點'}</p> : null}
+        {(['image','video','audio'] as const).map(kind=>host?.media?.[kind]?.workflows?.length ? <p className="small" key={kind}>
+          {kind==='image' ? '圖片' : kind==='video' ? '影片' : '音樂'}工作流程 · {host.media[kind]?.state==='ready' ? '已就緒' : '等待 ComfyUI、完整權重與節點'}</p> : null)}
         {host?.fingerprint && <details><summary>核對主機指紋</summary><p className="small pre">SHA-256 {host.fingerprint}</p></details>}
         <div className="row creation-actions">
           <button className="button primary" disabled={busy || host?.state === 'failed'} onClick={()=>void change(async()=>{

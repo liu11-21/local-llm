@@ -288,10 +288,11 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
   const serviceState = health?.comfyui.state
   const preview = result ?? latest?.name
   const apply = (work: Work) => {
-    const saved = workflows.find(item => item.id === work.workflow)
+    const saved = info?.registry.workflows.find(item => item.id === work.workflow && item.kind===kind)
     if (!saved || (work.schema !== undefined && work.schema !== 1)) return
     const keys = new Set(saved.parameters.map(param => param.key))
     setId(saved.id); setPrompt(work.prompt ?? ''); setLyrics(work.lyrics ?? '')
+    setRuntime(work.runtime==='remote-comfyui' && work.source?.host ? work.source.host : 'local')
     setOverrides(Object.fromEntries(Object.entries(work.options ?? {}).filter(([key]) => keys.has(key))))
   }
   useEffect(() => {
@@ -350,7 +351,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
         } catch(error) {report(error)} finally {setPending(false)}
       }}>
         <label>提示詞<textarea aria-label="提示詞" maxLength={12000} value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="描述想生成的作品…"/></label>
-        {kind === 'music' && <label>歌詞（選填）<textarea maxLength={12000} value={lyrics} onChange={e => setLyrics(e.target.value)}/></label>}
+        {kind === 'music' && <label>歌詞（選填）<textarea aria-label="歌詞（選填）" maxLength={12000} value={lyrics} onChange={e => setLyrics(e.target.value)}/></label>}
         <div className="parameters">{workflow?.parameters.filter(param => param.basic).map(parameter)}</div>
         <details><summary>進階生成參數</summary><div className="parameters">
           {workflow?.parameters.filter(param => !param.basic).map(parameter)}

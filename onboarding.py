@@ -13,7 +13,7 @@ def onboarding_plan(info, capabilities, task, policy):
     if task in DEFAULT_WORKFLOWS:
         choices = []
         for record in capabilities:
-            media = record.get("media", {}).get(task, {})
+            media = record.get("media", {}).get('audio' if task=='music' else task, {})
             if (record["kind"] != "remote-host" or task not in record["tasks"] or not record["connected"]
                     or not fresh(record) or media.get("state") != "ready" or not media.get("workflows")
                     or task_health(record,task) not in ("ready","busy")):

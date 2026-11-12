@@ -72,6 +72,9 @@ class MediaContractTests(TestCase):
         with TemporaryDirectory() as folder:
             root=Path(folder);path=root/'a12345678901.png';copyfile(FIXTURES/'sample.png',path)
             validate_content(path,'image')
+            oversized=bytearray(path.read_bytes());oversized[16:20]=(2**31).to_bytes(4,'big');path.write_bytes(oversized)
+            with self.assertRaisesRegex(ValueError,'尺寸'):validate_content(path,'image')
+            copyfile(FIXTURES/'sample.png',path)
             body=bytearray(path.read_bytes());body[-6]^=1;path.write_bytes(body)
             with self.assertRaisesRegex(ValueError,'CRC'):validate_content(path,'image')
             copyfile(FIXTURES/'sample.webm',path)
