@@ -1,5 +1,13 @@
 # Device Recommendation · E3-D1–D4
 
+## E3-F 現行推薦與資源政策
+
+runtime-recommend 另保存本機推薦憑證；實際採用／派送保存原 Benchmark ID、Run ID、Recommendation ID、Task ID 與 Dispatch ID。採用後 15 分鐘內仍需在開始時重新通過原條件，模型／設備／驅動／證據變動時拒絕舊憑證。未採用的手動設備選擇不偽裝為 Benchmark 推薦。
+
+本輪舊 GPU LUID 與目前不同，舊結果被排除；驗收明確執行新短張量 CPU／GPU Benchmark 後，真實 UI 採用及原生推理通過。[原始完整證據](evidence/media/recommendation-native-real.json)。張量排名不推論文字效能。
+
+固定 8 GiB 隔離上限已改為動態實體 RAM 安全容量與使用者上限；當前不足排隊、總容量不足拒絕。遠端影片與音樂候選依各自受管理 Workflow／完整權重／健康判斷。[記憶體與 ComfyUI 調度](RESOURCE_SCHEDULER.md)。
+
 版本維持 0.6.2，分支 dev/desktop-workspace。D1、D2、D3、D4 已連續實作。Benchmark 提供證據，既有 runtime_recommendation.py 決策，TaskManager 執行。沒有第二套 Benchmark、推薦核心或工作佇列。
 
 ## D1 新鮮度與可比較性
@@ -25,7 +33,7 @@ device_recommendation.py 組合即時資料，呼叫同一個 runtime_recommenda
 
 結果包含 Runtime、Engine、Device、Model、availability、evidence_level、confidence、performance、resource、cost、needs_consent、替代候選與原因。availability 分為 ready、needs-setup、uncertain、incompatible。未安裝、裝置缺失、NPU 壓縮條件不符、離線及政策不允許者不進入可執行排序。沒有 Adapter 的 AMD／Qualcomm NPU 不列為可執行候選。OpenVINO GPU 與 Vulkan 保持不同 Backend。
 
-System RAM、Dedicated VRAM、Unified／Shared、估計及實測分開。只檢查所選單張 GPU 的可用池，不合併多張 VRAM，不把共享上限當可分配容量。Intel 內顯主要計入共享 RAM，不能因專用顯存小就判為不可用。GPU 原生編譯／驅動工作空間預留至少 2 GiB；隔離程序目前最高 8 GiB，較大模型可保留既有單工作模式，不自動切換或下載。
+System RAM、Dedicated VRAM、Unified／Shared、估計及實測分開。只檢查所選單張 GPU 的可用池，不合併多張 VRAM，不把共享上限當可分配容量。Intel 內顯主要計入共享 RAM，不能因專用顯存小就判為不可用。GPU 原生編譯／驅動工作空間預留至少 2 GiB；隔離程序依動態 RAM 策略與使用者上限准入，不自動切換或下載。
 
 支援 Auto、Speed、Low Memory、Energy、Privacy、Local First、Cost。沒有功耗時不判定最省電，未知費用不當免費。隱私限制本機，節省費用排除可能計費與未知費用。外部 API 需要手動政策與此次確認，配對主機也必須確認目的地及內容。
 
@@ -39,7 +47,7 @@ device_resources.py 定義 ResourceDemand，TaskManager 在同一把鎖內一次
 
 需求包含 Device／Engine、RAM、各 VRAM 池、已含於 RAM 的共享需求、CPU／頻寬預算、排他資源、Backend 限制及時間。每裝置、Engine／Provider、共享加速器與遠端 Runtime 都有鎖。未知 GPU 使用 gpu:*，不同 Backend 不會誤認成不同實體 GPU。一次取得所有資源，沒有部分鎖等待循環。
 
-RAM 保留 256 MiB 系統餘量，再保守扣除正在執行的預留，可能低估並行數。CPU／頻寬是規劃預算，推理執行緒有上限，不宣稱作業系統級 CPU 百分比隔離。Windows Job Object 限制程序 committed memory，與 RAM 工作集峰值分開。
+RAM 保留 max(1 GiB, 實體 RAM 10%) 系統餘量，再保守扣除正在執行的預留，可能低估並行數。CPU／頻寬是規劃預算，推理執行緒有上限，不宣稱作業系統級 CPU 百分比隔離。Windows Job Object 限制程序 committed memory，與 RAM 工作集峰值分開。
 
 ComfyUI 運行期間保守預留全域本機資源。其本地／Host 圖片任務沿用這份保留，仍由原 compute lane 序列化；不會被自己的常駐服務或等候它結束的舊 Benchmark 鎖死。其他引擎與 Benchmark 仍須等候 ComfyUI 停止。Benchmark 獨占本機，避免污染量測。舊閒置 GPU 模型保留 GPU 鎖，可由使用者停止；既有單工作流程取得全域鎖後仍能按原行為換模。停止資源的任務不受公平性鎖死。
 

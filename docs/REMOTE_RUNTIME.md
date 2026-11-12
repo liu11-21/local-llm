@@ -1,5 +1,11 @@
 # 使用另一台 Windows 電腦運算
 
+## E4 遠端多模態
+
+Host 可宣告 image／video／audio，產品任務為圖片／影片／音樂；文字引擎健康與各媒體流程健康分開。影片與音樂只有完整固定權重通過 SHA-256、必要節點及服務就緒才可執行，開始時重查。舊 Host 僅有 PNG 時不會被顯示成支援影片／音樂。
+
+使用者選擇 Host 並核對提示詞／歌詞／生成參數及目的地後才提交，首頁快捷入口只預選、不傳送。TLS、DPAPI、擁有者隔離與管理 IPC 邊界沿用。配對後查詢同一 Job 可恢復下載，不會無條件重送生成。完整模型 GPU 與雙實體機驗收仍待硬體。[媒體操作](REMOTE_MEDIA.md)、[傳輸規則](MEDIA_TRANSPORT.md)。
+
 Host 提供文字聊天，也可在受管 ComfyUI 與 SD 1.5 就緒時接收圖片任務。兩台電腦需能透過 LAN 或受信任的私人 VPN 連線。Host 在本機 Windows 帳戶中執行，關閉工作台即停止分享。 [遠端圖片設定](REMOTE_MEDIA.md)
 
 E1 增加每項任務的 `task_health`，整體 Host 狀態保留相容用途。文字引擎失敗時，仍可依圖片流程的就緒狀態推薦圖片任務。離線、過期能力與權限檢查仍適用。E2 的可選 `hardware` 紀錄包含 GPU、NPU、量測來源及時間，對舊配對資料缺少的欄位保留未知。主機回報的硬體存在與模型實際可執行能力分別呈現。
@@ -68,7 +74,7 @@ $keyFile
 
 - Client 透過 TLS 1.2 以上驗證邀請內的憑證、IP SAN 和對端憑證身分。只有驗證完成後才傳送邀請或配對 Token。
 - Host 只保存 Token 的 SHA-256。Client 的連線資料與 Windows DPAPI 保護的 Token 分表儲存。遠端 API 只允許配對、能力查詢、文字任務、狀態、串流、取消及撤銷自己。Host 啟停和管理其他裝置只能從本機 IPC 操作。 [Windows DPAPI](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata)
-- 文字工作沿用本機運算槽與引擎分層。Host 同時最多收四筆尚未結束的遠端任務，並對請求大小、HTTP 連線數和任務時間設限。遠端使用者僅能選擇 Host 已列出的 GGUF。
+- 文字工作沿用本機運算槽與引擎分層。Host 同時最多收四筆尚未結束的遠端任務，並對請求大小、HTTP 連線數和任務時間設限。文字只能選 Host 已列出的 GGUF；媒體只能選已就緒的受管理 Workflow。
 - 任務與配對裝置綁定。文字 SSE 斷線時會以同一任務 ID 重連，避免重複生成。仍無法連線時可複製錯誤中的任務 ID 到「查詢中斷的遠端任務」。重新分享後仍可查詢已完成的回答或圖片。若 Client 送出取消時已離線，Host 仍按自身時間上限停止等待。
 
 Windows CI 的 TLS、配對、SSE 與撤銷測試使用隔離回環服務和受控模型輸出。跨兩台實體 Windows 電腦的 GPU 推理需要另行驗收。

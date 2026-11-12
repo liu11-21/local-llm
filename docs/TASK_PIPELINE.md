@@ -1,5 +1,11 @@
 # 共用任務準備
 
+## E3-F／E4／E5 任務流程
+
+推薦查詢不執行工作；採用附本機 Recommendation ID，TaskManager 開始前重新驗證模型／環境／Benchmark，dispatch_runs 保存完整鏈。未知或失效時拒絕舊憑證，手動改設備可重新確認。模型 Job Object 使用與資源預留一致的動態記憶體額度。
+
+遠端媒體使用原 media／remote-host-media／remote-fetch-work 動作。Client 提交前保存提示詞、歌詞、參數及 Host／Job ID；Host 重新檢查白名單、配額及完整權重，長工作查詢／取消／續傳共用現有任務系統。重啟中斷、不自動重跑；失敗的下載不重新生成。TaskCenter 保留結果入口與進階證據。[詳細狀態與界線](E4_E5_DELIVERY.md)。
+
 ## E3-D 的推薦與確認
 
 DeviceChoice 讀取相同推薦 RPC，不傳送 Prompt，也不啟動 Benchmark。使用者可看條件、替代來源與完整證據，手動選擇設備後仍須開始任務。外部來源沿用 TaskPreparation 的目的地、內容與費用確認，未知費用不視為免費。
@@ -18,7 +24,7 @@ Benchmark 不列為自動重試工作。取消、逾時或 Backend 失敗保留�
 
 OpenVINO 透過現有 TaskManager 執行安裝、裝置查詢、模型匯入及推理。安裝需確認固定版本套件和空間，模型由使用者從既有 IR 資料夾匯入。聊天只列出含完整 Tokenizer 的模型，使用本機政策，不增加外部傳送確認。OpenVINO 與 llama.cpp／ComfyUI 共用單一 compute 槽，獨立安裝走原 network 槽。
 
-指定裝置使用 CPU、GPU／GPU.n、NPU／NPU.n，不提供 AUTO／HETERO。NPU 文字模型須符合可辨識的對稱 INT4、group size 和 ratio 條件，實際算子相容性由後端載入檢查。格式檢查、後端存在、估計容量、實際推理證據及 Benchmark 各自呈現。E3-C、E3-D 的基準框架與智慧派送尚未交付。
+指定裝置使用 CPU、GPU／GPU.n、NPU／NPU.n，不提供 AUTO／HETERO。NPU 文字模型須符合可辨識的對稱 INT4、group size 和 ratio 條件，實際算子相容性由後端載入檢查。格式檢查、後端存在、估計容量、實際推理證據及 Benchmark 各自呈現。E3-C／D Benchmark 與智慧派送已整合，沿用原有核准與資料同意。
 
 首頁的首次使用引導使用同一套模型及 Runtime 資料。文字引擎和 GGUF 各自走原有任務，使用者只需要按一次準備。切換 Runtime 時更新模型清單並重驗證選取項目，保留提示詞。 [首次使用](ONBOARDING.md)
 

@@ -1,0 +1,17 @@
+2026-11-12T10:27:34.6109210Z test_binary_handles_utf8_and_returns_safe_ipc_errors (test_desktop_worker.PackagedWorkerTests.test_binary_handles_utf8_and_returns_safe_ipc_errors) ... skipped 'Build the Windows onedir worker first.'
+2026-11-12T10:27:51.9926103Z test_tls_identity_without_network_interception (test_remote_client.ClientTests.test_tls_identity_without_network_interception) ... ok
+2026-11-12T10:28:27.0762051Z Ran 189 tests in 77.934s
+2026-11-12T10:28:27.0762292Z OK (skipped=1)
+2026-11-12T10:28:36.8012860Z test_binary_handles_utf8_and_returns_safe_ipc_errors (test_desktop_worker.PackagedWorkerTests.test_binary_handles_utf8_and_returns_safe_ipc_errors) ... ok
+2026-11-12T10:28:36.8013867Z Ran 1 test in 0.780s
+2026-11-12T10:29:06.7365937Z PASS controlled NPU presence, unknown monitoring, long names, four sizes and both themes
+2026-11-12T10:29:10.7144468Z PASS creation installation summary, work library filters, and saved settings replay
+2026-11-12T10:29:10.7144973Z PASS workspace layout in both themes at 1280, 1024, 800, and 650 px
+2026-11-12T10:29:21.5161892Z PASS Agent approval, SSE tool protocol, timeline, format error and cancellation; Team roles, modes, review, partial failure and cancellation
+2026-11-12T10:29:23.5447660Z PASS workspace shell, resource monitor, TLS provisioning and destination consent
+2026-11-12T10:29:26.3599186Z PASS first use resumes after reload, retries interrupted setup, and saves the first chat
+2026-11-12T10:29:28.2677903Z PASS remote image consent, verified transfer, and works-library provenance
+2026-11-12T10:29:29.8459981Z PASS controlled OpenVINO Runtime selection, compute scheduling, local privacy and saved chat
+2026-11-12T10:29:31.4521091Z PASS controlled Benchmark empty/failed/unknown states, non-equivalence, long names, no GPU/NPU, consent, cancel, keyboard and four sizes in both themes
+2026-11-12T10:29:33.1966127Z PASS shared device recommendation across chat Agent Team media model/runtime centres, stale/missing/offline evidence, manual override, no auto-dispatch, keyboard and four sizes/both themes
+2026-11-12T10:29:40.2592803Z PASS E4/E5 controlled remote video/audio, legal VP9/FLAC playback, consent, saved parameters/reuse, compact chat, narrow history, grid/list pagination, four sizes and both themes

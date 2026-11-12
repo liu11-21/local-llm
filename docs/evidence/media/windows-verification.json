@@ -1,0 +1,134 @@
+{
+  "status": "PASS",
+  "run": 43200374886,
+  "artifact": 13934754399,
+  "commit": "4354605004c7d8db1f88bca8e3cc1ef38b135b55",
+  "version": "0.6.2",
+  "artifact_digest": "sha256:b38f8dfcb2fa21011ece176839ac265d526632b00ae8710815c238b13bee075b",
+  "downloaded_archive_sha256": "b38f8dfcb2fa21011ece176839ac265d526632b00ae8710815c238b13bee075b",
+  "exe_sha256": "885a9d3723c5eecd8c2db9277b2f1122648e665d8af2b92e952b2d5faae2d8a3",
+  "exe_bytes": 13226426,
+  "build_json_commit_version_and_exe_hash_match": true,
+  "sha256sums_match": true,
+  "official_release": false,
+  "authenticode": "NotSigned",
+  "python_ci": {
+    "tests": 189,
+    "initial_pass": 188,
+    "initial_skipped_packaged": 1,
+    "packaged_after_build_pass": 1
+  },
+  "loopback_tls_and_remote_video_audio": "PASS on clean Windows runner; not skipped",
+  "controlled_ui": "PASS including legal VP9/FLAC playback, consent, saved Host/lyrics/settings reuse, shared recommendations, Benchmark, Agent/Team and prior workflows",
+  "installer_smoke": "PASS per-user install, desktop/start-menu shortcuts, WebView/worker startup, process cleanup, uninstall preserving user data",
+  "ci_url": "https://github.com/liu11-21/local-llm/actions/runs/43200374886",
+  "artifact_url": "https://github.com/liu11-21/local-llm/actions/runs/43200374886/artifacts/13934754399",
+  "job_id": 131121909291,
+  "ci_steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:26:26Z",
+      "completed_at": "2026-11-12T10:26:27Z"
+    },
+    {
+      "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:26:27Z",
+      "completed_at": "2026-11-12T10:26:34Z"
+    },
+    {
+      "name": "Run actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:26:34Z",
+      "completed_at": "2026-11-12T10:26:40Z"
+    },
+    {
+      "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:26:40Z",
+      "completed_at": "2026-11-12T10:26:40Z"
+    },
+    {
+      "name": "Pin toolchain and Python packager",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:26:40Z",
+      "completed_at": "2026-11-12T10:27:07Z"
+    },
+    {
+      "name": "Test Python and build the onedir worker",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:27:07Z",
+      "completed_at": "2026-11-12T10:28:36Z"
+    },
+    {
+      "name": "Exercise desktop layout in Chromium",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:28:36Z",
+      "completed_at": "2026-11-12T10:29:40Z"
+    },
+    {
+      "name": "Build Windows per-user installer (unsigned)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:29:40Z",
+      "completed_at": "2026-11-12T10:33:18Z"
+    },
+    {
+      "name": "Verify installer inventory and produce checksums",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:33:18Z",
+      "completed_at": "2026-11-12T10:33:19Z"
+    },
+    {
+      "name": "Exercise the installed desktop app and uninstall",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:33:19Z",
+      "completed_at": "2026-11-12T10:33:44Z"
+    },
+    {
+      "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:33:44Z",
+      "completed_at": "2026-11-12T10:33:45Z"
+    },
+    {
+      "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:33:45Z",
+      "completed_at": "2026-11-12T10:33:46Z"
+    },
+    {
+      "name": "Post Run actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:33:46Z",
+      "completed_at": "2026-11-12T10:33:46Z"
+    },
+    {
+      "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:33:46Z",
+      "completed_at": "2026-11-12T10:33:47Z"
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-12T10:33:47Z",
+      "completed_at": "2026-11-12T10:33:47Z"
+    }
+  ]
+}

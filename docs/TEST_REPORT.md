@@ -1,5 +1,34 @@
 # 桌面工作台測試紀錄
 
+## E3-F、E4–E5 完整整合（2026-11-12）
+
+基準 db6f6f8，版本 0.6.2。F 44a9931、A 50dd40c、B ad15eb2、C 45fb36e、E4-D df213ee、E5 8decf9a、資源識別修正 25c3edd、媒體收尾 4354605。[完整交付與限制](E4_E5_DELIVERY.md)。
+
+| 狀態 | 驗收 |
+|---|---|
+| PASS | 本機 Python 189 項，182 通過，7 項 Norton 回環 TLS 案例交乾淨 Windows CI。TypeScript／Vite、完整 Chromium 通過，保留 bundle 大小提醒。 |
+| PASS | 真實 OpenVINO CPU／Intel GPU 新 Benchmark 共 28 列，正確輸出。舊 GPU LUID 不符先被排除，驗收明確啟動短量測；推薦器未自動執行 Benchmark。 |
+| PASS | 同次 UI 排序、採用、推薦 ID／Benchmark ID／Dispatch ID、TaskManager 與真實推理對應，輸出正確。[原始證據](evidence/media/recommendation-native-real.json) 與 [原始量測](evidence/media/benchmark-native-current.json)。 |
+| PASS | 動態容量、使用者上限、未知需求、RAM／VRAM／UMA、ComfyUI 閒置與保守回退、取消／清理；>8 GiB 是受控容量測試，不是大型模型載入。 |
+| PASS | 圖片／影片／音訊共享協定與資料保存；白名單、參數、來源／Owner 隔離、冪等、續傳、SHA、MIME／內容、34 MiB 串流、取消、空間、排隊配額與保留清理。[協定測試](evidence/media/protocol-tests.json)。 |
+| PASS | 真實合法 VP9／FLAC 的 Chromium 解碼、作品保存、歌詞／參數／重用；四尺寸、深淺色、Reduced Motion、鍵盤、精簡聊天與大量作品分頁。[播放器與流程](evidence/media/ui-playback-controlled.json)。此項不是模型推理。 |
+| NOT RUN | llama.cpp 本輪原生重測受 Windows 應用程式控制阻擋；沒有降低安全設定。原有功能回歸通過。[環境限制](evidence/media/native-limitations.json)。 |
+| NEEDS GPU | Wan 2.1／ACE-Step v1 真實模型生成、其他 GPU、多 GPU及 ComfyUI 獨顯／CPU 實機並行。權重／版本／授權已核對，完整模型及相容 GPU 尚未取得。 |
+| NEEDS NPU | 實體 NPU 推理與並行，未將 CPU fallback 或受控狀態當成功。 |
+| NEEDS REMOTE HOST | 雙實體 Windows 的長時生成、LAN／VPN 與斷線恢復。協定／TLS 與合法媒體傳輸另外驗證。 |
+| NEEDS CLOUD AUTH | 未呼叫付費 API 或外傳真實提示詞。 |
+| NOT RUN | >8 GiB 大模型實際載入、單模型 HETERO、main／正式 Release／簽章變更。 |
+
+Windows CI **PASS**：[Run 43200374886](https://github.com/liu11-21/local-llm/actions/runs/43200374886)，安裝包來源 `4354605004c7d8db1f88bca8e3cc1ef38b135b55`。乾淨 Windows：Python 189 項初跑 188 通過、1 項封裝測試待建置，Worker 建置後該項單獨通過；7 項本機 Norton TLS 限制案例在 CI 均實際執行。Chromium（含 E4/E5）、TypeScript／Vite、Rust／NSIS、實際安裝／桌面及開始選單捷徑／WebView 與 Worker 啟動／程序收尾／卸載保留資料皆通過。
+
+[下載 Windows x64 開發安裝包](https://github.com/liu11-21/local-llm/actions/runs/43200374886/artifacts/13934754399)（GitHub Actions artifact，保留 14 天，下載可能需登入）。解壓後執行 `Local LLM Workspace_0.6.2_x64-setup.exe`，13,226,426 bytes。它是可安裝的 EXE，壓縮檔同時含 BUILD.json 與 SHA256SUMS.txt；版本維持 0.6.2，未簽章、未建立正式 Release。
+
+安裝 EXE SHA-256：`885a9d3723c5eecd8c2db9277b2f1122648e665d8af2b92e952b2d5faae2d8a3`。
+
+下載 ZIP SHA-256：`b38f8dfcb2fa21011ece176839ac265d526632b00ae8710815c238b13bee075b`。已對照 GitHub artifact digest、BUILD.json 的來源／版本／EXE 雜湊及 SHA256SUMS.txt，全部一致。[建置記錄](evidence/media/windows-build.json)、[驗證及 CI 步驟](evidence/media/windows-verification.json)、[原始測試節錄](evidence/media/windows-test-excerpt.log)。
+
+此後的最終提交只增加文件、截圖與證據，不改動安裝包內程式碼。文件 HEAD 以本交付文件的 Git 提交及對話交付報告為準；下方 E3 安裝包均屬歷史紀錄。
+
 ## E3-D1–D5 智慧運算完整交付
 
 基準 40ea060，版本 0.6.2。D1 9559ef8、D2 1f24df4、D3 b75dd5f、D4 14493a9，D5 `a4343f5` 為原生驗收、回歸修正及文件；`1d0da88` 修正公平排程，`4bd3f17` 修正 ComfyUI 消費者預留，`ceba11e` 隔離 Agent 測試，最終安裝包來源亦為 `ceba11e`。規則見 [DEVICE_RECOMMENDATION](DEVICE_RECOMMENDATION.md)，資料見 [原生驗收](evidence/device/acceptance-real.json)、[完整推薦](evidence/device/recommendation-real.json)、[實際執行](evidence/device/dispatch-runs-real.json)。

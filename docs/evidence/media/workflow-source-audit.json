@@ -1,0 +1,59 @@
+{
+  "status": "PASS-source-contract-audit",
+  "runtime_version": "v0.44.0",
+  "gpu_model_inference": false,
+  "video_nodes": [
+    "CLIPLoader",
+    "CLIPTextEncode",
+    "EmptyHunyuanLatentVideo",
+    "KSampler",
+    "ModelSamplingSD3",
+    "SaveWEBM",
+    "UNETLoader",
+    "VAEDecode",
+    "VAELoader"
+  ],
+  "audio_v1_nodes": [
+    "CheckpointLoaderSimple",
+    "ConditioningZeroOut",
+    "EmptyAceStepLatentAudio",
+    "KSampler",
+    "ModelSamplingSD3",
+    "SaveAudio",
+    "TextEncodeAceStepAudio",
+    "VAEDecodeAudio"
+  ],
+  "ace_v1_node": "TextEncodeAceStepAudio",
+  "ace_v15_node_not_used": "TextEncodeAceStepAudio1.5",
+  "output_formats": [
+    "video/webm; codecs=vp9",
+    "audio/flac"
+  ],
+  "shipped_source_files": [
+    {
+      "path": "comfyui_version.py",
+      "sha256": "c12dd87fbe7d7b245ba0a26739ad74451b1585cc773ec6a87759ed661bf7832f"
+    },
+    {
+      "path": "comfy_extras/nodes_ace.py",
+      "sha256": "9f3142cb53801a25fd214388b4852c578ad71ac58d557884833175b0d02a7bfd"
+    },
+    {
+      "path": "comfy_extras/nodes_audio.py",
+      "sha256": "37352d586a50845f1cb0375652583aa7c662f759298de0f904f56d107d709267"
+    },
+    {
+      "path": "comfy_extras/nodes_video.py",
+      "sha256": "d9342ac1f74708457a8f27b66809e6aed994db35c073fe3bea83861643ca6828"
+    },
+    {
+      "path": "comfy_extras/nodes_wan.py",
+      "sha256": "9ae0b3b3c1384b50860b6ebfadff13ae1b012fa5db045c756372aa5979a21985"
+    },
+    {
+      "path": "server.py",
+      "sha256": "52618f91c663dc6524a028162212e0434fc9239618ddc0efbf7c605027081c8c"
+    }
+  ],
+  "source": "https://github.com/Comfy-Org/ComfyUI/tree/v0.44.0"
+}

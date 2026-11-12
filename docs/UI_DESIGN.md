@@ -1,5 +1,13 @@
 # 桌面 UI 設計
 
+## E5 實際介面
+
+聊天改為可展開模型／來源操作列，650px 預設隱藏歷史；設定、推薦與 Benchmark 能力保留。任務主列呈現工作／模型／來源／進度，完整 ID、資源、推薦憑證及錯誤置於進階區。首頁依首次、日常、活躍工作與配對主機調整內容。新手操作列固定於底部，完成後輕量提示。
+
+作品有 Grid／List、四種篩選／排序、搜尋、24 筆分頁、播放器與設定重用。縮圖為 16 MiB 有界 PNG 快取；只預覽選中的原始媒體，舊作品首次未預覽時顯示圖示。保留深淺色、鍵盤、Reduced Motion 與四尺寸。
+
+[之前](ui-preview/device/device-chat-vulkan-real-dark.png) · [精簡聊天](ui-preview/e4e5/chat-compact-dark.png) · [窄視窗](ui-preview/e4e5/chat-compact-light-650.png) · [影片](ui-preview/e4e5/remote-video-playback-controlled.png) · [音樂](ui-preview/e4e5/remote-music-playback-controlled.png) · [作品](ui-preview/e4e5/works-grid-light-650-controlled.png) · [情境首頁](ui-preview/e4e5/home-daily-controlled.png)。影音畫面為受控 Host 的合法測試媒體，並非模型生成。[操作量測與完整報告](E4_E5_DELIVERY.md)。
+
 ## E3-D 共用運算建議
 
 DeviceChoice 融入聊天、Agent、兩種 Team、圖片／影片／音樂、模型中心、運算環境與 Benchmark，不另做獨立控制台。主畫面只顯示設備、建議原因、有限證據摘要及操作；偏好、Workload、Warm／啟動／TTFT／Decode、版本、驅動、精度、Freshness 和替代來源放進進階區。沿用黑白灰與 Reduced Motion。
@@ -27,7 +35,7 @@ DeviceChoice 融入聊天、Agent、兩種 Team、圖片／影片／音樂、模
 
 以下三張截圖使用真實 React、Worker、TaskManager、隔離 OpenVINO 及官方 Qwen2.5-Coder 0.5B 模型。CPU 文字生成完成並保存，GenAI 算子分配仍標未驗證。 [Runtime 管理](ui-preview/e3/openvino-runtime-real.png) · [深色 CPU 聊天](ui-preview/e3/openvino-chat-cpu-real-dark.png) · [650 px 淺色聊天](ui-preview/e3/openvino-chat-cpu-real-light.png)
 
-E5 的情境首頁、固定引導操作列、輕量完成提示和作品 Grid／List 尚未交付。本輪延續原有配色、焦點與 reduced motion。 [實測範圍](TEST_REPORT.md)
+上述是 E3-A／B 時的紀錄，當時尚未交付 E5；情境首頁、固定引導操作列、輕量完成提示和作品 Grid／List 現已交付，見本文 E5 段落。 [實測範圍](TEST_REPORT.md)
 
 ## Batch 4E＋NPU 的 E1、E2
 
@@ -42,7 +50,7 @@ E5 的情境首頁、固定引導操作列、輕量完成提示和作品 Grid／
 - 受控 NPU 資料驗證 650 px 淺色、長名稱和未支援數值。畫面標示受控裝置及推理待驗收。 [NPU 介面回歸](ui-preview/batch4e/hardware-npu-controlled-light.png)
 - 已配對主機的遠端圖片引導，主機和生成輸出來自受控測試。 [遠端創作引導](ui-preview/batch4e/onboarding-remote-image.png)
 
-E5 的固定底部操作列、輕量完成提示、情境首頁及作品網格尚未交付。本輪沿用既有配色、焦點和 reduced motion。 [驗收範圍](TEST_REPORT.md)
+上述是 E1／E2 時的紀錄，當時尚未交付 E5；固定底部操作列、輕量完成提示、情境首頁及作品網格現已交付，見本文 E5 段落。 [驗收範圍](TEST_REPORT.md)
 
 ## 首次使用與遠端圖片
 

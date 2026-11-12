@@ -1,0 +1,114 @@
+{
+  "status": "PASS",
+  "model_inference": false,
+  "transport": "production Host/Client/storage paths, controlled inference and legal encoded media",
+  "tls": "verified separately on clean Windows CI",
+  "cases": [
+    {
+      "test": "test_remote_media.RemoteMediaTests.test_migration_and_private_prompt_recovery_after_client_restart",
+      "status": "PASS"
+    },
+    {
+      "test": "test_remote_media.RemoteMediaTests.test_range_resume_and_sha_rejection",
+      "status": "PASS"
+    },
+    {
+      "test": "test_remote_media.RemoteMediaTests.test_version_eight_database_migration_preserves_user_rows",
+      "status": "PASS"
+    },
+    {
+      "test": "test_remote_media.RemoteMediaTests.test_workflow_allowlist_and_range_limits",
+      "status": "PASS"
+    },
+    {
+      "test": "test_media_contract.MediaContractTests.test_allowlist_versions_mime_and_per_type_limits",
+      "status": "PASS"
+    },
+    {
+      "test": "test_media_contract.MediaContractTests.test_large_video_streams_above_image_limit_without_loading_file_into_sqlite",
+      "status": "PASS"
+    },
+    {
+      "test": "test_media_contract.MediaContractTests.test_new_png_rejects_corrupt_crc_and_video_cannot_be_renamed_png",
+      "status": "PASS"
+    },
+    {
+      "test": "test_media_contract.MediaContractTests.test_video_audio_real_containers_resume_cancel_integrity_and_space",
+      "status": "PASS"
+    },
+    {
+      "test": "test_remote_video.RemoteVideoTests.test_managed_job_to_verified_local_work_and_owner_isolation",
+      "status": "PASS"
+    },
+    {
+      "test": "test_remote_audio.RemoteAudioTests.test_managed_job_to_verified_local_work_and_owner_isolation",
+      "status": "PASS"
+    },
+    {
+      "test": "test_remote_retention.RemoteRetentionTests.test_expiry_removes_only_registered_host_results_and_preserves_job_and_client_work",
+      "status": "PASS"
+    },
+    {
+      "test": "test_remote_retention.RemoteRetentionTests.test_queued_media_reserves_host_storage_before_any_generation",
+      "status": "PASS"
+    },
+    {
+      "test": "test_media_previews.MediaPreviewTests.test_bounded_derived_cache_invalidates_changed_original_and_preserves_originals",
+      "status": "PASS"
+    },
+    {
+      "test": "test_media_previews.MediaPreviewTests.test_library_runtime_filter_pagination_does_not_read_original_media",
+      "status": "PASS"
+    },
+    {
+      "test": "test_resource_finish.ResourceFinishTests.test_comfy_reliable_idle_dedicated_gpu_allows_cpu_but_busy_unknown_and_uma_are_global",
+      "status": "PASS"
+    },
+    {
+      "test": "test_resource_finish.ResourceFinishTests.test_dynamic_limit_can_exceed_eight_gib_but_never_physical_or_user_cap",
+      "status": "PASS"
+    },
+    {
+      "test": "test_resource_finish.ResourceFinishTests.test_dynamic_memory_calculation_preserves_scalar_device_identity",
+      "status": "PASS"
+    },
+    {
+      "test": "test_resource_finish.ResourceFinishTests.test_recommendation_receipt_revalidates_benchmark_and_identity",
+      "status": "PASS"
+    }
+  ],
+  "fixtures": [
+    {
+      "name": "sample.flac",
+      "bytes": 20192,
+      "sha256": "c1cde77e0fb3ba78b49d3ac7113be25c79be932960418b8d1ca4ace74647e989",
+      "metadata": {
+        "duration": 1.0
+      }
+    },
+    {
+      "name": "sample.png",
+      "bytes": 399,
+      "sha256": "c7ccf2395642f513f6a77c6646843a6490423a90d00ba149f386d4ecdfca1fdd",
+      "metadata": {
+        "width": 160,
+        "height": 96
+      }
+    },
+    {
+      "name": "sample.webm",
+      "bytes": 805,
+      "sha256": "69eae0d0c5e1f4b35740e20b28709eb60f4a3c450e718b804e4810490ba5c1d6",
+      "metadata": {
+        "width": 160,
+        "height": 96,
+        "duration": 1.0
+      }
+    }
+  ],
+  "large_video_void_padding_bytes": 35651584,
+  "client_staging_quota_bytes": 4294967296,
+  "host_storage_quota_bytes": 8589934592,
+  "thumbnail_cache_limit_bytes": 16777216,
+  "host_retention_days": 7
+}

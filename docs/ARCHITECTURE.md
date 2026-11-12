@@ -1,5 +1,11 @@
 # 桌面工作台架構
 
+## E3-F／E4–E5 現行架構
+
+推薦憑證連接既有 Benchmark 與 dispatch_runs，採用及開始時重新驗證。resource_policy 使用實體 RAM、OS 餘量、使用者上限與模型／Backend 估計，TaskManager 原子准入；ComfyUI 的有限 Job Object 與可信閒置獨顯映射才允許縮小常駐鎖。
+
+遠端仍是一套 Host／Client／RemoteJobs，外層協定 1、Runtime 1、媒體 2，支援 image／video／audio。SQLite 14 保留舊 PNG／對話／作品並新增 Client 媒體欄位。大檔存在檔案系統；media_previews 為有界衍生快取，未增加推理引擎或第二套佇列。[完整架構與驗收](E4_E5_DELIVERY.md)、[傳輸](MEDIA_TRANSPORT.md)、[排程](RESOURCE_SCHEDULER.md)。
+
 ## E3-D1–D4 智慧運算與排程
 
 benchmark_evidence.py 分開評估 Freshness／Comparability；device_recommendation.py 組合現有 Registry、Runtime、即時資源與 Benchmark，交給既有 runtime_recommendation.py 決策。沒有新增平行的推薦核心，也不自動跑 Benchmark。
@@ -21,7 +27,7 @@ React BenchmarkPanel 位於運算環境進階區，只手動觸發，支援歷�
 - `resource_contract.py` 與 `hardware_contract.py` 為數值保存單位、時間、來源、狀態和證據。DXGI／D3D12 的 UMA 訊號區分統一記憶體與獨立顯存。舊紀錄缺少類型、時間或映射時保留未知。
 - `vram_available` 表示專用總量減去已用量的估計餘量。Runtime 推薦只接受單張、已識別且取樣新鮮的獨立顯存池，仍由後端確認模型是否可分配。統一記憶體、共享上限及多 GPU 不合併。llama.cpp 回報的池容量另列。
 - `openvino_adapter.py` 在應用程式資料夾管理可選 Runtime、固定套件快取、IR 模型及編譯快取。八個檔案固定版本和 SHA-256，Windows 系統 TLS 負責 HTTPS，傳輸沿用既有多線程、續傳和校驗。
-- `openvino_runner.py` 在獨立 Python 3.12.10 程序載入 OpenVINO 2025.4.1，提供裝置查詢、張量推理和 GenAI 文字串流。父程序套用 8 GiB 程序記憶體上限、180 秒執行時限與取消，工作結束釋放原生模型和程序。
+- `openvino_runner.py` 在獨立 Python 3.12.10 程序載入 OpenVINO 2025.4.1，提供裝置查詢、張量推理和 GenAI 文字串流。既有單工作模式預設 8 GiB；明確設備派送改用動態 RAM 政策。父程序套用記憶體限制、180 秒執行時限與取消，工作結束釋放原生模型和程序。
 - OpenVINO 聊天使用現有對話保存、IPC、任務中心和本機 compute 槽。SQLite 第 10 版增加 `engine_runs`，記錄模型雜湊、指定及實際回報裝置、算子資訊和結果狀態。GenAI 未提供足夠分配證據時維持未驗證。 [操作與限制](NPU_SUPPORT.md) · [儲存政策](PRIVACY_STORAGE.md)
 
 ## Batch 4E＋NPU 的 E1、E2

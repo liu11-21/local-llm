@@ -1,0 +1,16 @@
+{
+  "llama_cpp_current_native_retest": "NOT RUN",
+  "observations": {
+    "llama_server_exit_hex": "0xc0e90002",
+    "llama_bench_create_process_winerror": 4551,
+    "application_control": "Windows application control blocked the existing official tool"
+  },
+  "security_settings_changed": false,
+  "openvino_current_cpu_gpu_benchmark_and_cpu_dispatch": "PASS",
+  "wan21_real_gpu_generation": "NEEDS GPU",
+  "ace_step_v1_real_gpu_generation": "NEEDS GPU",
+  "physical_npu": "NEEDS NPU",
+  "dual_physical_host": "NEEDS REMOTE HOST",
+  "paid_cloud": "NEEDS CLOUD AUTH",
+  "large_model_over_eight_gib_inference": "NOT RUN"
+}
