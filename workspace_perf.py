@@ -77,7 +77,7 @@ def main():
     report={'status':'PASS','build':build_info(),'platform':sys.platform,'cpu_threads':os.cpu_count(),
         'scope':'process-cold; OS disk cache not flushed; production Worker/RPC with synthetic 2000 chats and 500 legal PNG files',
         'ui_render_included':False,'model_inference':False,'measurements':measurements,
-        'first_model_load':{'status':'NOT RUN','reason':'No inference is started by baseline; llama.cpp currently blocked by OS application control. Use explicit real acceptance on a permitted model/runtime.'},
+        'first_model_load':{'status':'NOT RUN','reason':'No inference is started by this baseline. Model/runtime availability and OS policy must be checked separately by explicit real acceptance.'},
         'comparison':'Baseline only; no improvement percentage claimed'}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({key:round(value['median'],2) for key,value in measurements.items()}))
