@@ -1,0 +1,97 @@
+{
+  "status": "PASS",
+  "legacy_workspace": "0.6.2",
+  "workspace": "0.7.0",
+  "tables": {
+    "chats": {
+      "rows": 1,
+      "sha256": "af11442b6e529bac60e540b49b803bc058fed16c9ba97d3ac287239b7d188a43"
+    },
+    "messages": {
+      "rows": 2,
+      "sha256": "db026f2bdc865f517a5e34eb4ae77846281ff74b0c80fed266078c551cfe407f"
+    },
+    "agent_reports": {
+      "rows": 1,
+      "sha256": "619e40cf0acfca06b438fc7c6244e608fdbcabb71d13e79f6963628e9225e22b"
+    },
+    "agent_plans": {
+      "rows": 1,
+      "sha256": "886dcf0c202ed6715530a38ac2bdbd8e3449d1f837b63a9d0be8be3b0dd62a48"
+    },
+    "team_configs": {
+      "rows": 1,
+      "sha256": "d0e089566eaf3b84cb26c7af92b8910d92d916e40d8f0b217c50ae06f68c2b81"
+    },
+    "team_runs": {
+      "rows": 1,
+      "sha256": "886dcf0c202ed6715530a38ac2bdbd8e3449d1f837b63a9d0be8be3b0dd62a48"
+    },
+    "settings": {
+      "rows": 2,
+      "sha256": "178e39acd225ee3776d0d852cda0de3a45f81d22eca23f8b44a1075707e7d39a"
+    },
+    "model_sources": {
+      "rows": 1,
+      "sha256": "a738eb0ce80196a172133b1be3c8ff9c4c3dabbdfe4ed088d69ad36331589aaf"
+    },
+    "media_weight_verification": {
+      "rows": 1,
+      "sha256": "3ec0a70899cd7d597badaa0ef7bf366522141a72cd8f23ec7e3da3ac3bf3a781"
+    },
+    "benchmark_sessions": {
+      "rows": 1,
+      "sha256": "48cc293672d3f975f4b37fed9b9f6a1125f64ee13af956272bba575f43368332"
+    },
+    "benchmark_runs": {
+      "rows": 1,
+      "sha256": "6f3479c415f68176b5a2dd54f4500692ed704e5839e5545961fc185b1cad53a0"
+    },
+    "benchmark_measurements": {
+      "rows": 1,
+      "sha256": "f5151e99c217fb0b77ec606bdf5c59e0cbea3c80c4f811b43dea2c40a58cc080"
+    },
+    "remote_host_identity": {
+      "rows": 1,
+      "sha256": "8b7efe89a2bd62d06ee7d9dbc9ba5d17f7788082ea874da2c59a1efcf0b35625"
+    },
+    "remote_host_grants": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "remote_client_hosts": {
+      "rows": 1,
+      "sha256": "194ee40b122367ab223c4bec17c0c83d98ce59019335d9047c32a9400b0e7d68"
+    },
+    "remote_client_secrets": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "remote_tls": {
+      "rows": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "creations": {
+      "rows": 1,
+      "sha256": "658392494b363252ebaa23b637c429d284363fe80a913292655ca46d47a7ed04"
+    }
+  },
+  "files": {
+    "models\\preserve.txt": "a05380eef5ed7769b0683175ac16b3f32621d3a30ea9111a2d9d4d19b26fdafd",
+    "outputs\\abcdefabcdef.png": "c7ccf2395642f513f6a77c6646843a6490423a90d00ba149f386d4ecdfca1fdd"
+  },
+  "original_legacy_preserved": true,
+  "backup_verified": true,
+  "fixture_only": true,
+  "storage": {
+    "version": "0.7.0",
+    "database": "workspace.sqlite3",
+    "status": "adopted-legacy",
+    "backup": "C:\\Users\\HSUAN\\AppData\\Local\\Packages\\OpenAI.Codex_2p2nqsd0c76g0\\AC\\#!sandbox.{1e2096bf-5831-4c9c-89c0-b126568d7042}\\Temp\\v070-upgrade-3m94q8fv\\backups\\workspace-pre-070-20261112T125155-f46ab1462bdf.sqlite3",
+    "backup_sha256": "973aa10455ffcb21efcac1eb9555f7cbb5138479d737c019b1130376d3bdfd58",
+    "source": "desktop.sqlite3",
+    "source_schema": 14,
+    "integrity": "PASS"
+  },
+  "scope": "Actual 4354605 source 0.6.2 worker -> current source 0.7.0; synthetic populated migration data, no inference"
+}

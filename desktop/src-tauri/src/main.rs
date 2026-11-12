@@ -90,6 +90,9 @@ impl Worker {
         let output = BufReader::new(child.stdout.take().expect("piped stdout"));
         let mut worker = Self { child, input, output, #[cfg(windows)] _job: job };
         let identity = worker.request(br#"{"op":"build-info","data":{}}"#.to_vec())?;
+        if identity["ok"] != true {
+            return Err(identity["error"].as_str().unwrap_or("工作程序無法開啟使用者資料，請先保留備份並檢查版本。").to_string());
+        }
         let value = &identity["value"];
         if identity["ok"] != true || value["version"] != env!("CARGO_PKG_VERSION")
             || value["channel"] != "Development"

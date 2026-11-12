@@ -67,6 +67,7 @@ from tool_registry import builtins as agent_tools
 from web_bridge import Workspace, engine_path, field
 from workspace_version import build_info
 from workspace_errors import explain, user_message
+from workspace_storage import protected_initialization, DATABASE
 
 ENGINE_VERSION = "b11810"
 ENGINE_FILE = f"llama-{ENGINE_VERSION}-bin-win-vulkan-x64.zip"
@@ -128,6 +129,7 @@ def install_engine(root, cancel, update):
 
 
 class Desktop(Workspace):
+    @protected_initialization
     def __init__(self, data):
         super().__init__(data)
         self.local = LocalEngine()
@@ -136,7 +138,7 @@ class Desktop(Workspace):
         self.active = None
         self.active_native = False
         self.providers = Providers()
-        self.database = self.data / "desktop.sqlite3"
+        self.database = self.data / DATABASE
         self.download_cache = self.models / ".localllm-downloads"
         self.hardware_cache = None
         self.resource_monitor = ResourceMonitor()
@@ -1122,6 +1124,8 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == 'storage-status':
+            return self.storage_status
         if op == "build-info":
             return build_info()
         if op=="runtime-recommend":
@@ -1533,7 +1537,13 @@ def main():
 
 
 def worker_loop(directory):
-    worker = Desktop(directory)
+    try:
+        worker = Desktop(directory)
+    except Exception as error:
+        info=explain(error)
+        sys.stdout.buffer.write(json.dumps({'ok':False,'error':user_message(info),'error_info':info},ensure_ascii=True).encode()+b'\n')
+        sys.stdout.buffer.flush()
+        return
     try:
         while raw := sys.stdin.buffer.readline(MAX_LINE + 1):
             if len(raw) > MAX_LINE:

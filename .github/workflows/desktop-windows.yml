@@ -48,6 +48,27 @@ jobs:
           python -m unittest -v test_desktop_worker.PackagedWorkerTests
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python check_workspace_version.py --build build/workspace-build.json --worker build/desktop-worker/LocalLLMWorker/LocalLLMWorker.exe
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: '4354605004c7d8db1f88bca8e3cc1ef38b135b55'
+          path: build/upgrade-source
+          persist-credentials: false
+      - name: Build actual Workspace 0.6.2 upgrade baseline
+        shell: pwsh
+        run: |
+          python build/upgrade-source/build_desktop_worker.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Push-Location build/upgrade-source/desktop
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $env:CARGO_TARGET_DIR = Join-Path $env:GITHUB_WORKSPACE 'desktop/src-tauri/target'
+          npm run tauri -- build --target x86_64-pc-windows-msvc -- --locked
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Pop-Location
+          Remove-Item Env:CARGO_TARGET_DIR
+          $baseline = Get-Item 'desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Local LLM Workspace_0.6.2_x64-setup.exe'
+          New-Item -ItemType Directory -Force build/upgrade-baseline | Out-Null
+          Move-Item -LiteralPath $baseline.FullName -Destination build/upgrade-baseline/
       - name: Exercise desktop layout in Chromium
         working-directory: desktop
         shell: pwsh
@@ -97,7 +118,7 @@ jobs:
         shell: pwsh
         run: |
           $installer = Get-ChildItem build/windows-review -Filter '*.exe' -File
-          ./desktop/smoke-install.ps1 -Installer $installer.FullName
+          ./desktop/smoke-install.ps1 -Installer $installer.FullName -BaselineInstaller 'build/upgrade-baseline/Local LLM Workspace_0.6.2_x64-setup.exe'
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: LocalLLM-workspace-Windows-x64-unsigned

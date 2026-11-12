@@ -18,7 +18,7 @@ def explain(error):
         code, summary, recovery = 'POLICY_BLOCKED', 'Windows 應用程式控制阻擋了引擎。', '請查看系統事件與發行來源；保留安全政策，改用允許的 Runtime。'
     elif isinstance(error, ssl.SSLError) or any(word in lower for word in ('certificate','憑證','fingerprint','指紋')):
         code, summary, recovery = 'TLS_VERIFY_FAILED', '遠端憑證驗證失敗。', '請核對 Host 憑證指紋及系統時間，必要時重新配對；不要略過 TLS 驗證。'
-    elif isinstance(error, PermissionError) or getattr(error,'code',None) in (401,403) or '權限' in detail:
+    elif isinstance(error, PermissionError) or getattr(error,'code',None) in (401,403) or '權限' in detail or 'TEAM_EXTERNAL_NOT_GRANTED' in detail:
         code, summary, recovery = 'ACCESS_DENIED', '沒有執行這項工作的權限。', '請確認檔案權限、API 金鑰或 Host 配對與任務擁有者。'
     elif isinstance(error, TimeoutError) or 'timeout' in lower or '逾時' in detail:
         code, summary, recovery = 'TIMEOUT', '工作等候超過時間上限。', '請到任務中心確認原工作狀態；遠端任務不要直接重送，可先查詢或恢復下載。'

@@ -63,7 +63,7 @@ def run_team(app,identity,cancel,update,parent_id):
                 value=app.scheduler.snapshot(task)
                 if value["state"] not in ("running","queued"):
                     if nodes[node]["state"] not in ("completed","failed","skipped","cancelled"):
-                        change(app.team_store,identity,node,state="failed",error=value["message"][:360],finished=timestamp())
+                        change(app.team_store,identity,node,state="failed",error=((value.get('error') or '')+' · '+value['message'])[:360],finished=timestamp())
                     pending.pop(node)
             if len(submitted)==len(nodes) and not pending:break
             for node,item in nodes.items():
