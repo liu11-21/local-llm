@@ -21,7 +21,7 @@ class UpgradeTests(unittest.TestCase):
 
     def test_legacy_is_backed_up_and_adopted_without_modification(self):
         with TemporaryDirectory() as folder:
-            root=Path(folder);old=self.legacy(root);digest=hashlib.sha256(old.read_bytes()).hexdigest()
+            root=Path(folder).resolve();old=self.legacy(root);digest=hashlib.sha256(old.read_bytes()).hexdigest()
             app=Desktop(root)
             try:
                 status=app.rpc('storage-status',{});self.assertEqual(status['integrity'],'PASS')
@@ -41,7 +41,7 @@ class UpgradeTests(unittest.TestCase):
     def test_future_schema_and_reader_refuse_writes_and_corrupt_source_is_preserved(self):
         for kind in ('schema','reader','corrupt'):
             with self.subTest(kind=kind),TemporaryDirectory() as folder:
-                root=Path(folder);path=root/DATABASE
+                root=Path(folder).resolve();path=root/DATABASE
                 if kind=='corrupt':path.write_bytes(b'not a database')
                 else:
                     with closing(sqlite3.connect(path)) as db,db:
@@ -54,7 +54,7 @@ class UpgradeTests(unittest.TestCase):
 
     def test_failed_migration_preserves_partial_files_and_restores_verified_snapshot(self):
         with TemporaryDirectory() as folder:
-            root=Path(folder);old=self.legacy(root)
+            root=Path(folder).resolve();old=self.legacy(root)
             with patch('desktop_worker.ClientMedia.initialize',side_effect=RuntimeError('injected migration failure')):
                 with self.assertRaisesRegex(ValueError,'升級'):Desktop(root)
             self.assertTrue(list((root/'backups').glob('failed-upgrade-*')))
@@ -66,7 +66,7 @@ class UpgradeTests(unittest.TestCase):
 
     def test_readonly_snapshot_includes_wal_and_disk_shortage_never_replaces_source(self):
         with TemporaryDirectory() as folder:
-            root=Path(folder);old=self.legacy(root)
+            root=Path(folder).resolve();old=self.legacy(root)
             with closing(sqlite3.connect(old)) as db,db:
                 db.execute('PRAGMA journal_mode=WAL');db.execute("INSERT INTO messages VALUES('wal','user','uncheckpointed')");db.commit()
                 backup=root/'wal-backup.sqlite3';snapshot(old,backup)
