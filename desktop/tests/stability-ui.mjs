@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {mkdir,writeFile} from 'node:fs/promises'
+import {mkdir,writeFile,readFile} from 'node:fs/promises'
 import {join} from 'node:path'
 
 export async function exerciseStability(page) {
@@ -74,12 +74,18 @@ export async function exerciseStability(page) {
   await probe.route('**/__desktop_dev_rpc',mismatch)
   await probe.goto(page.url());await probe.getByRole('alert').getByText(/介面與工作程序版本不一致/).waitFor()
   assert(forwarded.every(op=>op==='build-info'),'Mixed frontend/worker must block all product operations')
+  const policy=JSON.parse(await readFile(new URL('../src-tauri/tauri.conf.json',import.meta.url),'utf8')).app.security.csp
+  const png=(await readFile(new URL('./media-fixtures/sample.png',import.meta.url))).toString('base64')
+  const imagePage=await isolated.newPage()
+  await imagePage.setContent(`<meta http-equiv="Content-Security-Policy" content="${policy.replaceAll('"','&quot;')}"><img alt="受管理 PNG 縮圖" src="data:image/png;base64,${png}">`)
+  await imagePage.waitForFunction(()=>document.querySelector('img').naturalWidth>0)
+  assert(!/default-src[^;]*data:/.test(policy),'Data images must not broaden script/default permissions')
   await isolated.close()
   if(process.env.LOCALLLM_070_EVIDENCE){
     await mkdir(process.env.LOCALLLM_070_EVIDENCE,{recursive:true})
     await writeFile(join(process.env.LOCALLLM_070_EVIDENCE,'ui-stability.json'),JSON.stringify({status:'PASS',model_inference:false,
       version:'0.7.0',channel:'Development',mixed_worker_operations_blocked:true,chat_page_size:50,chat_search:true,
-      collapsed_monitor_unmounted:true,timings,scope:'Real React and production RPC; controlled Runtime, not model load/remote hardware performance'},null,2))
+      collapsed_monitor_unmounted:true,packaged_csp_png_cache:true,timings,scope:'Real React and production RPC; controlled Runtime, not model load/remote hardware performance'},null,2))
   }
   console.log('PASS 0.7.0 settings identity, mixed-worker rejection, paged searchable history, collapsed monitoring and repeated UI baselines')
 }
