@@ -39,11 +39,15 @@ jobs:
       - name: Test Python and build the onedir worker
         shell: pwsh
         run: |
+          python check_workspace_version.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m unittest -v
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python build_desktop_worker.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m unittest -v test_desktop_worker.PackagedWorkerTests
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python check_workspace_version.py --build build/workspace-build.json --worker build/desktop-worker/LocalLLMWorker/LocalLLMWorker.exe
       - name: Exercise desktop layout in Chromium
         working-directory: desktop
         shell: pwsh
@@ -73,8 +77,17 @@ jobs:
             $signature = Get-AuthenticodeSignature $file.FullName
             if ($signature.Status -ne 'NotSigned') { throw "Unsigned validation pipeline produced unexpected signing state: $($signature.Status)" }
             $version = (Get-Content desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+            $stamp = Get-Content build/workspace-build.json -Raw | ConvertFrom-Json
+            if ($stamp.version -ne $version -or $stamp.channel -ne 'Development' -or $stamp.commit -ne $env:GITHUB_SHA) {
+              throw 'Packaged Worker build identity disagrees with App build.'
+            }
+            $installerVersion = $file.VersionInfo.FileVersion
+            if ($installerVersion -notmatch ('^' + [regex]::Escape($version) + '(\.0)?$')) {
+              throw "Installer version mismatch: $installerVersion expected $version"
+            }
             @{
               commit = $env:GITHUB_SHA; version = $version; run = $env:GITHUB_RUN_ID
+              channel = 'Development'; worker_version = $stamp.version; installer_version = $installerVersion
               runner = $env:RUNNER_OS; target = 'x86_64-pc-windows-msvc'
               rust = (rustc --version); python = (python --version); node = (node --version)
               authenticode = $signature.Status.ToString(); sha256 = $hash; bytes = $file.Length

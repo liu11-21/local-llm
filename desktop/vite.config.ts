@@ -7,6 +7,8 @@ import { createReadStream } from 'node:fs'
 import { realpath, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 
 function previewWorker(port: number): Plugin {
   return {
@@ -74,9 +76,13 @@ function previewWorker(port: number): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
+  const version = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version
+  let commit = 'unknown'
+  try { commit = execFileSync('git', ['rev-parse','HEAD'], {cwd:fileURLToPath(new URL('../',import.meta.url)),encoding:'utf8'}).trim() } catch {}
   const preview = mode === 'preview-worker'
   const port = preview && process.env.LOCALLLM_PREVIEW_PORT ? Number(process.env.LOCALLLM_PREVIEW_PORT) : 1420
   return {
+    define: {__WORKSPACE_VERSION__:JSON.stringify(version), __WORKSPACE_COMMIT__:JSON.stringify(commit)},
     plugins: [react(), tailwind(), ...(preview ? [previewWorker(port)] : [])],
     server: { host: '127.0.0.1', port, strictPort: true, cors: false },
     clearScreen: false,

@@ -88,7 +88,15 @@ impl Worker {
         };
         let input = child.stdin.take().expect("piped stdin");
         let output = BufReader::new(child.stdout.take().expect("piped stdout"));
-        Ok(Self { child, input, output, #[cfg(windows)] _job: job })
+        let mut worker = Self { child, input, output, #[cfg(windows)] _job: job };
+        let identity = worker.request(br#"{"op":"build-info","data":{}}"#.to_vec())?;
+        let value = &identity["value"];
+        if identity["ok"] != true || value["version"] != env!("CARGO_PKG_VERSION")
+            || value["channel"] != "Development"
+            || (!cfg!(debug_assertions) && value["commit"] != env!("WORKSPACE_COMMIT")) {
+            return Err("App 與工作程序版本不一致或資料無法開啟。請使用完整 Workspace 安裝包重新安裝；請先保留使用者資料。".into());
+        }
+        Ok(worker)
     }
 
     fn request(&mut self, mut bytes: Vec<u8>) -> Result<Value, String> {

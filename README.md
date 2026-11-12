@@ -1,4 +1,37 @@
-# Local LLM v0.6.2
+# Local LLM Workspace 0.7.0 · Development
+
+React／Tauri Windows AI 工作台，整合文字聊天、Agent、Team、圖片／影片／音樂創作、模型下載及本地／遠端運算。
+
+| 通道 | 版本／分支 | 取得方式 |
+|---|---|---|
+| Stable | v0.6.2 · main | [既有正式發行](https://github.com/liu11-21/local-llm/releases/tag/v0.6.2)，保留舊桌面版 |
+| Development | 0.7.0 · dev/desktop-workspace | [Windows Actions](https://github.com/liu11-21/local-llm/actions/workflows/desktop-windows.yml?query=branch%3Adev%2Fdesktop-workspace)，開啟成功建置的 artifact |
+
+開發安裝包解壓後執行 `Local LLM Workspace_0.7.0_x64-setup.exe`，會建立桌面與開始功能表捷徑。Actions 下載可能需要登入 GitHub，產物保留 14 天。這是未簽章開發版，目前沒有正式 0.7.0 Release。請選擇本分支最新成功的建置，並核對隨附的 BUILD.json／SHA256SUMS.txt。
+
+工作台支援：
+
+- 串流聊天、Markdown／程式碼、歷史，Agent 工具核准及多模型 Team。
+- Hugging Face 搜尋、模型校驗、可續傳的多執行緒下載、受管理引擎。
+- ComfyUI 固定工作流程；圖片、Wan 2.1 影片及 ACE-Step v1 音樂，完整權重需另行確認下載。
+- 配對遠端 Host、TLS、能力檢查、媒體續傳／SHA-256、作品庫與播放器。
+- CPU／GPU／NPU 偵測、可選 OpenVINO、Benchmark、證據型推薦、動態 RAM 與安全排程。
+- 精簡深淺色 UI、情境首頁、新手引導、作品 Grid／List 與分頁。
+
+偵測到硬體不代表該模型已能推理。Wan／ACE-Step 真實 GPU 生成、雙實體機與 NPU 仍須實機驗收；不會自動啟用付費雲端或傳送提示詞。[目前功能與驗收](docs/TEST_REPORT.md) · [介面截圖](docs/UI_DESIGN.md) · [架構](docs/ARCHITECTURE.md)。
+
+工作台只檢查 `workspace-vX.Y.Z` 的正式發行，與舊桌面版 `vX.Y.Z` 分流；沒有可校驗的較新 Workspace Release 時不提供更新，不自動安裝。設定頁顯示 App／Worker 版本、Development、建置 SHA 與目標；版本混搭會拒絕啟動工作。
+
+Workspace 與舊桌面版為不同產品，不能把舊版 Setup 當成 Workspace 升級包。兩者歷史上使用 `%LOCALAPPDATA%\LocalLLM` 的模型／作品目錄；請先關閉兩套程式並備份資料。Workspace 0.6.2 → 0.7.0 是同產品的原地升級路徑，資料及安裝驗收詳見本輪測試報告。
+
+開發：Python 3.12、Node 24、Rust／MSVC／WebView2；執行 `python check_workspace_version.py`、`python -m unittest -v`、`python build_desktop_worker.py`，再於 desktop 執行 `npm ci`、`npm run tauri -- dev`。只預覽 UI 可用 `npm run dev`；完整安裝包由 Windows CI 產生。main 的既有發行與說明不變。
+
+---
+
+## 舊版 Stable v0.6.2 使用說明
+
+以下為舊桌面版說明，與上方 Workspace 0.7.0 Development 分開。
+
 
 **[下載 Windows x64 安裝程式](https://github.com/liu11-21/local-llm/releases/download/v0.6.2/LocalLLM-v0.6.2-Windows-x64-Setup.exe)** · [免安裝版](https://github.com/liu11-21/local-llm/releases/download/v0.6.2/LocalLLM-v0.6.2-Windows-x64.exe) · [最新發行頁](https://github.com/liu11-21/local-llm/releases/latest)
 

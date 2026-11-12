@@ -89,7 +89,10 @@ export type Job = {
 }
 type Reply<T> = { ok: true; value: T } | { ok: false; error: string }
 
-export async function rpc<T>(op: string, data: Params = {}): Promise<T> {
+export type BuildInfo = {version:string;channel:string;commit:string;target:string;signed:boolean}
+export const APP_VERSION = __WORKSPACE_VERSION__
+let identity: Promise<BuildInfo> | undefined
+async function transport<T>(op: string, data: Params = {}): Promise<T> {
   let reply: Reply<T>
   if (isTauri()) {
     reply = await invoke('workspace', { op, data })
@@ -104,4 +107,16 @@ export async function rpc<T>(op: string, data: Params = {}): Promise<T> {
   }
   if (!reply.ok) throw new Error(reply.error)
   return reply.value
+}
+
+export async function rpc<T>(op: string, data: Params = {}): Promise<T> {
+  if (!identity) identity = transport<BuildInfo>('build-info').then(value => {
+    if(value.version !== APP_VERSION || value.channel !== 'Development' ||
+      (isTauri() && value.commit !== __WORKSPACE_COMMIT__))
+      throw new Error('介面與工作程序版本不一致。請關閉並重新安裝完整 Workspace；任務未自動重送。')
+    return value
+  }).catch(error=>{identity=undefined;throw error})
+  const build = await identity
+  if(op==='build-info') return build as T
+  return transport<T>(op,data)
 }

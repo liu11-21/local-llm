@@ -5,6 +5,9 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import json
+from check_workspace_version import check
+from workspace_version import build_info
 
 ROOT = Path(__file__).resolve().parent
 BUILD = ROOT / "build"
@@ -13,9 +16,14 @@ BUILD = ROOT / "build"
 def main():
     if os.name != "nt" or sys.maxsize <= 2**32:
         raise SystemExit("A Windows x64 Python interpreter is required.")
+    check()
+    BUILD.mkdir(exist_ok=True)
+    stamp = BUILD / "workspace-build.json"
+    stamp.write_text(json.dumps(build_info()), encoding="utf-8")
     subprocess.run(
         [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir", "--console", "--noupx",
          "--name", "LocalLLMWorker", "--icon", str(ROOT / "logo.ico"),
+         "--add-data", f"{stamp}:.",
          "--add-data", f"{ROOT / 'third_party' / 'llama.cpp-b11810-LICENSE'}:third_party",
          "--add-data", f"{ROOT / 'openvino-packages.lock.json'}:.",
          "--add-data", f"{ROOT / 'openvino_runner.py'}:.",

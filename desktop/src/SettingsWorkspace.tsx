@@ -1,5 +1,5 @@
 import { useState,useEffect } from 'react'
-import { rpc } from './api'
+import { rpc, APP_VERSION, type BuildInfo } from './api'
 import { Panel } from './ui'
 import { useWorkspaceUpdates } from './updates'
 import type { Run } from './taskQueue'
@@ -12,6 +12,8 @@ export function SettingsWorkspace({theme,setTheme,policy,setPolicy,busy,run,repo
   const [updateFile, setUpdateFile] = useState<string>()
   const [memory,setMemory]=useState(0)
   const [memoryStatus,setMemoryStatus]=useState('')
+  const [build,setBuild]=useState<BuildInfo>()
+  useEffect(()=>{void rpc<BuildInfo>('build-info').then(setBuild,report)},[])
   useEffect(()=>{void rpc<{user_limit_mib:number}>('resource-policy').then(value=>setMemory(value.user_limit_mib),report)},[])
   return <div className="dashboard"><Panel title="外觀"><label>色彩模式<select value={theme} onChange={e=>setTheme(e.target.value)}><option value="system">依系統設定</option><option value="dark">深色</option><option value="light">淺色</option></select></label><p className="muted section-note">介面語言：繁體中文</p></Panel>
           <Panel title="運算政策"><label>預設政策<select value={policy} onChange={e=>setPolicy(e.target.value)}><option value="auto">自動（僅本機）</option><option value="local">只用本機</option>
@@ -23,8 +25,12 @@ export function SettingsWorkspace({theme,setTheme,policy,setPolicy,busy,run,repo
             <button className="button" onClick={()=>void rpc('resource-policy',{user_limit_mib:memory}).then(()=>setMemoryStatus('已儲存記憶體策略。'),report)}>儲存記憶體上限</button>
             <p className="small" role="status">{memoryStatus}</p>
           </Panel>
+          <Panel title="版本與建置">
+            <p>Local LLM Workspace {APP_VERSION} · Development</p>
+            <details><summary>建置詳情</summary><p className="small pre">Git Commit：{build?.commit || '尚未取得'}<br/>Build Target：{build?.target || '尚未取得'}<br/>Signed：{build?.signed ? 'Yes':'No'}<br/>Worker：{build?.version || '尚未驗證'}</p></details>
+          </Panel>
           <Panel title="工作台更新">
-            <p className="section-note muted">目前版本 {updates.status?.version || '—'} · {
+            <p className="section-note muted">目前版本 {APP_VERSION} · {
               updates.status?.state === 'available' ? `可下載 ${updates.status.tag}` :
               updates.status?.state === 'current' ? '目前沒有新版' :
               updates.status?.state === 'error' ? updates.status.message : '正在檢查…'}</p>

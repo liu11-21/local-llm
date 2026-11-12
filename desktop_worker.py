@@ -65,6 +65,7 @@ from task_manager import TaskManager, timestamp
 from team_workflow import ROLES as TEAM_ROLES, TeamStore, run_team as run_team_workflow, specification, templates
 from tool_registry import builtins as agent_tools
 from web_bridge import Workspace, engine_path, field
+from workspace_version import build_info
 
 ENGINE_VERSION = "b11810"
 ENGINE_FILE = f"llama-{ENGINE_VERSION}-bin-win-vulkan-x64.zip"
@@ -72,7 +73,7 @@ ENGINE_HASH = "96a04cf289479b3404a559eab0db7dba9877080a61f5f5fdba9d85eb6ca0f324"
 ENGINE_BYTES = 36868097
 ENGINE_LICENSE_HASH = "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
 MAX_LINE = 256 * 1024
-WORKSPACE_VERSION = "0.6.2"
+WORKSPACE_VERSION = "0.7.0"
 ACTIONS = {"chat", "download", "team", "team-workflow", "comfy-start", "comfy-stop", "media", "engine-start",
            "engine-stop", "engine-install", "comfy-install", "media-install", "agent", "update-download", "remote-fetch-work",
            "openvino-install","openvino-remove","openvino-detect","openvino-import","openvino-infer","benchmark"}
@@ -1119,6 +1120,8 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == "build-info":
+            return build_info()
         if op=="runtime-recommend":
             return self.recommendation_receipts.issue(data)
         if op=='resource-policy':
