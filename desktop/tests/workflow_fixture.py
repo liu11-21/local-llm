@@ -141,6 +141,45 @@ if __name__ == "__main__":
                 return super().perform(action,data,cancel,update)
 
             def rpc(self, op, data):
+                if op=='fixture-remote-media':
+                    from remote_media import media_input,descriptor,MEDIA_TYPES,MEDIA_WORKFLOWS
+                    id='6'*32
+                    media={kind:{'installed':True,'state':'ready','schema':2,'workflows':list(MEDIA_WORKFLOWS[kind]),'formats':[MEDIA_TYPES[kind][1][1:]],'weights_verified':True} for kind in MEDIA_TYPES}
+                    record=capability(id,'受控影音主機 · 傳輸驗收','remote-host','Local LLM',connected=True,health='unhealthy',
+                        task_health={'chat':'unhealthy','image':'ready','video':'ready','music':'ready'},tasks=['chat','image','video','music'],
+                        formats=['GGUF','safetensors'],media=media,destination='127.0.0.1',cost='no-api-fee')
+                    requests={};cancelled=set()
+                    folder=self.data/'controlled-host-output';folder.mkdir(exist_ok=True)
+                    def accept(method,path,data=None):
+                        if path.endswith('/cancel'):
+                            cancelled.add(path.split('/')[3]);return {'state':'cancelled'}
+                        payload=media_input(data);request=data['request']
+                        requests.setdefault(request,{'payload':payload,'polls':0})
+                        return {'id':request}
+                    def job(request):
+                        item=requests[request];item['polls']+=1
+                        if request in cancelled:return {'state':'cancelled','message':'受控取消'}
+                        if item['polls']<2 or item['payload']['prompt'].startswith('CANCEL'):return {'state':'running','message':'受控 Host 工作進行中，沒有可信 ETA'}
+                        payload=item['payload'];suffix=MEDIA_TYPES[payload['kind']][1]
+                        path=folder/('c12345678901'+suffix)
+                        shutil.copyfile(Path(__file__).parent/'media-fixtures'/('sample'+suffix),path)
+                        return {'state':'completed','artifact':descriptor(path,payload['workflow'],{**payload['options'],'seed':417},desktop_worker.timestamp(),Event(),owner='c'*32,host=id,job=request)}
+                    @contextmanager
+                    def transfer(method,path,headers):
+                        request=path.split('/')[3];artifact=job(request)['artifact'];source=folder/artifact['id'];body=source.read_bytes()
+                        offset=int(headers.get('Range','bytes=0-')[6:-1])
+                        yield Response(body[offset:],206 if offset else 200,{'ETag':'"'+artifact['sha256']+'"','Content-Length':str(len(body)-offset),'Content-Type':artifact['mime'],'Content-Range':f'bytes {offset}-{len(body)-1}/{len(body)}'})
+                    self.remote_clients.items[id]=SimpleNamespace(id=id,host='127.0.0.1',port=9443,label=record['label'],capability=lambda:record,
+                        discover=lambda:None,job=job,json=accept,request=transfer,
+                        summary=lambda:{'id':id,'label':record['label'],'kind':'paired','host':'127.0.0.1','port':9443,'models':[],'tasks':record['tasks'],'capability':record,'connected':True})
+                    return id
+                if op=='fixture-many-works':
+                    contents=(Path(__file__).parent/'media-fixtures/sample.png').read_bytes()
+                    with self.connect() as db:
+                        for index in range(1000,1080):
+                            name=f'{index:012x}.png';(self.outputs/name).write_bytes(contents)
+                            db.execute('INSERT OR REPLACE INTO creations VALUES(?,?)',(name,json.dumps({'model':'受控大量作品','runtime':'local-comfyui','prompt':'Gallery pagination fixture'})))
+                    return True
                 if op == "fixture-openvino":
                     source = self.data/"受控 OpenVINO 模型"
                     source.mkdir(exist_ok=True)

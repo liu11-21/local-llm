@@ -110,6 +110,12 @@ class DeviceRecommendations:
         if data.get("reference") is True and selected:
             usage["parameters"] = {"context":2048,"max_tokens":32,"memory_mib":4096,"batch":1,"temperature":0,"do_sample":False,"ignore_eos":True}
             usage["reference_only"] = True
+        if task=='tensor' and data.get('reference') is True and isinstance(profile,str) and profile.startswith('input-'):
+            source=next((session for session in history if any(item['id']==profile for item in session['config'].get('workloads',[]))),None)
+            if source:
+                selected=next(item for item in source['config']['workloads'] if item['id']==profile)
+                usage={'workload':profile,'workload_sha256':selected['sha256'],
+                    'parameters':{'batch':1,'temperature':0,'do_sample':False,'ignore_eos':True,**source['config']['parameters']},'reference_only':True}
         descriptors = {}
         for record in records:
             runtime = record["id"]
@@ -215,7 +221,7 @@ class DeviceRecommendations:
                     for run in session["runs"]:
                         if run["device"]!=device:continue
                         effective = dict(usage)
-                        if data.get("reference") is True and selected and engine=="openvino":
+                        if data.get("reference") is True and profile in ('short','long') and engine=="openvino":
                             effective["parameters"]={**usage["parameters"],"context":1024}
                         entry = evaluate(session,run,current,effective)
                         if entry["eligible_for_ranking"]:

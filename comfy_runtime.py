@@ -190,6 +190,8 @@ class ManagedComfy:
     def __init__(self):
         self.process = None
         self.port = None
+        self.memory_guard=None
+        self.memory_budget=None
 
     def running(self):
         return self.process is not None and self.process.poll() is None
@@ -203,7 +205,7 @@ class ManagedComfy:
         except HTTPException:
             return False
 
-    def start(self, directory, profile, port, cancel):
+    def start(self, directory, profile, port, cancel, *, memory_mib=0):
         if self.running():
             raise RuntimeError("ComfyUI 已啟動。")
         client = ComfyClient(port, timeout=2)
@@ -224,6 +226,17 @@ class ManagedComfy:
         self.profile=profile
         self.directory=directory
         try:
+            from hardware import detect_hardware
+            from resource_policy import memory_policy,GIB
+            from openvino_adapter import memory_limit
+            physical=detect_hardware(directory)
+            policy=memory_policy(physical.ram_total,physical.ram_available,user_mib=memory_mib)
+            if policy['admission_available'] is not None and policy['ceiling']:
+                budget=min(policy['admission_available'],policy['ceiling'] if memory_mib else policy['safe_capacity']//2)
+                if budget<GIB:raise ValueError('ComfyUI 的安全記憶體容量不足。')
+                self.memory_guard=memory_limit(self.process,budget)
+                self.memory_guard.__enter__()
+                self.memory_budget=budget
             # A fresh extraction can spend several minutes loading Windows/PyTorch DLLs.
             deadline = time.monotonic() + 600
             while time.monotonic() < deadline:
@@ -260,3 +273,6 @@ class ManagedComfy:
                 self.process.kill()
                 self.process.wait(timeout=4)
         self.process = self.port = None
+        if self.memory_guard:self.memory_guard.__exit__(None,None,None)
+        self.memory_guard=None
+        self.memory_budget=None

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { rpc, type Job, type Params, type Task } from './api'
+import { rpc, type Job, type Params, type Task,type Info } from './api'
 import { Empty, Panel } from './ui'
 
 const labels: Record<string, string> = {
@@ -8,7 +8,7 @@ const labels: Record<string, string> = {
   'openvino-install':'安裝 OpenVINO','openvino-remove':'移除 OpenVINO','openvino-detect':'檢查 OpenVINO 裝置',
   'openvino-import':'匯入 OpenVINO IR','openvino-infer':'OpenVINO 張量推理',
   'remote-host-chat': '遠端裝置文字推理',
-  'remote-host-media': '遠端裝置圖片生成', 'remote-fetch-work': '下載遠端作品',
+  'remote-host-media': '遠端裝置媒體生成', 'remote-fetch-work': '下載遠端作品',
   chat: '文字聊天', download: '模型下載', team: 'AI 團隊', agent: 'AI 代理人',
   'team-workflow': 'AI 團隊角色流程',
   image: '圖片生成', video: '影片生成', music: '音樂生成', media: '創作',
@@ -79,16 +79,20 @@ export function useTaskQueue(report: (error: unknown) => void, refreshed: () => 
   return { tasks, loadError, run, cancel, retry }
 }
 
-export function TaskCenter({ tasks, cancel, retry, compact, loadError }: {
-  tasks: Task[]; cancel?: (id: string) => void; retry?: (id: string) => void; compact?: boolean; loadError?: boolean
+export function TaskCenter({ tasks, cancel, retry, compact, loadError,info,onResult }: {
+  tasks: Task[]; cancel?: (id: string) => void; retry?: (id: string) => void; compact?: boolean; loadError?: boolean;info?:Info;onResult?:(name:string)=>void
 }) {
   const sorted = [...tasks.filter(activeTask), ...tasks.filter(task => !activeTask(task))]
-  return <Panel title={compact ? '最近任務' : '任務與佇列'} description={compact ? undefined : '本機推理依序執行，下載可以同時進行。'}>
+  return <Panel title={compact ? '最近任務' : '任務與佇列'} description={compact ? undefined : '依設備與資源預算排程，結果和進階證據保存在同一筆任務。'}>
     {loadError && <div role="alert" className="empty">暫時無法讀取任務，系統會自動重試。</div>}
     {sorted.length === 0 && !loadError && <Empty>完成或啟動的任務會顯示在這裡。</Empty>}
-    <div className="task-list">{(compact ? sorted.slice(0, 4) : sorted).map(task => <article className="list-row" key={task.id}>
+    <div className="task-list">{(compact ? sorted.slice(0, 4) : sorted).map(task => <article className="list-row task-card" key={task.id}>
       <span><b>{labels[task.kind] || labels[task.action] || task.action}{task.title && ` · ${task.title}`}</b>
-        <small>{task.message}</small>
+        <small className="pre">{task.model} · {info?.providers.find(provider=>provider.id===task.runtime)?.label || (task.runtime==='openvino' ? '本機 OpenVINO' : task.runtime==='local' || !task.runtime ? '本機' : task.runtime)}</small>
+        <small>{task.message.slice(0,180)}</small>
+        {!compact && <small>{task.started ? '開始 '+new Date(task.started).toLocaleString() : '尚未開始'}</small>}
+        {!compact && <details className="task-evidence"><summary>執行證據與完整紀錄</summary>
+        <small className="pre">Job ID {task.id} · Dispatch ID {task.execution?.dispatch_id || '此任務無隔離 Dispatch'}</small>
         {!compact && task.history_warning && <small>{task.history_warning}</small>}
         {!compact && task.remote_request && <small className="pre">遠端任務 ID {task.remote_request}</small>}
         {!compact && <small>{new Date(task.created).toLocaleString()} · {['local','openvino'].includes(task.runtime || 'local') ? '本機' : '外部運算'}</small>}
@@ -96,11 +100,15 @@ export function TaskCenter({ tasks, cancel, retry, compact, loadError }: {
         {!compact && task.execution && <small className="pre">指定 {task.execution.requested_device} · 實際 {Array.isArray(task.execution.actual_device) ? task.execution.actual_device.join('、') : task.execution.actual_device} ·
           {task.execution.execution_device_verified ? '裝置已驗證' : '裝置分配未完整驗證'}</small>}
         {!compact && task.parent_id && <small>父任務 {task.parent_id}</small>}
+        {task.execution?.recommendation && <small className="pre">推薦 ID {task.execution.recommendation.recommendation_id}
+          {task.execution.recommendation.benchmarks.map(ref=><span key={ref.benchmark_run_id}> · Benchmark {ref.benchmark_id} / {ref.benchmark_run_id} · {ref.freshness} · {ref.comparability}</span>)}</small>}
+        <pre className="pre task-record">{JSON.stringify(task,null,2)}</pre></details>}
         {activeTask(task) && <TaskProgress received={task.received} total={task.total}/>}
       </span>
       <span className={`tag task-${task.state}`}>{states[task.state] || task.state}</span>
       {!compact && cancel && activeTask(task) && <button className="button" onClick={() => cancel(task.id)}>取消</button>}
       {!compact && retry && task.retryable && <button className="button" onClick={() => retry(task.id)}>重試</button>}
+      {!compact && onResult && task.result_file && <button className="button" onClick={()=>onResult(task.result_file!.split('/').at(-1)!)}>查看結果</button>}
     </article>)}</div>
   </Panel>
 }

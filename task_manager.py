@@ -108,6 +108,7 @@ class TaskManager:
                          "state": "queued", "created": timestamp(), "message": "等候可用資源…",
                          "started": None, "finished": None, "error": None}, {**payload,"_task_id":task_id}, key)
             task.demand=demand
+            task.public['model']=getattr(payload.get('_dispatch'),'model',payload.get('model') or payload.get('workflow'))
             if demand:task.public["resource_request"]=demand.public()
             if parent_id:task.public["parent_id"]=parent_id
             if action == "media-install":
@@ -217,6 +218,7 @@ class TaskManager:
                 state, message = "completed", (result or {}).get("message") or "已完成。"
             task.public.update(state=state, finished=None if state == "paused" else timestamp(), message=message, result=result,
                                error=detail if state == "failed" else None)
+            if result and result.get('file'):task.public['result_file']=result['file']
             if state != "paused" and (task.public["action"] not in RETRYABLE or state == "completed"):
                 task.payload = {}
             self._persist(task)

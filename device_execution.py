@@ -105,6 +105,9 @@ class DeviceExecution:
 
     @contextmanager
     def scope(self,target,task_id,cancel):
+        physical=detect_hardware(self.app.data)
+        if not memory_policy(physical.ram_total,user_mib=configured(self.app),required=target.memory)['feasible']:
+            raise ValueError('RAM_POLICY_CHANGED · 排隊期間安全容量或使用者上限已變更。')
         if target.recommendation:
             self.app.recommendation_receipts.verify(target.recommendation['recommendation_id'],target.runtime,target.device,target.model)
         if target.hashes:
@@ -120,6 +123,7 @@ class DeviceExecution:
         scoped.execution_scoped=True
         scoped.execution_target=target
         scoped.local=self.new_local()
+        scoped.llama_job_memory=None
         scoped.active,scoped.active_native=None,False
         scoped.llama_health=EngineHealth(scoped.local.running,scoped.local.health_probe)
         scoped.openvino=self.app.openvino.session()
@@ -148,6 +152,7 @@ class DeviceExecution:
                 details.update(evidence=evidence,execution_device_verified=evidence.get("verified_inference") is True,
                                actual_device=evidence.get("execution_devices") or "unknown")
             if getattr(scoped.openvino,"last_job_memory",None):details["job_memory"]=scoped.openvino.last_job_memory
+            elif scoped.llama_job_memory:details['job_memory']=scoped.llama_job_memory
             if scoped.active:details["configured_plan"]=scoped.active[-1]
             scoped.local.stop()
             scoped.openvino.close()

@@ -41,6 +41,7 @@ from device_recommendation import DeviceRecommendations
 from device_execution import DeviceExecution,DispatchTarget
 from recommendation_receipts import RecommendationReceipts
 from comfy_resources import ComfyResources
+from media_previews import MediaPreviews
 from resource_policy import configured,memory_policy,load as load_memory_policy,save as save_memory_policy
 from openvino_adapter import memory_limit
 from load_plan import block_count
@@ -191,6 +192,7 @@ class Desktop(Workspace):
         self.recommendation_receipts = RecommendationReceipts(self)
         self.device_execution = DeviceExecution(self)
         self.comfy_resources = ComfyResources(self)
+        self.media_previews=MediaPreviews(self.outputs)
         self.scheduler.resource_snapshot=self.device_execution.snapshot
         self.scheduler.dynamic_resources=True
 
@@ -291,14 +293,17 @@ class Desktop(Workspace):
             return records
         kind = field(query, "kind", 12, optional=True)
         model = field(query, "model", 160, optional=True)
+        runtime = field(query,'runtime',160,optional=True)
         term = field(query, "query", 180, optional=True).casefold()
         offset = query.get("offset", 0)
         if (kind and kind not in MODELS or query.get("sort") not in (None, "newest", "oldest")
                 or type(offset) is not int or offset < 0):
             raise ValueError("作品篩選條件無效。")
         models = sorted({item["model"] for item in records if item.get("model")})
+        runtimes=sorted({(item.get('source') or {}).get('host') or item.get('runtime') or 'unknown' for item in records})
         matches = [item for item in records if (not kind or item["kind"] == kind)
                    and (not model or item.get("model") == model)
+                   and (not runtime or ((item.get('source') or {}).get('host') or item.get('runtime') or 'unknown')==runtime)
                    and (not term or any(term in item.get(key, "").casefold()
                                         for key in ("name", "model", "workflow", "prompt", "lyrics")))]
         if query.get("sort") == "oldest":
@@ -307,7 +312,7 @@ class Desktop(Workspace):
         for item in page:
             if not item.get("dimensions"):
                 item["dimensions"] = media_metadata(self.outputs / item["name"])
-        return {"items": page, "models": models, "total": len(matches)}
+        return {"items": page, "models": models, 'runtimes':runtimes,"total": len(matches)}
 
     def prepare(self, data, cancel, update):
         name = field(data, "model", 180)
@@ -347,7 +352,8 @@ class Desktop(Workspace):
             raise ValueError("可用記憶體可能不足。請關閉其他程式、改用更小的模型，或手動選擇其他運算環境。")
         update(message="正在載入模型…", plan=asdict(plan))
         try:
-            options={"threads":target.threads,"on_process":lambda process:self.session_guards.enter_context(memory_limit(process,target.memory))} if target else {}
+            def guard(process):self.llama_job_memory=self.session_guards.enter_context(memory_limit(process,target.memory))
+            options={"threads":target.threads,"on_process":guard} if target else {}
             self.local.start(executable, path, cancel, plan, context=context, native_tools=native,**options)
         except RuntimeError as error:
             if not target and plan.layers and not cancel.is_set() and (ram is None or estimate_ram(path.stat().st_size) <= ram):
@@ -540,6 +546,11 @@ class Desktop(Workspace):
         try:
             if not self.comfy.running():
                 raise ValueError("ComfyUI stopped")
+            kind=data.get('kind','image')
+            if kind!='image':
+                current=self.remote_host.media().get(kind,{})
+                if current.get('state')!='ready' or not current.get('weights_verified'):
+                    raise ValueError('WEIGHTS_CHANGED · 排隊後模型、節點或完整性驗證已失效。')
             if self.local.running() or self.active:
                 self.stop_local()
             if not owned(self.remote_output):
@@ -547,7 +558,6 @@ class Desktop(Workspace):
             options = dict(data["options"])
             if options["seed"] is None:
                 options["seed"] = secrets.randbits(53)
-            kind=data.get('kind','image')
             app_kind=MEDIA_TYPES[kind][0]
             path = ComfyClient(self.comfy.port).generate(app_kind,data["prompt"],data.get('lyrics',''),self.remote_output,cancel,
                                                        lambda message:update(message=message),
@@ -608,7 +618,12 @@ class Desktop(Workspace):
                     raise ValueError("主機回傳的圖片任務識別碼無效。")
                 artifact = await_image(client,request,cancel,update)
             except ConnectionError:
+                self.client_media.state(runtime,request,'interrupted')
                 raise ConnectionError(f"主機連線中斷。請使用任務識別碼 {request} 重新查詢。") from None
+            except InterruptedError:
+                self.client_media.state(runtime,request,'cancelled');raise
+            except (OSError,ValueError,RuntimeError,TimeoutError):
+                self.client_media.state(runtime,request,'failed');raise
         update(remote_request=request,message="正在下載並驗證作品…")
         saved = self.client_media.get(runtime,request)
         if saved:
@@ -1088,7 +1103,7 @@ class Desktop(Workspace):
             if action == "comfy-start" and self.comfy.running():
                 raise ValueError("請先停止已啟動的 ComfyUI，再更換版本。")
             with self.comfy_health.transition(action == "comfy-start", cancel):
-                return super().perform(action, data, cancel, update)
+                return super().perform(action, {**data,'memory_mib':configured(self)}, cancel, update)
         result = super().perform(action, data, cancel, update)
         if action == "media" and result and result.get("file"):
             kind = field(data, "kind", 12)
@@ -1111,6 +1126,13 @@ class Desktop(Workspace):
             physical=detect_hardware(self.data)
             return memory_policy(physical.ram_total,physical.ram_available,user_mib=configured(self))
         if op=='comfy-resources':return self.comfy_resources.snapshot()[0]
+        if op=='home-summary':
+            with self.connect() as db:
+                chats=db.execute('SELECT id,title FROM chats ORDER BY touched DESC,rowid DESC LIMIT 5').fetchall()
+                recent=db.execute("SELECT value FROM settings WHERE key='recent_model'").fetchone()
+            return {'chats':chats,'first_use':not chats and not self.works(),'recent_model':recent[0] if recent else None}
+        if op=='work-previews':return self.media_previews.get(data.get('names'))
+        if op=='work-preview-put':return self.media_previews.put(data.get('name'),data.get('image'))
         if op=="dispatch-runs":
             with self.connect() as db:
                 return [{"id":identity,"task":task,"state":state,"details":json.loads(details),"created":created,"finished":finished}

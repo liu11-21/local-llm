@@ -20,21 +20,34 @@ function workAsset(info: Info | undefined, name: string) {
   if (import.meta.env.MODE === 'preview-worker') return '/__desktop_dev_output/' + encodeURIComponent(name)
 }
 
-function WorkPreview({info, name, kind, onMetadata}: {info?: Info; name: string; kind: MediaKind;
-  onMetadata?: (dimensions: WorkDimensions) => void}) {
+async function cachePreview(element:HTMLImageElement|HTMLVideoElement,name:string,done?:()=>void) {
+  try {
+    const width=element instanceof HTMLVideoElement ? element.videoWidth : element.naturalWidth
+    const height=element instanceof HTMLVideoElement ? element.videoHeight : element.naturalHeight
+    if(!width || !height)return
+    const scale=Math.min(1,320/width,200/height)
+    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(width*scale));canvas.height=Math.max(1,Math.round(height*scale))
+    canvas.getContext('2d')?.drawImage(element,0,0,canvas.width,canvas.height)
+    await rpc('work-preview-put',{name,image:canvas.toDataURL('image/png')});done?.()
+  } catch { /* Preview cache is optional; keep the original and playback available. */ }
+}
+
+function WorkPreview({info, name, kind, onMetadata,onPreview}: {info?: Info; name: string; kind: MediaKind;
+  onMetadata?: (dimensions: WorkDimensions) => void;onPreview?:()=>void}) {
   const [failed, setFailed] = useState(false)
   const asset = workAsset(info, name)
   if (!asset || failed) return <p className="muted small section-note">目前無法載入預覽。作品檔仍可在作品庫查看位置。</p>
   if (kind === 'image') return <img className="media-output" alt="生成作品" src={asset} onError={() => setFailed(true)}
-    onLoad={e => onMetadata?.({width:e.currentTarget.naturalWidth, height:e.currentTarget.naturalHeight})}/>
+    onLoad={e => {onMetadata?.({width:e.currentTarget.naturalWidth, height:e.currentTarget.naturalHeight});void cachePreview(e.currentTarget,name,onPreview)}}/>
   if (kind === 'video') return <video className="media-output" src={asset} controls preload="metadata" onError={() => setFailed(true)}
+    onLoadedData={e=>void cachePreview(e.currentTarget,name,onPreview)}
     onLoadedMetadata={e => onMetadata?.({width:e.currentTarget.videoWidth, height:e.currentTarget.videoHeight,
       duration:e.currentTarget.duration})}/>
   return <audio className="media-audio" src={asset} controls preload="metadata" onError={() => setFailed(true)}
     onLoadedMetadata={e => onMetadata?.({duration:e.currentTarget.duration})}/>
 }
 
-function WorkDetails({work, info, reuse}: {work: Work; info?: Info; reuse: (work: Work) => void}) {
+function WorkDetails({work, info, reuse,onPreview}: {work: Work; info?: Info; reuse: (work: Work) => void;onPreview?:()=>void}) {
   const [dimensions, setDimensions] = useState<WorkDimensions>()
   const [error, setError] = useState('')
   const {width, height, duration} = {...work.dimensions, ...dimensions}
@@ -53,7 +66,7 @@ function WorkDetails({work, info, reuse}: {work: Work; info?: Info; reuse: (work
     ['來源任務', work.source?.job], ['來源檔名', work.source?.original],
   ]
   return <>
-    <WorkPreview info={info} name={work.name} kind={work.kind} onMetadata={setDimensions}/>
+    <WorkPreview info={info} name={work.name} kind={work.kind} onMetadata={setDimensions} onPreview={onPreview}/>
     <dl>{fields.filter(([, value]) => value != null).map(([label, value]) =>
       <div className="list-row pre" key={String(label)}><dt>{String(label)}</dt><dd>{String(value)}</dd></div>)}</dl>
     {(work.prompt || work.lyrics || work.options) && <details><summary>提示詞和生成設定</summary>
@@ -80,29 +93,37 @@ export function Works({ info, revision, selected, choose, reuse }: {
 }) {
   const [kind, setKind] = useState('')
   const [model, setModel] = useState('')
+  const [runtime,setRuntime]=useState('')
+  const [view,setView]=useState<'grid'|'list'>('grid')
+  const [previews,setPreviews]=useState<Record<string,string>>({})
+  const [previewRevision,setPreviewRevision]=useState(0)
   const [sort, setSort] = useState('newest')
   const [query, setQuery] = useState('')
   const [offset, setOffset] = useState(0)
-  const [page, setPage] = useState<{items:Work[]; models:string[]; total:number}>()
+  const [page, setPage] = useState<{items:Work[]; models:string[];runtimes?:string[]; total:number}>()
   const [issue, setIssue] = useState('')
   const [loading, setLoading] = useState(true)
   useEffect(() => {
     let mounted = true
     setLoading(true); setIssue('')
     const timer = setTimeout(() => {
-      void rpc<NonNullable<typeof page>>('works-library', {kind, model, sort, query, offset}).then(
+      void rpc<NonNullable<typeof page>>('works-library', {kind, model,runtime, sort, query, offset}).then(
         result => {if (mounted) {setPage(result); setLoading(false)}},
         error => {if (mounted) {setIssue(String(error instanceof Error ? error.message : error)); setLoading(false)}},
       )
     }, 180)
     return () => {mounted = false; clearTimeout(timer)}
-  }, [kind, model, sort, query, offset, revision])
+  }, [kind, model,runtime, sort, query, offset, revision])
   const works = page?.items ?? []
-  const work = works.find(item => item.name === selected?.name) ?? (!kind && !model && !query && offset === 0 ? selected : undefined) ?? works[0]
+  const previewNames=works.map(work=>work.name).join(',')
+  useEffect(()=>{let mounted=true;void rpc<Record<string,string>>('work-previews',{names:works.map(work=>work.name)}).then(value=>{if(mounted)setPreviews(value ?? {})},()=>{});return()=>{mounted=false}},[previewNames,previewRevision])
+  const work = works.find(item => item.name === selected?.name) ?? (!kind && !model && !runtime && !query && offset === 0 ? selected : undefined) ?? works[0]
   return <div className="dashboard"><Panel title="作品庫">
     <label>搜尋作品<input type="search" maxLength={180} value={query} placeholder="提示詞、模型或檔名"
       onChange={e => {setQuery(e.target.value);setOffset(0)}}/></label>
     <div className="parameters work-filters section-note">
+      <label>運算來源篩選<select aria-label="運算來源篩選" value={runtime} onChange={e=>{setRuntime(e.target.value);setOffset(0)}}><option value="">全部來源</option>
+        {page?.runtimes?.map(value=><option key={value} value={value}>{info?.providers.find(item=>item.id===value)?.label || (value==='local-comfyui' ? '本機 ComfyUI' : value==='unknown' ? '來源未記錄' : value)}</option>)}</select></label>
       <label>類型<select aria-label="類型" value={kind} onChange={e => {setKind(e.target.value);setOffset(0)}}>
         <option value="">全部類型</option>{Object.entries(titles).map(([value, title]) => <option value={value} key={value}>{title}</option>)}
       </select></label>
@@ -116,22 +137,23 @@ export function Works({ info, revision, selected, choose, reuse }: {
     {loading && <p className="muted section-note" role="status">正在讀取作品…</p>}
     {issue && <p role="alert" className="creation-error pre">{issue}</p>}
     {!loading && !issue && !works.length && <Empty>{kind || model || query ? '找不到符合條件的作品。' : '還沒有作品。生成完成後會自動加入。'}</Empty>}
-    {works.map(item => {
+    <div className="row section-note" aria-label="作品顯示方式"><button className="button" aria-pressed={view==='grid'} onClick={()=>setView('grid')}>網格</button><button className="button" aria-pressed={view==='list'} onClick={()=>setView('list')}>清單</button></div>
+    <div className={view==='grid' ? 'works-grid' : 'works-list'}>{works.map(item => {
       const Icon = icons[item.kind]
-      const thumbnail = item.kind === 'image' ? workAsset(info, item.name) : undefined
+      const thumbnail = previews[item.name]
       return <button className={'work-link ' + (work?.name === item.name ? 'current' : '')} key={item.name} onClick={() => choose(item)}>
         {thumbnail ? <img className="work-thumb" src={thumbnail} alt="" loading="lazy"
           onError={e => {e.currentTarget.hidden = true}}/> : <Icon size={16}/>}
-        <span>{item.model || item.name}<small>{new Date(item.created).toLocaleString()}</small></span>
+        <span>{item.model || item.name}<small>{titles[item.kind]} · {new Date(item.created).toLocaleString()}</small><small>{item.dimensions?.duration ? item.dimensions.duration.toFixed(1)+' 秒' : '開啟作品以預覽'}</small></span>
       </button>
-    })}
+    })}</div>
     {(offset > 0 || (page?.total ?? 0) > 24) && <div className="row section-note creation-actions">
       <button className="button" disabled={!offset || loading} onClick={() => setOffset(n => n - 24)}>上一頁</button>
       <button className="button" disabled={offset + 24 >= (page?.total ?? 0) || loading} onClick={() => setOffset(n => n + 24)}>下一頁</button>
     </div>}
   </Panel><Panel title="作品詳細資料">
     {!work && <Empty>選擇作品後可查看預覽和生成設定。</Empty>}
-    {work && <WorkDetails key={work.name} work={work} info={info} reuse={reuse}/>}
+    {work && <WorkDetails key={work.name} work={work} info={info} reuse={reuse} onPreview={()=>setPreviewRevision(value=>value+1)}/>}
   </Panel></div>
 }
 
@@ -296,6 +318,8 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
   const busy = pending || active
   const currentReadiness = remote ? provider?.connected ? imageCapability : undefined : readiness
   const ready = currentReadiness?.state === 'ready'
+  const optionValue=(key:string)=>Number(overrides[key] ?? workflow?.parameters.find(parameter=>parameter.key===key)?.default ?? 0)
+  const unsafeVideo=kind==='video' && optionValue('width')*optionValue('height')*optionValue('frames')>16*1024**2
   const parameter = (param: WorkflowParameter) => <label key={param.key}>{param.label}<input
     type={param.type === 'integer' ? 'number' : 'text'} min={param.min} max={param.max} step={param.step}
     maxLength={param.type === 'text' ? param.max : undefined}
@@ -315,7 +339,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
       <DeviceChoice info={info} task={kind} runtime={runtime} model={workflow?.id ?? ''} policy={policy} disabled={!!busy}/>
       <form onSubmit={async event => {
         event.preventDefault()
-        if (!workflow || busy || !ready || !prompt.trim()) return
+        if (!workflow || busy || !ready || !prompt.trim() || unsafeVideo) return
         setPending(true); setResult(undefined)
         try {
           const decision = remote ? await prepare(kind,[{runtime,model:workflow.id}],policy,kind==='music' ? '音樂提示詞、歌詞與生成參數' : titles[kind]+'提示詞與生成參數') : 'local'
@@ -337,9 +361,10 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
           <ul>{workflow?.models.map(model => <li key={model}>{model}</li>)}</ul>
         </details>}
         <div className="row section-note creation-actions">
-          <button className="button primary" disabled={!workflow || busy || !ready || !prompt.trim()}>{busy ? '已提交 · 見任務中心' : '生成' + titles[kind]}</button>
+          <button className="button primary" disabled={!workflow || busy || !ready || !prompt.trim() || unsafeVideo}>{busy ? '已提交 · 見任務中心' : '生成' + titles[kind]}</button>
           {latest?.workflow && <button className="button" type="button" disabled={busy} onClick={() => apply(latest)}>沿用上次設定</button>}
         </div>
+        {unsafeVideo && <p role="alert" className="small creation-error">解析度與影格總量超過安全上限，請降低尺寸或影格數。</p>}
       </form>
     </Panel>
     <div className="creation-sidebar">

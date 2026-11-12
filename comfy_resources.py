@@ -7,7 +7,7 @@ from media import ComfyClient
 from resource_contract import fresh_measure
 
 
-def reservation(stats,queue,hardware,peak,*,now=None):
+def reservation(stats,queue,hardware,peak,*,now=None,committed_limit=None):
     now=time() if now is None else now
     unknown={'state':'unknown','model_loaded':None,'precise':False,'checked_at':now}
     fallback=ResourceDemand(engine='ComfyUI',limitations=('ComfyUI 資源／裝置或生成峰值未知，維持全域互斥。',))
@@ -16,7 +16,7 @@ def reservation(stats,queue,hardware,peak,*,now=None):
     if queue['queue_running'] or queue['queue_pending']:
         return {**unknown,'state':'generating' if queue['queue_running'] else 'switching'},fallback
     devices=stats.get('devices',[]) if isinstance(stats,dict) else []
-    if len(devices)!=1 or type(peak) is not int or peak<=0:return unknown,fallback
+    if len(devices)!=1 or type(peak) is not int or peak<=0 or type(committed_limit) is not int or committed_limit<peak:return unknown,fallback
     item=devices[0]
     candidates=[gpu for gpu in hardware.get('devices',[]) if gpu.get('kind')=='gpu' and gpu.get('memory_type')=='dedicated'
                 and gpu['name'].casefold() in str(item.get('name','')).casefold() and fresh_measure(gpu['vram_total'],now)
@@ -29,9 +29,9 @@ def reservation(stats,queue,hardware,peak,*,now=None):
     # Actual weights are not enumerated by /system_stats. Resident allocations are
     # evidence of occupancy, not a fabricated model identity. Same GPU stays locked.
     details={'state':state,'model_loaded':None,'resident_allocations':item['torch_vram_total'],
-             'device':gpu['id'],'mapping':'unique-name-and-dedicated-capacity','precise':True,'checked_at':now}
-    return details,ResourceDemand(engine='ComfyUI',device=gpu['id'],ram=peak+512*1024**2,
-        cpu_load=10,bandwidth=10,exclusive=('gpu:'+gpu['id'],),limitations=('閒置服務的歷史 RSS 峰值加餘量；生成或未知時恢復全域互斥。',))
+             'device':gpu['id'],'mapping':'unique-name-and-dedicated-capacity','precise':True,'checked_at':now,'committed_limit':committed_limit}
+    return details,ResourceDemand(engine='ComfyUI',device=gpu['id'],ram=committed_limit,
+        cpu_load=10,bandwidth=10,exclusive=('gpu:'+gpu['id'],),limitations=('服務預留完整 Job Object 記憶體上限；生成或未知時恢復全域互斥。',))
 
 
 class ComfyResources:
@@ -41,6 +41,9 @@ class ComfyResources:
         self.thread=None
 
     def snapshot(self):
+        status=self.app.comfy_health.status
+        if status and status['state'] in ('starting','stopping','failed','unhealthy'):
+            return {'state':{'starting':'switching','stopping':'releasing'}.get(status['state'],'unknown'),'precise':False},ResourceDemand(engine='ComfyUI') if self.app.comfy.running() else None
         if not self.app.comfy.running():return {'state':'stopped','precise':True},None
         if self.thread is None:
             self.thread=Thread(target=self._run,daemon=True,name='comfy-resource-monitor');self.thread.start()
@@ -53,7 +56,7 @@ class ComfyResources:
             try:
                 if self.app.comfy.running():
                     client=ComfyClient(self.app.comfy.port,timeout=.7)
-                    value=reservation(client.json('/system_stats'),client.json('/queue'),self.app.hardware_monitor.snapshot(),native_peak(self.app.comfy.process))
+                    value=reservation(client.json('/system_stats'),client.json('/queue'),self.app.hardware_monitor.snapshot(),native_peak(self.app.comfy.process),committed_limit=self.app.comfy.memory_budget)
                     with self.lock:self.observed=value
                 else:
                     with self.lock:self.observed=None

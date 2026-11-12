@@ -37,6 +37,7 @@ export function App() {
   const [selected, setSelected] = useState<Work>()
   const [preset, setPreset] = useState<Work>()
   const [preferredRuntime, setPreferredRuntime] = useState<{id:string;model?:string}>()
+  const [preferredChat,setPreferredChat]=useState<{id:string;nonce:number}>()
   const [guide, setGuide] = useState(readGuide)
   const [creationRuntime,setCreationRuntime] = useState<{kind:Use;runtime:string;workflow:string}>()
   const [showGuide, setShowGuide] = useState(false)
@@ -97,7 +98,7 @@ export function App() {
     const result = await queue.run(action,data,observe)
     const task = action==='media' ? data.kind : action==='team-workflow' ? 'team' : action
     if (result && guide.stage==='launched' && guide.task===task) {
-      updateGuide({...guide,stage:'completed',prepared:true});setShowGuide(true)
+      updateGuide({...guide,stage:'completed',prepared:true});setShowGuide(false);notice('第一項任務已完成，結果已保存。')
     }
     return result
   }
@@ -150,10 +151,11 @@ export function App() {
         {!info && banner?.error && <button className="button" onClick={() => void refresh()}>重新連線</button>}
         {page !== 'home' && page !== 'chat' && <div className="page-title"><div className="tile-icon"><Icon size={22}/></div><h1>{title}</h1></div>}
         {page === 'home' && <Dashboard info={info} tasks={queue.tasks} works={works} go={go} openGuide={openGuide}
-          openWork={work => {setSelected(work);go('works')}}/>}
+          openWork={work => {setSelected(work);go('works')}} openChat={id=>{setPreferredChat({id,nonce:Date.now()});go('chat')}}
+          openRemote={(runtime,task,model)=>{if(task==='chat')setPreferredRuntime({id:runtime,model});else setCreationRuntime({kind:task,runtime,workflow:model});go(task)}}/>}
         <div hidden={page !== 'chat'}><ChatWorkspace info={info} policy={policy} run={runTracked} cancel={queue.cancel}
-          report={report} notice={notice} go={go} preferredRuntime={preferredRuntime} refreshRuntime={refreshRuntime}/></div>
-        {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError}/>}
+          report={report} notice={notice} go={go} preferredRuntime={preferredRuntime} preferredChat={preferredChat} refreshRuntime={refreshRuntime}/></div>
+        {page === 'tasks' && <TaskCenter tasks={queue.tasks} cancel={queue.cancel} retry={queue.retry} loadError={queue.loadError} info={info} onResult={name=>void openSavedWork(name)}/>}
         {page === 'library' && <ModelLibrary info={info} tasks={queue.tasks} run={queue.run} report={report} go={go} refresh={refresh}/>}
         {page === 'runtime' && <RuntimeWorkspace info={info} health={health} policy={policy} tasks={queue.tasks} run={queue.run}
           cancel={queue.cancel}

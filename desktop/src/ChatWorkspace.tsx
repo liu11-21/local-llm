@@ -33,10 +33,10 @@ function Reply({ content }: { content: string }) {
   }}>{content}</Markdown></div>
 }
 
-export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, preferredRuntime, refreshRuntime }: {
+export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, preferredRuntime, preferredChat, refreshRuntime }: {
   info?: Info; policy: string; run: Run; cancel: (id: string) => void; report: (error: unknown) => void
   notice: (message: string) => void; go: (page: 'library' | 'runtime') => void
-  preferredRuntime?: {id:string;model?:string}
+  preferredRuntime?: {id:string;model?:string}; preferredChat?:{id:string;nonce:number}
   refreshRuntime: (runtime:string)=>Promise<void>
 }) {
   const [chats, setChats] = useState<Chat[]>([])
@@ -57,6 +57,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const [openvinoDevice,setOpenvinoDevice] = useState('CPU')
   const [title, setTitle] = useState<string>()
   const [opening, setOpening] = useState(false)
+  const [historyOpen,setHistoryOpen]=useState(false)
   const locked = useRef(false)
   const latest = useRef(0)
   const scroll = useRef<HTMLDivElement>(null)
@@ -70,6 +71,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const canSend = !pending && !opening && !!model && (runtime === 'local' ? !!info?.engine :
     runtime==='openvino' ? !!info?.openvino?.installed : !!provider?.connected)
   const current = chats.find(([id]) => id === chat)
+  useEffect(()=>{if(preferredChat && !locked.current)void open(preferredChat.id)},[preferredChat])
+  useEffect(()=>{if(!selectedModel && info?.recent_model && models.includes(info.recent_model))setModel(info.recent_model)},[info?.recent_model])
 
   async function refreshChats() { setChats(await rpc<Chat[]>('chats')) }
   useEffect(() => { void refreshChats().catch(report) }, [])
@@ -136,7 +139,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   ] : messages
   const tokens = job?.usage ?? usage
 
-  return <div className="chat-grid">
+  return <div className={'chat-grid'+(historyOpen ? ' history-open' : '')}>
     <aside className="chat-rail" aria-label="對話歷史">
       <button className="button primary full" disabled={!!pending} onClick={() => void open()}><Plus size={17}/>新對話</button>
       <h2>對話歷史</h2>
@@ -151,11 +154,15 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
           <input autoFocus aria-label="對話名稱" maxLength={80} value={title} onChange={e => setTitle(e.target.value)}/>
           <button className="button">儲存</button><button className="button" type="button" onClick={() => setTitle(undefined)}>取消</button>
         </form> : <div className="row">
+          <button className="button history-toggle" aria-expanded={historyOpen} onClick={()=>setHistoryOpen(value=>!value)}>對話歷史</button>
           <h2>{current?.[1] || '新對話'}</h2>
           {current && <><button className="icon" title="重新命名對話" disabled={!!pending} onClick={() => setTitle(current[1])}><Pencil size={16}/></button>
             <button className="icon" title="刪除對話" disabled={!!pending} onClick={() => void remove()}><Trash2 size={16}/></button></>}
         </div>}
-        <div className="chat-controls">
+        <details className="chat-config"><summary aria-label="模型與運算設定"><span className="chat-model-summary">
+          <b>{info?.registry.models.find(item=>item.id===model)?.label || info?.openvino?.models.find(item=>item.id===model)?.label || model || '選擇模型'}</b>
+          <span>{runtime==='local' ? device || '本機 CPU／GPU' : runtime==='openvino' ? 'OpenVINO · '+(device || openvinoDevice) : provider?.label || '遠端'} · {canSend ? '就緒' : '需要準備'} · 設定 ⌄</span>
+        </span></summary><div className="chat-config-body"><div className="chat-controls">
           <label>模型<TaskModelPicker info={info} runtime={runtime} model={model} change={setModel} disabled={!!pending}/></label>
           <label>運算環境<RuntimePicker info={info} task="chat" value={runtime} disabled={!!pending}
             refresh={refreshRuntime} change={value => {setRuntime(value);setModel('');setDevice('')}}/></label>
@@ -167,6 +174,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         {runtime !== 'local' && runtime!=='openvino' && !provider?.connected && <PreparationNotice title="需要重新連線">
           <button className="button section-note" onClick={()=>go('runtime')}>檢查運算環境</button>
         </PreparationNotice>}
+        <button className="button" onClick={()=>go('runtime')}>Benchmark 與進階運算環境</button>
+        </div></details>
       </header>
       <div className="messages" ref={scroll} aria-label="對話內容" onScroll={event => {
         const node = event.currentTarget; stick.current = node.scrollHeight - node.scrollTop - node.clientHeight < 72

@@ -88,9 +88,10 @@ export function Onboarding({guide, update, close, info, policy, run, cancel, lau
     onCancel={event=>{event.preventDefault();if(!busy)close()}}>
     <p className="eyebrow">LOCAL LLM / START</p>
     <h2 id="guide-title">{stage==='completed' ? '第一項任務已完成' : '開始使用 Local LLM'}</h2>
+    <ol className="guide-steps" aria-label="引導進度">{['開始','用途','準備','執行'].map((label,index)=><li key={label}
+      aria-current={(stage==='welcome' || stage==='hardware' ? 0 : stage==='choose' ? 1 : stage==='prepare' ? 2 : 3)===index ? 'step' : undefined}>{index+1} · {label}</li>)}</ol>
     {stage==='welcome' && <>
       <p className="section-note">先選一項想完成的工作。工作台會檢查這台電腦，並帶你準備模型。</p>
-      <button className="button primary" onClick={()=>advance('hardware')}>開始使用 <ArrowRight size={16}/></button>
     </>}
     {stage==='hardware' && <>
       <dl className="guide-hardware">
@@ -105,7 +106,6 @@ export function Onboarding({guide, update, close, info, policy, run, cancel, lau
         <div><dt>文字引擎</dt><dd>{info.engine ? '已安裝' : '待準備'}</dd></div>
       </dl>
       <p className="small section-note">可用 CPU 執行輕量模型。模型需求是估計值，實際載入仍取決於當時可用資源。</p>
-      <button className="button primary" onClick={()=>advance('choose')}>選擇用途</button>
     </>}
     {stage==='choose' && <div className="guide-uses">{uses.map(([id,label,Icon])=>
       <button className="button" key={id} onClick={()=>{setSelected('');setPrepared(false);setError('');update({stage:'prepare',task:id})}}>
@@ -123,12 +123,6 @@ export function Onboarding({guide, update, close, info, policy, run, cancel, lau
           {choice.ram && <> RAM 估計 {gb(choice.ram)}。</>}</p>
         {choice.actions.length>0 && !prepared && <p className="small">準備會下載官方引擎或固定版本模型，需要網路。已有本機模型仍可離線使用。</p>}
         {busy && <TaskProgress message={job?.message || '正在準備…'} received={job?.received} total={job?.total}/>}
-        <div className="row creation-actions section-note">
-          {!ready && <button className="button primary" disabled={busy} onClick={()=>void prepare()}>{error ? '重試準備' : '一鍵準備'}</button>}
-          {ready && <button className="button primary" disabled={busy} onClick={()=>launch(task,choice.runtime,choice.model)}>
-            {media ? choice.runtime==='local' ? '前往創作並準備權重' : '開始遠端創作' : task==='chat' ? '開始第一次聊天' : '開始第一項任務'}</button>}
-          {busy && <button className="button" onClick={()=>{stop.current=true;if(job)cancel(job.id)}}>取消準備</button>}
-        </div>
       </>}
       {error && <p role="alert" className="pre creation-error">{error}</p>}
       {!busy && <button className="button" onClick={()=>advance('choose')}>更換用途</button>}
@@ -137,9 +131,17 @@ export function Onboarding({guide, update, close, info, policy, run, cancel, lau
       <button className="button primary" onClick={()=>advance('choose')}>開始下一項任務</button>
       <button className="button" onClick={openModels}>查看模型</button>
     </div>}
-    <div className="row creation-actions section-note">
+    <footer className="row creation-actions guide-footer">
+      {stage==='welcome' && <button className="button primary" onClick={()=>advance('hardware')}>開始使用 <ArrowRight size={16}/></button>}
+      {stage==='hardware' && <button className="button primary" onClick={()=>advance('choose')}>選擇用途</button>}
+      {stage==='prepare' && choice && <>
+        {!ready && <button className="button primary" disabled={busy} onClick={()=>void prepare()}>{error ? '重試準備' : '一鍵準備'}</button>}
+        {ready && <button className="button primary" disabled={busy} onClick={()=>launch(task,choice.runtime,choice.model)}>
+          {media ? choice.runtime==='local' ? '前往創作並準備權重' : '開始遠端創作' : task==='chat' ? '開始第一次聊天' : '開始第一項任務'}</button>}
+        {busy && <button className="button" onClick={()=>{stop.current=true;if(job)cancel(job.id)}}>取消準備</button>}
+      </>}
       {!busy && <button className="button" onClick={()=>{if(stage!=='completed')advance('skipped');close()}}>
         {stage==='completed' ? '完成' : '略過引導'}</button>}
-    </div>
+    </footer>
   </dialog>
 }

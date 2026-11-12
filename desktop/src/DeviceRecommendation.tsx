@@ -62,7 +62,7 @@ export function DeviceChoice({info,task,runtime,model,policy='auto',device='',on
       <label htmlFor={id+'-objective'}>效能指標<select aria-label="推薦效能指標" id={id+'-objective'} value={objective} onChange={event=>{setObjective(event.target.value);setResult(undefined)}}>
         <option value="latency">Warm 整體回應延遲</option><option value="cold">模型載入＋首次推理</option><option value="ttft">原生 TTFT</option><option value="decode">Decode Token/s</option></select></label>
       <label htmlFor={id+'-workload'}>參考工作量<select aria-label="推薦參考工作量" id={id+'-workload'} value={workload} onChange={event=>{setWorkload(event.target.value);setResult(undefined)}}>
-        <option value="">本次任務條件未知</option><option value="short">固定短文字 · 32 Token</option><option value="long">固定長文字 · 32 Token</option></select></label>
+        <option value="">本次任務條件未知</option>{task==='tensor' ? <><option value="input-1">歷史張量輸入 1 · 僅參考</option><option value="input-2">歷史張量輸入 2 · 僅參考</option></> : <><option value="short">固定短文字 · 32 Token</option><option value="long">固定長文字 · 32 Token</option></>}</select></label>
     </div><p className="small muted">固定 Benchmark 只比較指定模型與條件，不能代表您的提示詞、長篇生成或其他模型。選擇參考工作量不會重跑 Benchmark。省電沒有可靠功耗時保留未知。</p>
     {result?.candidates.map(candidate=><article key={candidate.id} className="device-alternative pre">
       <b>{candidate.label} · {availability[candidate.availability]}</b>

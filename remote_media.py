@@ -7,7 +7,7 @@ import shutil
 import struct
 import zlib
 from datetime import datetime,timezone,timedelta
-from time import monotonic
+from time import monotonic,time
 
 from download_recovery import exclusive, owned
 from media import FORMATS, MODELS, WORKFLOWS, workflow_options
@@ -72,6 +72,9 @@ class ClientMedia:
 
     def downloads(self,host,job,state):
         with self.connect() as db:db.execute('UPDATE client_media_jobs SET download_status=?,updated=? WHERE host=? AND job=?',(state,timestamp(),host,job))
+
+    def state(self,host,job,state):
+        with self.connect() as db:db.execute('UPDATE client_media_jobs SET state=?,updated=? WHERE host=? AND job=?',(state,timestamp(),host,job))
 
     def available(self, host, job, artifact):
         with self.connect() as db:
@@ -155,6 +158,7 @@ def validate_content(path,kind,*,strict=True):
 
 
 def descriptor(path, workflow, options, created, cancel, *, owner=None,host=None,job=None):
+    from media_install import MODELS_FOR_INSTALL
     app_kind=WORKFLOWS[workflow][0]
     kind='audio' if app_kind=='music' else app_kind
     size = path.stat().st_size
@@ -163,7 +167,9 @@ def descriptor(path, workflow, options, created, cancel, *, owner=None,host=None
     expires=(datetime.fromisoformat(created)+timedelta(days=RETENTION_DAYS)).isoformat()
     return {"schema":2,"id":path.name,"media_id":path.stem,"job_id":job,"owner_client_id":owner,'host_id':host,'runtime_id':host,
             "bytes":size,"sha256":checksum(path,cancel),"kind":kind,'mime':MEDIA_TYPES[kind][2],'extension':MEDIA_TYPES[kind][1],
-            "model":MODELS[app_kind][1],"model_id":MODELS[app_kind][1],"workflow":workflow,"options":options,"created":created,
+            "model":MODELS[app_kind][1],"model_id":{'image':'sd15','video':'wan21','audio':'ace-step'}[kind],
+            'model_version':MODELS_FOR_INSTALL[app_kind].version,'model_revision':MODELS_FOR_INSTALL[app_kind].revision,
+            "workflow":workflow,"options":options,"created":created,
             'updated':created,'completed':created,'status':'completed','download_status':'available',
             'retention':{'days':RETENTION_DAYS,'expires':expires}}
 
@@ -180,6 +186,10 @@ def validate_artifact(value):
             or value.get("workflow") not in MEDIA_WORKFLOWS[kind]
             or schema==2 and (value.get('mime')!=mime or value.get('extension')!=suffix)):
         raise ValueError("遠端作品資訊無效。")
+    if schema==2:
+        if any(not re.fullmatch('[a-f0-9]{32}',str(value.get(key,''))) for key in ('job_id','owner_client_id','host_id','runtime_id')):
+            raise ValueError('媒體擁有者或來源識別無效。')
+        if value.get('media_id')!=value['id'].split('.')[0] or value.get('status')!='completed':raise ValueError('媒體識別或完成狀態無效。')
     return {**value,'schema':schema,'mime':mime,'extension':suffix,'app_kind':app_kind,
         "model":MODELS[app_kind][1],"options":workflow_options(app_kind,value["workflow"],value.get("options"))}
 
@@ -189,6 +199,10 @@ def fetch_image(client, request, artifact, output, staging, cancel, update):
     if not owned(staging):raise ValueError('作品下載目錄不安全。')
     # One quota transaction across hosts, no partial reservations or overcommit.
     with exclusive(staging/'.quota.lock'):
+        keep=sha256(f'{client.id}:{request}'.encode()).hexdigest()[:32]
+        for path in staging.glob('*.part'):
+            if re.fullmatch(r'[a-f0-9]{32}-[a-f0-9]{24}\.part',path.name) and not path.name.startswith(keep) and owned(path) and path.is_file() and path.stat().st_nlink==1 and time()-path.stat().st_mtime>RETENTION_DAYS*86400:
+                path.unlink()
         return _fetch_media(client,request,artifact,output,staging,cancel,update)
 
 
@@ -226,7 +240,7 @@ def _fetch_media(client, request, artifact, output, staging, cancel, update):
                         or response.getheader("Content-Length") != str(size-offset)
                         or offset and response.getheader("Content-Range") != f"bytes {offset}-{size-1}/{size}"):
                     raise ValueError("遠端作品長度或續傳範圍不符。")
-                if response.getheader('Content-Type') not in (None,artifact['mime']):raise ValueError('遠端媒體 MIME 不符。')
+                if response.getheader('Content-Type') not in ((artifact['mime'],) if artifact['schema']==2 else (None,artifact['mime'])):raise ValueError('遠端媒體 MIME 不符。')
                 with part.open("ab") as stream:
                     while offset < size:
                         if cancel.is_set():

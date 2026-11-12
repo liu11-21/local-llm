@@ -174,7 +174,7 @@ class Workspace:
                 path = install(self.data / "comfyui", profile, cancel, report,
                                lambda received, total: update(received=received, total=total))
             update(received=None, total=None, message="正在啟動 ComfyUI…")
-            self.comfy.start(path, profile, port, cancel)
+            self.comfy.start(path, profile, port, cancel,memory_mib=data.get('memory_mib',0))
             return {"port": port, "folder": str(path / "ComfyUI" / "models"), "message": "ComfyUI 已就緒。"}
 
         if action == "comfy-stop":

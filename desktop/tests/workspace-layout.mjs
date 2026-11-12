@@ -8,6 +8,7 @@ import { createServer } from 'vite'
 import { exerciseWorkflows } from './workflow-ui.mjs'
 import { exerciseBenchmarks } from './benchmark-ui.mjs'
 import {exerciseDevices} from './device-ui.mjs'
+import {exerciseMediaUX} from './media-ux.mjs'
 
 const desktop = fileURLToPath(new URL('../', import.meta.url))
 const root = await realpath(tmpdir())
@@ -67,6 +68,7 @@ try {
     const menu = page.getByTitle('導覽')
     if (await menu.isVisible()) await menu.click()
     await button(name).click()
+    if(name==='文字聊天')await page.locator('.chat-config').evaluate(node=>{node.open=true})
   }
   async function noOverflow() {
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Horizontal overflow')
@@ -335,9 +337,9 @@ try {
   await guide.getByRole('button',{name:'開始第一次聊天',exact:true}).click()
   await page.getByLabel('訊息').fill('第一次本機聊天')
   await button('送出').click()
-  await page.getByRole('dialog',{name:'第一項任務已完成'}).waitFor()
+  await page.getByRole('status').filter({hasText:'第一項任務已完成，結果已保存。'}).waitFor()
   if(firstUseShots) await page.screenshot({path:join(firstUseShots,'first-use-complete.png')})
-  await page.getByRole('dialog',{name:'第一項任務已完成'}).getByRole('button',{name:'完成',exact:true}).click()
+  assert.equal(await page.getByRole('dialog',{name:'第一項任務已完成'}).count(),0)
   await page.getByText('首次對話已保存。',{exact:true}).waitFor()
   console.log('PASS first use resumes after reload, retries interrupted setup, and saves the first chat')
   const imageHost = await page.evaluate(async () => {
@@ -363,7 +365,7 @@ try {
   await page.getByRole('dialog',{name:'確認資料傳送'}).getByText(/受控圖片主機/).waitFor()
   if(firstUseShots) await page.screenshot({path:join(firstUseShots,'remote-image-consent.png')})
   await page.getByRole('dialog',{name:'確認資料傳送'}).getByRole('button',{name:'同意並送出'}).click()
-  await page.getByRole('dialog',{name:'第一項任務已完成'}).getByRole('button',{name:'完成',exact:true}).click()
+  await page.getByRole('status').filter({hasText:'第一項任務已完成，結果已保存。'}).waitFor()
   await page.getByRole('heading',{name:'本次作品'}).waitFor()
   await button('查看作品與參數').click()
   await page.getByText('受控圖片主機',{exact:true}).waitFor()
@@ -393,6 +395,7 @@ try {
   console.log('PASS controlled OpenVINO Runtime selection, compute scheduling, local privacy and saved chat')
   await exerciseBenchmarks(page,navigate)
   await exerciseDevices(page,navigate)
+  await exerciseMediaUX(page)
   assert.deepEqual(exceptions, [])
 } finally {
   if (browser) await browser.close()

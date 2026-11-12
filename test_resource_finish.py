@@ -45,10 +45,10 @@ class ResourceFinishTests(TestCase):
         gpu={'id':'physical','kind':'gpu','name':'Test GPU','memory_type':'dedicated','vram_total':reading(8*GIB),'vram_available':reading(6*GIB)}
         stats={'devices':[{'name':'cuda:0 Test GPU','type':'cuda','vram_total':8*GIB,'vram_free':6*GIB,'torch_vram_total':GIB}]}
         queue={'queue_running':[],'queue_pending':[]}
-        state,claim=reservation(stats,queue,{'devices':[gpu]},GIB,now=100)
+        state,claim=reservation(stats,queue,{'devices':[gpu]},GIB,now=100,committed_limit=2*GIB)
         self.assertTrue(state['precise']);self.assertEqual(claim.exclusive,('gpu:physical',))
         for altered in ({'queue_running':[1],'queue_pending':[]},{}):
-            state,claim=reservation(stats,altered,{'devices':[gpu]},GIB,now=100)
+            state,claim=reservation(stats,altered,{'devices':[gpu]},GIB,now=100,committed_limit=2*GIB)
             self.assertFalse(state['precise']);self.assertEqual(claim.exclusive,('local:*',))
         gpu['memory_type']='unified'
         self.assertFalse(reservation(stats,queue,{'devices':[gpu]},GIB,now=100)[0]['precise'])

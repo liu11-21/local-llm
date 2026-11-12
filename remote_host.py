@@ -382,13 +382,19 @@ class Host:
                 path.unlink()
             except (ValueError,OSError,KeyError,TypeError):continue
             db.execute("UPDATE remote_jobs SET artifact=NULL,message='主機結果保留期已到，請重新生成。' WHERE owner=? AND request=?",(owner,request))
+        referenced={json.loads(row[0]).get('id') for row in db.execute('SELECT artifact FROM remote_jobs WHERE artifact IS NOT NULL')}
+        for path in self.media_output.glob('*'):
+            try:
+                if path.name not in referenced and re.fullmatch(r'[a-f0-9]{12}\.(png|webm|flac)',path.name) and now.timestamp()-path.stat().st_mtime>7*86400:
+                    work_file(self.media_output,path.name).unlink()
+            except (OSError,ValueError):pass
 
     def schedule_cleanup(self):
         def clean():
             try:
                 with self.connect() as db:self.cleanup_media(db)
             except (OSError,ValueError,DatabaseError):pass
-            if self.server:self.schedule_cleanup()
+            if self.server and self.state=='ready':self.schedule_cleanup()
         self.cleanup_timer=Timer(300,clean);self.cleanup_timer.daemon=True;self.cleanup_timer.start()
 
 

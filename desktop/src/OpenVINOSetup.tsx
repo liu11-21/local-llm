@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { rpc, type Info, type Job, type Task } from './api'
 import { activeTask, TaskProgress, type Run } from './taskQueue'
 import { Panel, gb } from './ui'
+import {DeviceChoice} from './DeviceRecommendation'
 
 type RunRecord = {id:string;model:string;created:string;details:{status:string;requested_device?:string;
   execution_devices?:string[];verified_inference?:boolean;fallback?:string;latency_ms?:number}}
@@ -15,6 +16,7 @@ export function OpenVINOSetup({info,tasks,run,cancel,openChat}: {
   const [directory,setDirectory] = useState('')
   const [chosen,setChosen] = useState('')
   const [device,setDevice] = useState('CPU')
+  const [recommendation,setRecommendation]=useState<string>()
   const [inputs,setInputs] = useState('[[[1,2,3,4]]]')
   const [issue,setIssue] = useState('')
   const [result,setResult] = useState<Job['result']>()
@@ -22,6 +24,7 @@ export function OpenVINOSetup({info,tasks,run,cancel,openChat}: {
   const [pending,setPending] = useState(false)
   const active = tasks.find(task=>activeTask(task) && task.action.startsWith('openvino-'))
   const model = adapter?.models.find(model=>model.id===chosen) ?? adapter?.models[0]
+  useEffect(()=>setRecommendation(undefined),[model?.id])
   const readRecords = async () => setRecords(await rpc<RunRecord[]>('openvino-runs'))
   useEffect(()=>{
     void rpc<NonNullable<typeof plan>>('openvino-install-plan').then(setPlan).catch(()=>setIssue('無法取得安裝摘要。'))
@@ -57,17 +60,19 @@ export function OpenVINOSetup({info,tasks,run,cancel,openChat}: {
       </details>
     </>}
     {!!adapter?.models.length && <details className="section-note"><summary>相容模型與進階推理</summary>
-      <label className="section-note">OpenVINO 模型<select value={model?.id} onChange={event=>setChosen(event.target.value)}>
+      <label className="section-note">OpenVINO 模型<select aria-label="OpenVINO 模型" value={model?.id} onChange={event=>setChosen(event.target.value)}>
         {adapter.models.map(model=><option value={model.id} key={model.id}>{model.label} · {model.kind==='text' ? '文字' : '張量'}</option>)}
       </select></label>
       <p className="small pre">{model?.architecture} · {model?.format} · {gb(model?.bytes)} · 實際相容性待所選裝置驗證</p>
       {model?.kind==='tensor' && <>
-        <label>推理裝置<select value={device} onChange={event=>setDevice(event.target.value)}>
+        <DeviceChoice info={info} task="tensor" runtime="openvino" model={model.id} device={device}
+          onDevice={value=>{setDevice(value);setRecommendation(undefined)}} onRecommendation={setRecommendation}/>
+        <label>推理裝置<select aria-label="推理裝置" value={device} onChange={event=>{setDevice(event.target.value);setRecommendation(undefined)}}>
           {[...new Set(['CPU',...adapter.devices])].map(device=><option key={device}>{device}</option>)}
         </select></label>
-        <label>輸入張量 JSON<textarea value={inputs} maxLength={200000} onChange={event=>setInputs(event.target.value)}/></label>
+        <label>輸入張量 JSON<textarea aria-label="輸入張量 JSON" value={inputs} maxLength={200000} onChange={event=>setInputs(event.target.value)}/></label>
         <button className="button section-note" disabled={pending || !!active} onClick={()=>{
-          try {void start('openvino-infer',{model:model.id,device,inputs:JSON.parse(inputs)})}
+          try {void start('openvino-infer',{model:model.id,device,inputs:JSON.parse(inputs),execution:{device,confirmed:true,recommendation_id:recommendation}})}
           catch {setIssue('請輸入有效的 JSON 陣列。')}
         }}>執行張量推理</button>
       </>}
