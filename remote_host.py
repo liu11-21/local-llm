@@ -90,6 +90,7 @@ class Host:
         self.media, self.media_output = media, media_output
         self.transfers = BoundedSemaphore(2)
         self.ownership = ExitStack()
+        self.cleanup_timer=None
 
     @staticmethod
     def initialize(db):
@@ -132,6 +133,7 @@ class Host:
                     try:
                         with self.connect() as db:
                             self.records.recover(db)
+                            self.cleanup_media(db)
                             if configure:
                                 configure(db)
                     except Exception:
@@ -145,6 +147,7 @@ class Host:
             self.label, self.address, self.port = label.strip(), bind, port
             self.state = "ready"
             Thread(target=self.serve, args=(self.server,), daemon=True).start()
+            self.schedule_cleanup()
         return self.status()
 
     def serve(self, server):
@@ -156,6 +159,7 @@ class Host:
                     self.state, self.error = "failed", "運算主機服務已中斷。請停止後重新啟用。"
 
     def stop(self):
+        if self.cleanup_timer:self.cleanup_timer.cancel()
         with self.lock:
             if not self.server:
                 self.state, self.error = "stopped", None
@@ -297,7 +301,8 @@ class Host:
                     self.media_output.mkdir(parents=True,exist_ok=True)
                     occupied=sum(path.stat().st_size for path in self.media_output.iterdir() if path.is_file() and not path.is_symlink())
                     budget=MEDIA_LIMITS[kind]
-                    if occupied+budget>HOST_QUOTA or shutil.disk_usage(self.media_output).free<budget+DISK_RESERVE:
+                    reserved=sum(MEDIA_LIMITS.get(row[0],0) for row in db.execute("SELECT kind FROM remote_jobs WHERE state IN ('queued','running','paused')"))
+                    if occupied+reserved+budget>HOST_QUOTA or shutil.disk_usage(self.media_output).free<reserved+budget+DISK_RESERVE:
                         raise ProtocolError(507,'主機作品配額或磁碟空間不足。')
             for key, (task,timer) in list(self.jobs.items()):
                 if not self.job_active(task):
@@ -354,6 +359,8 @@ class Host:
         info = saved.get("artifact")
         if saved["state"]!="completed" or not info or not self.media_output:
             raise ProtocolError(404,"尚無可下載的作品。")
+        if info.get('retention',{}).get('expires') and datetime.fromisoformat(info['retention']['expires'])<=datetime.now(timezone.utc):
+            raise ProtocolError(404,'主機結果已超過保留期。')
         try:
             path = work_file(self.media_output,info["id"])
             if path.stat().st_size != info["bytes"]:
@@ -375,6 +382,14 @@ class Host:
                 path.unlink()
             except (ValueError,OSError,KeyError,TypeError):continue
             db.execute("UPDATE remote_jobs SET artifact=NULL,message='主機結果保留期已到，請重新生成。' WHERE owner=? AND request=?",(owner,request))
+
+    def schedule_cleanup(self):
+        def clean():
+            try:
+                with self.connect() as db:self.cleanup_media(db)
+            except (OSError,ValueError,DatabaseError):pass
+            if self.server:self.schedule_cleanup()
+        self.cleanup_timer=Timer(300,clean);self.cleanup_timer.daemon=True;self.cleanup_timer.start()
 
 
 class HostServer(ThreadingHTTPServer):

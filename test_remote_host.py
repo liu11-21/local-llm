@@ -161,7 +161,7 @@ class HostProtocolTests(unittest.TestCase):
         self.addCleanup(client.close)
         self.host.media = lambda:{"installed":True,"state":"ready","workflows":["sd15"],"formats":["png"]}
         self.worker.comfy.port = 8188
-        png = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jh2sAAAAASUVORK5CYII=")
+        png = (Path(__file__).parent/'desktop/tests/media-fixtures/sample.png').read_bytes()
 
         def generate(_self, _kind, _prompt, _lyrics, output, _stop, _report, **_):
             output.mkdir(exist_ok=True)
@@ -184,3 +184,29 @@ class HostProtocolTests(unittest.TestCase):
         self.assertEqual((work["options"]["seed"],work["source"]["host"]),(417,paired["id"]))
         another = self.pair()
         self.assertEqual(self.request("GET","/v1/jobs/"+work["source"]["job"]+"/artifact",token=another["token"])[0],404)
+
+    def test_verified_tls_video_audio_and_range_use_the_existing_owner_protocol(self):
+        from shutil import copyfile
+        for kind,task,workflow,suffix in [('video','video','wan21','.webm'),('audio','music','ace-step','.flac')]:
+            with self.subTest(kind=kind),TemporaryDirectory() as folder:
+                client=Desktop(Path(folder))
+                self.host.media=lambda:{kind:{'installed':True,'state':'ready','workflows':[workflow],'formats':[suffix[1:]],'schema':2,'weights_verified':True}}
+                self.worker.comfy.port=8188
+                def generate(_self,_kind,_prompt,_lyrics,output,_stop,_report,**_):
+                    output.mkdir(exist_ok=True);path=output/('b12345678901'+suffix)
+                    copyfile(Path(__file__).parent/'desktop/tests/media-fixtures'/('sample'+suffix),path)
+                    return path
+                try:
+                    paired=client.rpc('remote-client-pair',{'invite':self.host.issue(),'label':'TLS media test','confirmed':True})
+                    self.assertIn(task,paired['tasks'])
+                    with patch.object(self.worker.comfy,'running',return_value=True),patch('desktop_worker.ComfyClient.generate',generate):
+                        result=client.perform('media',{'runtime':paired['id'],'kind':task,'workflow':workflow,'prompt':'legal synthetic playback fixture',
+                            'lyrics':'controlled words' if kind=='audio' else '', 'options':{'seed':11},'policy':'manual','consent':True},Event(),lambda **_:None)
+                    work=client.rpc('works-library',{})['items'][0]
+                    self.assertEqual(work['options']['seed'],11)
+                    remote=client.remote_clients.get(paired['id'])
+                    with remote.request('GET','/v1/jobs/'+work['source']['job']+'/artifact',headers={'Range':'bytes=31-'}) as response:
+                        self.assertEqual(response.status,206)
+                        self.assertEqual(response.getheader('Content-Type'),'video/webm' if kind=='video' else 'audio/flac')
+                        self.assertEqual(response.read(),(client.outputs/result['file'].split('/')[-1]).read_bytes()[31:])
+                finally:client.close()

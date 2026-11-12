@@ -4,6 +4,8 @@ import json
 import os
 import re
 import shutil
+import struct
+import zlib
 from datetime import datetime,timezone,timedelta
 from time import monotonic
 
@@ -113,13 +115,33 @@ def checksum(path, cancel):
     return digest.hexdigest()
 
 
-def validate_content(path,kind):
+def validate_content(path,kind,*,strict=True):
     app_kind,suffix,_=MEDIA_TYPES[kind]
     if path.suffix not in (suffix,'.part'):raise ValueError('媒體副檔名不符。')
     with path.open('rb') as stream:header=stream.read(64)
     if not header.startswith(FORMATS[app_kind][1]):raise ValueError('媒體內容格式不符。')
     if kind=='image' and (len(header)<24 or header[12:16]!=b'IHDR' or not any(header[16:24])):
         raise ValueError('PNG 內容格式不符。')
+    if kind=='image' and strict:
+        with path.open('rb') as stream:
+            stream.seek(8);seen=set()
+            for _ in range(4096):
+                chunk=stream.read(8)
+                if len(chunk)!=8:raise ValueError('PNG 區塊不完整。')
+                size,tag=struct.unpack('>I4s',chunk)
+                if size>REMOTE_IMAGE_LIMIT:raise ValueError('PNG 區塊過大。')
+                crc=zlib.crc32(tag);remaining=size
+                while remaining:
+                    block=stream.read(min(CHUNK,remaining))
+                    if not block:raise ValueError('PNG 區塊不完整。')
+                    crc=zlib.crc32(block,crc);remaining-=len(block)
+                checksum_bytes=stream.read(4)
+                if len(checksum_bytes)!=4 or int.from_bytes(checksum_bytes,'big')!=crc:raise ValueError('PNG CRC 不符。')
+                seen.add(tag)
+                if tag==b'IEND':
+                    if not {b'IHDR',b'IDAT'}.issubset(seen) or stream.read(1):raise ValueError('PNG 結尾無效。')
+                    break
+            else:raise ValueError('PNG 區塊數過多。')
     # Metadata parsers are bounded. Staging files deliberately have no trusted suffix.
     if kind=='audio':
         if len(header)<42 or header[4]&127!=0 or header[5:8]!=b'\x00\x00\x22':raise ValueError('FLAC STREAMINFO 無效。')
@@ -218,7 +240,7 @@ def _fetch_media(client, request, artifact, output, staging, cancel, update):
         if checksum(part,cancel) != expected:
             part.unlink(missing_ok=True)
             raise ValueError("遠端圖片內容未通過 SHA-256 或 PNG 格式驗證。")
-        try:validate_content(part,artifact['kind'])
+        try:validate_content(part,artifact['kind'],strict=artifact['schema']==2)
         except ValueError:
             part.unlink(missing_ok=True)
             raise

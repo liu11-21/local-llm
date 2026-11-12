@@ -4,8 +4,12 @@ from fractions import Fraction
 import av
 import numpy as np
 import wave
+import struct,zlib
 
 root=Path(__file__).resolve().parent
+def chunk(tag,data):return struct.pack('>I',len(data))+tag+data+struct.pack('>I',zlib.crc32(tag+data))
+(root/'sample.png').write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',160,96,8,2,0,0,0))+
+    chunk(b'IDAT',zlib.compress((b'\0'+bytes([80,120,160])*160)*96))+chunk(b'IEND',b''))
 with av.open(str(root/'sample.webm'),'w',format='webm') as container:
     stream=container.add_stream('libvpx-vp9',rate=8)
     stream.width,stream.height,stream.pix_fmt=160,96,'yuv420p'

@@ -8,6 +8,7 @@ from unittest import TestCase
 from unittest.mock import patch
 from remote_media import media_input,descriptor,fetch_image,validate_artifact,MEDIA_LIMITS
 from test_remote_media import Response
+from remote_media import checksum,validate_content
 
 FIXTURES=Path(__file__).parent/'desktop/tests/media-fixtures'
 
@@ -44,3 +45,34 @@ class MediaContractTests(TestCase):
             with self.assertRaises(ValueError):media_input({'kind':'video','workflow':'wan21','prompt':'scene',**change})
         self.assertGreater(MEDIA_LIMITS['video'],MEDIA_LIMITS['image'])
         with self.assertRaises(ValueError):validate_artifact({'schema':2,'kind':'video','id':'../../secret.webm'})
+
+    def test_large_video_streams_above_image_limit_without_loading_file_into_sqlite(self):
+        with TemporaryDirectory() as folder:
+            root=Path(folder).resolve();path=root/'a12345678901.webm'
+            copyfile(FIXTURES/'sample.webm',path)
+            padding=34*1024**2
+            with path.open('r+b') as stream:
+                stream.seek(0,2)
+                stream.write(b'\xec'+((1<<56)|padding).to_bytes(8,'big'))
+                stream.seek(padding-1,1);stream.write(b'\0')
+            artifact=descriptor(path,'wan21',{},'2026-11-12T00:00:00+00:00',Event(),owner='c'*32,host='a'*32,job='b'*32)
+            self.assertGreater(artifact['bytes'],MEDIA_LIMITS['image'])
+            class Client:
+                id='a'*32
+                @contextmanager
+                def request(self,method,url,headers):
+                    with path.open('rb') as stream:
+                        stream.status=200
+                        stream.getheader=lambda key:{'ETag':'"'+artifact['sha256']+'"','Content-Length':str(artifact['bytes']),'Content-Type':'video/webm'}.get(key)
+                        yield stream
+            result=fetch_image(Client(),'b'*32,artifact,root/'out',root/'cache',Event(),lambda **_:None)
+            self.assertEqual(checksum(result,Event()),artifact['sha256'])
+
+    def test_new_png_rejects_corrupt_crc_and_video_cannot_be_renamed_png(self):
+        with TemporaryDirectory() as folder:
+            root=Path(folder);path=root/'a12345678901.png';copyfile(FIXTURES/'sample.png',path)
+            validate_content(path,'image')
+            body=bytearray(path.read_bytes());body[-6]^=1;path.write_bytes(body)
+            with self.assertRaisesRegex(ValueError,'CRC'):validate_content(path,'image')
+            copyfile(FIXTURES/'sample.webm',path)
+            with self.assertRaises(ValueError):validate_content(path,'image')

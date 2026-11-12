@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "downloaded_weights": false,
+  "models": [
+    {
+      "kind": "video",
+      "repo": "Comfy-Org/Wan-2.1",
+      "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+      "version": "2.1 T2V 1.3B",
+      "license_manifest": "apache-2.0",
+      "files": [
+        {
+          "path": "split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+          "size_match": true,
+          "sha256_match": true,
+          "bytes": 2838303560,
+          "sha256": "be531024cd9018cb5b48c40cfbb6a6191645b1c792eb8bf4f8c1c6e10f924dc5"
+        },
+        {
+          "path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+          "size_match": true,
+          "sha256_match": true,
+          "bytes": 6735906897,
+          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68"
+        },
+        {
+          "path": "split_files/vae/wan_2.1_vae.safetensors",
+          "size_match": true,
+          "sha256_match": true,
+          "bytes": 253815318,
+          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b"
+        }
+      ]
+    },
+    {
+      "kind": "music",
+      "repo": "Comfy-Org/ACE-Step",
+      "revision": "ea4f3d349e84d5c098cc8e8b904a30fde59fc99a",
+      "version": "v1 3.5B",
+      "license_manifest": "apache-2.0",
+      "files": [
+        {
+          "path": "all_in_one/ace_step_v1_3.5b.safetensors",
+          "size_match": true,
+          "sha256_match": true,
+          "bytes": 7699743341,
+          "sha256": "f07cad74c4adce52ca14ca1bdf74cf3c14cbafb0823b95eca4459467fa369f40"
+        }
+      ]
+    }
+  ]
+}
