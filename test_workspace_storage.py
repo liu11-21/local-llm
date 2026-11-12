@@ -8,9 +8,17 @@ import unittest
 from unittest.mock import patch
 from desktop_worker import Desktop
 from workspace_storage import DATABASE, Upgrade, snapshot
+from upgrade_probe import database_ready
 
 
 class UpgradeTests(unittest.TestCase):
+    def test_installer_readiness_requires_complete_schema_not_only_existing_file(self):
+        with TemporaryDirectory() as folder:
+            root=Path(folder).resolve();old=self.legacy(root)
+            self.assertFalse(database_ready(old))
+            app=Desktop(root)
+            try:self.assertTrue(database_ready(app.database))
+            finally:app.close()
     def legacy(self,root):
         path=root/'desktop.sqlite3'
         with closing(sqlite3.connect(path)) as db,db:

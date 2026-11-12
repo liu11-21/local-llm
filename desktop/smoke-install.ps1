@@ -21,15 +21,19 @@ function Start-AndClose([string]$ExpectedDatabase) {
     $timer = [Diagnostics.Stopwatch]::StartNew()
     $script:app = Start-Process -FilePath $appExe -WindowStyle Hidden -PassThru
     $script:worker = $null
+    $ready = $false
     $deadline = (Get-Date).AddSeconds(60)
     while ((Get-Date) -lt $deadline) {
         $script:app.Refresh()
         if ($script:app.HasExited) { throw 'Installed app exited before initialization.' }
         $script:worker = Get-CimInstance Win32_Process -Filter "ParentProcessId = $($script:app.Id) AND Name = 'LocalLLMWorker.exe'"
-        if ($script:worker -and (Test-Path -LiteralPath $ExpectedDatabase)) { break }
+        if ($script:worker -and (Test-Path -LiteralPath $ExpectedDatabase)) {
+            python upgrade_probe.py ready --data $dataDir --database $ExpectedDatabase
+            if ($LASTEXITCODE -eq 0) { $ready = $true; break }
+        }
         Start-Sleep -Milliseconds 250
     }
-    if (!$script:worker -or !(Test-Path -LiteralPath $ExpectedDatabase)) { throw 'WebView did not initialize its worker/database.' }
+    if (!$script:worker -or !$ready) { throw 'WebView did not finish initializing its worker/database.' }
     $timer.Stop()
     if (!$script:app.CloseMainWindow() -or !$script:app.WaitForExit(8000)) { $script:app.Kill() }
     $script:app.WaitForExit(8000) | Out-Null
@@ -43,6 +47,8 @@ try {
     Set-Content -LiteralPath $marker -Value 'preserve-user-data'
     Install-Workspace $BaselineInstaller
     $baselineStartup = Start-AndClose $legacyDb
+    python upgrade_probe.py initialize --data $dataDir --worker $workerExe --output build/windows-review/baseline-worker.json
+    if ($LASTEXITCODE) { throw 'Baseline installed worker identity/initialization failed.' }
     python upgrade_probe.py seed --data $dataDir --record build/upgrade-seed.json
     if ($LASTEXITCODE) { throw 'Baseline data seeding failed.' }
     $legacyHash = (Get-FileHash -LiteralPath $legacyDb).Hash

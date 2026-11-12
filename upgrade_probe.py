@@ -5,10 +5,34 @@ import hashlib
 import json
 from pathlib import Path
 import sqlite3
+import subprocess
 
 TABLES=('chats','messages','agent_reports','agent_plans','team_configs','team_runs','settings','model_sources',
         'media_weight_verification','benchmark_sessions','benchmark_runs','benchmark_measurements',
         'remote_host_identity','remote_host_grants','remote_client_hosts','remote_client_secrets','remote_tls','creations')
+
+
+def database_ready(path):
+    if not path.is_file():return False
+    try:
+        with closing(sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True,timeout=.1)) as db:
+            tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            if not set(TABLES+('dispatch_runs','recommendation_receipts','engine_runs'))<=tables:return False
+            if path.name=='workspace.sqlite3':
+                return 'workspace_storage' in tables and db.execute('SELECT version FROM workspace_storage WHERE id=1').fetchone()==('0.7.0',)
+            return True
+    except sqlite3.Error:return False
+
+
+def initialize_worker(worker,data,version):
+    result=subprocess.run([str(worker.resolve()),'--data',str(data.resolve())],
+        input='{"op":"update-status","data":{}}\n',text=True,encoding='utf-8',capture_output=True,timeout=60,check=True)
+    reply=json.loads(result.stdout)
+    if not reply.get('ok') or reply['value'].get('version')!=version:
+        raise ValueError('Installed baseline Worker version mismatch')
+    if not database_ready(data/'desktop.sqlite3'):
+        raise ValueError('Installed baseline Worker did not finish database initialization')
+    return {'status':'PASS','worker_version':version,'database_ready':True}
 
 
 def fingerprint(path):
@@ -66,10 +90,20 @@ def verify(data,record):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('operation',choices=('seed','verify'))
-    parser.add_argument('--data',type=Path,required=True);parser.add_argument('--record',type=Path,required=True)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('operation',choices=('seed','verify','ready','initialize'))
+    parser.add_argument('--data',type=Path,required=True);parser.add_argument('--record',type=Path)
+    parser.add_argument('--database',type=Path);parser.add_argument('--worker',type=Path)
+    parser.add_argument('--expected-version',default='0.6.2')
     parser.add_argument('--output',type=Path);args=parser.parse_args()
-    value=seed(args.data) if args.operation=='seed' else verify(args.data,args.record)
+    if args.operation=='ready':
+        if args.database is None:parser.error('--database is required')
+        raise SystemExit(0 if database_ready(args.database) else 2)
+    if args.operation=='initialize':
+        if args.worker is None:parser.error('--worker is required')
+        value=initialize_worker(args.worker,args.data,args.expected_version)
+    else:
+        if args.record is None:parser.error('--record is required')
+        value=seed(args.data) if args.operation=='seed' else verify(args.data,args.record)
     target=args.record if args.operation=='seed' else args.output
     if target:target.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({'status':'PASS','operation':args.operation}))
