@@ -1,0 +1,283 @@
+{
+  "schema": 1,
+  "build": {
+    "version": "0.7.0",
+    "channel": "Development",
+    "commit": "04faf5949e41afecdf14dc1d2f0ffec4be0bf79c",
+    "target": "Windows x64",
+    "signed": false
+  },
+  "status": "NEEDS GPU",
+  "mode": "host",
+  "inference_verified": false,
+  "downloads_started": false,
+  "expected_gpu": "RTX 5070 Ti",
+  "npu": "NEEDS NPU",
+  "tasks": [],
+  "inventory_error": {
+    "code": "WORK_FAILED",
+    "summary": "工作無法完成。",
+    "recovery": "請查看任務詳情，確認設定後手動重試。",
+    "detail": "Windows inventory unavailable"
+  },
+  "local_devices": [],
+  "host": {
+    "hardware": {
+      "cpu_threads": 16,
+      "ram_total": 16781869056,
+      "ram_available": 6656139264,
+      "disk_available": 186947891200
+    },
+    "devices": [],
+    "profile": "NVIDIA GPU",
+    "bundle": "D:\\antigravity\\REA\\local-llm\\build\\v070-diagnosis\\comfyui\\ComfyUI_windows_portable_nvidia-v0.44.0",
+    "torch": {
+      "status": "NOT RUN"
+    },
+    "weights": {
+      "image": {
+        "model": {
+          "id": "sd15",
+          "kind": "image",
+          "label": "Stable Diffusion 1.5",
+          "publisher": "Runway / Comfy-Org archive",
+          "version": "1.5",
+          "format": "safetensors",
+          "workflows": [
+            "sd15",
+            "sd15-preview"
+          ],
+          "engine": "comfyui",
+          "engine_version": "v0.44.0",
+          "platforms": [
+            "windows-x64"
+          ],
+          "nodes": [
+            "CLIPTextEncode",
+            "CheckpointLoaderSimple",
+            "EmptyLatentImage",
+            "KSampler",
+            "SaveImage",
+            "VAEDecode"
+          ],
+          "source": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive",
+          "revision": "9cfd069101959ca3828bf9c04a4419870832b74f",
+          "license": "creativeml-openrail-m",
+          "terms": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/tree/9cfd069101959ca3828bf9c04a4419870832b74f",
+          "ram": null,
+          "vram": null,
+          "requirements": [
+            "ComfyUI 內建節點"
+          ],
+          "weights": [
+            {
+              "filename": "v1-5-pruned-emaonly-fp16.safetensors",
+              "directory": "checkpoints",
+              "remote_path": "v1-5-pruned-emaonly-fp16.safetensors",
+              "bytes": 2132696762,
+              "sha256": "e9476a13728cd75d8279f6ec8bad753a66a1957ca375a1464dc63b37db6e3916",
+              "url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/9cfd069101959ca3828bf9c04a4419870832b74f/v1-5-pruned-emaonly-fp16.safetensors",
+              "path": "ComfyUI/models/checkpoints/v1-5-pruned-emaonly-fp16.safetensors"
+            }
+          ]
+        },
+        "profile": "NVIDIA GPU",
+        "target": "image:nvidia",
+        "installed": false,
+        "files": [
+          {
+            "filename": "v1-5-pruned-emaonly-fp16.safetensors",
+            "directory": "checkpoints",
+            "remote_path": "v1-5-pruned-emaonly-fp16.safetensors",
+            "bytes": 2132696762,
+            "sha256": "e9476a13728cd75d8279f6ec8bad753a66a1957ca375a1464dc63b37db6e3916",
+            "url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/9cfd069101959ca3828bf9c04a4419870832b74f/v1-5-pruned-emaonly-fp16.safetensors",
+            "path": "ComfyUI/models/checkpoints/v1-5-pruned-emaonly-fp16.safetensors",
+            "status": "missing"
+          }
+        ],
+        "free": 186947891200,
+        "needed": 2132696762,
+        "conflict": false,
+        "unavailable": false,
+        "verified": false
+      },
+      "video": {
+        "model": {
+          "id": "wan21",
+          "kind": "video",
+          "label": "Wan 2.1 T2V 1.3B",
+          "publisher": "Wan-AI / Comfy-Org",
+          "version": "2.1 T2V 1.3B",
+          "format": "safetensors",
+          "workflows": [
+            "wan21"
+          ],
+          "engine": "comfyui",
+          "engine_version": "v0.44.0",
+          "platforms": [
+            "windows-x64"
+          ],
+          "nodes": [
+            "CLIPLoader",
+            "CLIPTextEncode",
+            "EmptyHunyuanLatentVideo",
+            "KSampler",
+            "ModelSamplingSD3",
+            "SaveWEBM",
+            "UNETLoader",
+            "VAEDecode",
+            "VAELoader"
+          ],
+          "source": "https://huggingface.co/Comfy-Org/Wan-2.1",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "license": "apache-2.0",
+          "terms": "https://huggingface.co/Comfy-Org/Wan-2.1/tree/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "ram": null,
+          "vram": null,
+          "requirements": [
+            "ComfyUI 內建節點"
+          ],
+          "weights": [
+            {
+              "filename": "wan2.1_t2v_1.3B_fp16.safetensors",
+              "directory": "diffusion_models",
+              "remote_path": "split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+              "bytes": 2838303560,
+              "sha256": "be531024cd9018cb5b48c40cfbb6a6191645b1c792eb8bf4f8c1c6e10f924dc5",
+              "url": "https://huggingface.co/Comfy-Org/Wan-2.1/resolve/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+              "path": "ComfyUI/models/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors"
+            },
+            {
+              "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+              "directory": "text_encoders",
+              "remote_path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+              "bytes": 6735906897,
+              "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+              "url": "https://huggingface.co/Comfy-Org/Wan-2.1/resolve/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+              "path": "ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+            },
+            {
+              "filename": "wan_2.1_vae.safetensors",
+              "directory": "vae",
+              "remote_path": "split_files/vae/wan_2.1_vae.safetensors",
+              "bytes": 253815318,
+              "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+              "url": "https://huggingface.co/Comfy-Org/Wan-2.1/resolve/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/split_files/vae/wan_2.1_vae.safetensors",
+              "path": "ComfyUI/models/vae/wan_2.1_vae.safetensors"
+            }
+          ]
+        },
+        "profile": "NVIDIA GPU",
+        "target": "video:nvidia",
+        "installed": false,
+        "files": [
+          {
+            "filename": "wan2.1_t2v_1.3B_fp16.safetensors",
+            "directory": "diffusion_models",
+            "remote_path": "split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+            "bytes": 2838303560,
+            "sha256": "be531024cd9018cb5b48c40cfbb6a6191645b1c792eb8bf4f8c1c6e10f924dc5",
+            "url": "https://huggingface.co/Comfy-Org/Wan-2.1/resolve/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+            "path": "ComfyUI/models/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+            "status": "missing"
+          },
+          {
+            "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+            "directory": "text_encoders",
+            "remote_path": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+            "bytes": 6735906897,
+            "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+            "url": "https://huggingface.co/Comfy-Org/Wan-2.1/resolve/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+            "path": "ComfyUI/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+            "status": "missing"
+          },
+          {
+            "filename": "wan_2.1_vae.safetensors",
+            "directory": "vae",
+            "remote_path": "split_files/vae/wan_2.1_vae.safetensors",
+            "bytes": 253815318,
+            "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+            "url": "https://huggingface.co/Comfy-Org/Wan-2.1/resolve/123acf1cc74bccbb9bfff8ac1ee72edc08c2341d/split_files/vae/wan_2.1_vae.safetensors",
+            "path": "ComfyUI/models/vae/wan_2.1_vae.safetensors",
+            "status": "missing"
+          }
+        ],
+        "free": 186947891200,
+        "needed": 9828025775,
+        "conflict": false,
+        "unavailable": false,
+        "verified": false
+      },
+      "music": {
+        "model": {
+          "id": "ace-step",
+          "kind": "music",
+          "label": "ACE-Step v1",
+          "publisher": "ACE-Step / Comfy-Org",
+          "version": "v1 3.5B",
+          "format": "safetensors",
+          "workflows": [
+            "ace-step"
+          ],
+          "engine": "comfyui",
+          "engine_version": "v0.44.0",
+          "platforms": [
+            "windows-x64"
+          ],
+          "nodes": [
+            "CheckpointLoaderSimple",
+            "ConditioningZeroOut",
+            "EmptyAceStepLatentAudio",
+            "KSampler",
+            "ModelSamplingSD3",
+            "SaveAudio",
+            "TextEncodeAceStepAudio",
+            "VAEDecodeAudio"
+          ],
+          "source": "https://huggingface.co/Comfy-Org/ACE-Step",
+          "revision": "ea4f3d349e84d5c098cc8e8b904a30fde59fc99a",
+          "license": "apache-2.0",
+          "terms": "https://huggingface.co/Comfy-Org/ACE-Step/tree/ea4f3d349e84d5c098cc8e8b904a30fde59fc99a",
+          "ram": null,
+          "vram": null,
+          "requirements": [
+            "ComfyUI 內建節點"
+          ],
+          "weights": [
+            {
+              "filename": "ace_step_v1_3.5b.safetensors",
+              "directory": "checkpoints",
+              "remote_path": "all_in_one/ace_step_v1_3.5b.safetensors",
+              "bytes": 7699743341,
+              "sha256": "f07cad74c4adce52ca14ca1bdf74cf3c14cbafb0823b95eca4459467fa369f40",
+              "url": "https://huggingface.co/Comfy-Org/ACE-Step/resolve/ea4f3d349e84d5c098cc8e8b904a30fde59fc99a/all_in_one/ace_step_v1_3.5b.safetensors",
+              "path": "ComfyUI/models/checkpoints/ace_step_v1_3.5b.safetensors"
+            }
+          ]
+        },
+        "profile": "NVIDIA GPU",
+        "target": "music:nvidia",
+        "installed": false,
+        "files": [
+          {
+            "filename": "ace_step_v1_3.5b.safetensors",
+            "directory": "checkpoints",
+            "remote_path": "all_in_one/ace_step_v1_3.5b.safetensors",
+            "bytes": 7699743341,
+            "sha256": "f07cad74c4adce52ca14ca1bdf74cf3c14cbafb0823b95eca4459467fa369f40",
+            "url": "https://huggingface.co/Comfy-Org/ACE-Step/resolve/ea4f3d349e84d5c098cc8e8b904a30fde59fc99a/all_in_one/ace_step_v1_3.5b.safetensors",
+            "path": "ComfyUI/models/checkpoints/ace_step_v1_3.5b.safetensors",
+            "status": "missing"
+          }
+        ],
+        "free": 186947891200,
+        "needed": 7699743341,
+        "conflict": false,
+        "unavailable": false,
+        "verified": false
+      }
+    },
+    "downloads_started": false
+  }
+}
