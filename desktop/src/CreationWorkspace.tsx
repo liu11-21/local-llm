@@ -252,11 +252,11 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
   },[preferredRuntime,kind])
   const provider = info?.providers.find(item=>item.id===runtime)
   const remote = runtime!=='local'
-  const imageCapability = provider?.capability?.media?.image
+  const imageCapability = provider?.capability?.media?.[kind==='music' ? 'audio' : kind]
   const workflows = info?.registry.workflows.filter(item => item.kind === kind &&
     (!remote || imageCapability?.workflows.includes(item.id))) || []
-  const suggested = kind==='image' && !remote && !['local','privacy'].includes(policy) &&
-    info?.providers.find(item=>item.kind==='paired' && item.connected && item.capability?.media?.image?.state==='ready')
+  const suggested = !remote && !['local','privacy'].includes(policy) &&
+    info?.providers.find(item=>item.kind==='paired' && item.connected && item.capability?.media?.[kind==='music' ? 'audio' : kind]?.state==='ready')
   const workflow = workflows.find(item => item.id === id) ?? workflows[0]
   const latest = works.find(work => work.kind === kind)
   const task = tasks.find(task => task.action === 'media' && task.kind === kind)
@@ -309,7 +309,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
           onChange={e => {setId(e.target.value);setOverrides({})}}>
           {workflows.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select></label>
-        <label>運算環境<RuntimePicker info={info} task={kind} value={runtime} disabled={!!busy || kind!=='image'}
+        <label>運算環境<RuntimePicker info={info} task={kind} value={runtime} disabled={!!busy}
           change={value=>{setRuntime(value);setId('')}} refresh={refreshRuntime}/></label>
       </div>
       <DeviceChoice info={info} task={kind} runtime={runtime} model={workflow?.id ?? ''} policy={policy} disabled={!!busy}/>
@@ -318,7 +318,7 @@ export function CreationWorkspace({ kind, info, health, preset, works, tasks, ru
         if (!workflow || busy || !ready || !prompt.trim()) return
         setPending(true); setResult(undefined)
         try {
-          const decision = remote ? await prepare(kind,[{runtime,model:workflow.id}],policy,'圖片提示詞與生成參數') : 'local'
+          const decision = remote ? await prepare(kind,[{runtime,model:workflow.id}],policy,kind==='music' ? '音樂提示詞、歌詞與生成參數' : titles[kind]+'提示詞與生成參數') : 'local'
           if (decision==='cancelled') return
           const response = await run('media', {kind, prompt, lyrics, port, runtime, policy, consent:decision==='confirmed',
             workflow:workflow.id, options:overrides})

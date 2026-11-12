@@ -96,7 +96,7 @@ def compare(record, task, model, *, ram=None, vram=None, policy="auto", now=None
     if network and (record["connected"] is not True or not fresh(record, now)):
         connect = True
         unknown.append("需要重新連線或更新能力資料。")
-    image = record.get("media",{}).get("image") if task=="image" and not local else None
+    image = record.get("media",{}).get('audio' if task=='music' else task) if task in ('image','video','music') and not local else None
     if image and image["state"]!="ready":
         risks.append("遠端 ComfyUI 或圖片權重尚未就緒。")
     health = task_health(record, task)

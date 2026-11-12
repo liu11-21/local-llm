@@ -177,8 +177,8 @@ class DeviceRecommendations:
                         except (ValueError,RuntimeError,OSError):readiness={"state":"unavailable"}
                         if readiness["state"]!="ready":
                             available,executable="needs-setup",False;reasons.append("創作權重、節點或服務需要準備，請使用既有一鍵安裝。")
-                    elif task!="image" or record.get("media",{}).get("image",{}).get("state")!="ready" or model not in record.get("media",{}).get("image",{}).get("workflows",[]):
-                        available,executable="incompatible",False;reasons.append("遠端影片／音樂尚未實作，或圖片能力未就緒。")
+                    elif record.get("media",{}).get('audio' if task=='music' else task,{}).get("state")!="ready" or model not in record.get("media",{}).get('audio' if task=='music' else task,{}).get("workflows",[]):
+                        available,executable="incompatible",False;reasons.append("主機尚未確認此媒體流程、完整權重與節點就緒。")
                 incompatible = available=="incompatible"
                 ram = record["resources"]["ram_available"]
                 total_ram=record["resources"]["ram_total"]["value"]

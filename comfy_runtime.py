@@ -221,6 +221,8 @@ class ManagedComfy:
             self.process = external_process(args, cwd=directory, env=env, stdin=subprocess.DEVNULL,
                                             stdout=log, stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
         self.port = port
+        self.profile=profile
+        self.directory=directory
         try:
             # A fresh extraction can spend several minutes loading Windows/PyTorch DLLs.
             deadline = time.monotonic() + 600

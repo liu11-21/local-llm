@@ -16,13 +16,14 @@ export type HardwareCapabilities = {
     quantization:string[];verified_inference:boolean;limitations:string}[];
 }
 export type Plan = { device: string | null; layers: number; total_layers: number; ram: number; vram: number; mapped_bytes: number }
+export type MediaCapability={state:'checking'|'ready'|'missing'|'unavailable';installed:boolean;workflows:string[];missing:string[];missing_nodes:string[];schema?:number;weights_verified?:boolean;model_version?:string;parameters?:WorkflowParameter[]}
 export type RuntimeCapability = {
   schema: number; id: string; label: string; kind: string; health: string; connected: boolean | null; error?: string;
   checked_at: number; cost: string; tasks: string[]; formats: string[]; models: string[];
   task_health?:Record<string,string>;
   hardware?:HardwareCapabilities|null;
   resources: Record<string, {value: number | string[] | null; source: string}>;
-  media?: {image?: {state:'checking'|'ready'|'missing'|'unavailable'; installed:boolean; workflows:string[]; missing:string[]; missing_nodes:string[]}}
+  media?: Partial<Record<'image'|'video'|'audio',MediaCapability>>
 }
 export type Provider = { id: string; kind: string; label: string; host: string; port: number; models: string[]; connected: boolean;
   capability?: RuntimeCapability }

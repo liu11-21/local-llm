@@ -240,18 +240,19 @@ class Host:
     def capabilities(self):
         state = self.engine_status()
         models = self.model_names()
-        image = self.media()
-        supported = bool(image.get("workflows"))
+        raw = self.media()
+        media=raw if any(key in raw for key in ('image','video','audio')) else {'image':raw}
+        supported={key:value for key,value in media.items() if value.get('workflows')}
+        task=lambda key:'music' if key=='audio' else key
         resources = self.resources()
         return capability(self.id, self.label, "remote-host", "Local LLM", version=str(PROTOCOL), connected=True,
                           health="unhealthy" if not state["accepting"] else "busy" if state["busy"] else "ready",
-                          tasks=["chat","image"] if supported else ["chat"], formats=["GGUF","safetensors"] if supported else ["GGUF"],
-                          engines=(["llama.cpp"] if state["installed"] else []) + (["ComfyUI"] if image.get("installed") else []),
+                          tasks=['chat',*[task(key) for key in supported]], formats=["GGUF","safetensors"] if supported else ["GGUF"],
+                          engines=(["llama.cpp"] if state["installed"] else []) + (["ComfyUI"] if any(value.get('installed') for value in media.values()) else []),
                           models=models, model_ram=self.model_ram(models), resources=resources,hardware=resources.get("hardware"),
-                          media={"image":image} if image else {},
+                          media=media,
                           task_health={"chat":"unhealthy" if not state["accepting"] else "busy" if state["busy"] else "ready",
-                                       **({"image":"ready" if image.get("state")=="ready" else "setup"}
-                                          if supported else {})},
+                                       **{task(key):'ready' if value.get('state')=='ready' else 'setup' for key,value in supported.items()}},
                           network=True, destination=self.address,
                           auth="paired-token-tls", cost="no-api-fee", source="remote-host",
                           error=state["error"], features={"stream": True, "cancel": True, "load": False,

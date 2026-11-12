@@ -49,13 +49,13 @@ from text_backend import TextBackend
 from team_dispatch import run_team as run_scheduled_team,run_node as run_team_node
 from resource_contract import gpu_memory
 from load_plan import allocate, engine_devices, plan_load
-from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec
+from media import ComfyClient, DEFAULT_WORKFLOWS, MODELS, workflow_options, workflow_spec,workflow_manifest
 from registries import media_metadata, model_identity, recent_works, work_file, workspace_registry
 from remote_client import RemoteClients
 from remote_tls import ManagedTLS, inspect_invite
 from remote_host import ANSWER_LIMIT, Host
 from remote_media import ClientMedia, IMAGE_WORKFLOWS, REMOTE_IMAGE_LIMIT, await_image, descriptor, fetch_image, image_input, validate_artifact,media_input,MEDIA_TYPES,MEDIA_LIMITS,MEDIA_WORKFLOWS
-from media_install import install_plan, install_weights, required_nodes
+from media_install import install_plan, install_weights, required_nodes,manifest as media_manifest
 from runtime_provider import POLICIES, Providers, route
 from runtime_contract import capability, colab_capability, external_capability, fresh, local_capability, observed, task_health
 from runtime_recommendation import TASK_FORMAT, compare
@@ -180,7 +180,7 @@ class Desktop(Workspace):
         self.scheduler = TaskManager(self.perform, self.save_task)
         self.remote_output = self.data / "remote-outputs"
         self.remote_host = Host(self.connect, self.scheduler, self.host_models, self.host_engine, self.host_resources,
-                                self.host_model_ram, self.host_image_capability, self.remote_output)
+                                self.host_model_ram, self.host_media_capabilities, self.remote_output)
         self.remote_clients = RemoteClients(self.connect)
         self.client_media = ClientMedia(self.connect)
         self.remote_tls = ManagedTLS(self.connect, self.remote_host)
@@ -428,10 +428,10 @@ class Desktop(Workspace):
             runtime = field(targets[0], "runtime", 32)
             if runtime != "local":
                 client = self.remote_clients.items.get(runtime)
-                if not client or task != "image":
+                if not client:
                     raise ValueError("這個工作流程需要本機 ComfyUI。")
                 record = client.capability()
-                state = record["media"].get("image",{})
+                state = record["media"].get('audio' if task=='music' else task,{})
                 workflow = field(targets[0],"model",40)
                 blockers = []
                 try:
@@ -441,7 +441,7 @@ class Desktop(Workspace):
                 if not record["connected"] or not fresh(record):
                     blockers.append("請先重新連線並更新主機能力。")
                 if workflow not in state.get("workflows",[]) or state.get("state") != "ready":
-                    blockers.append("主機圖片流程尚未就緒。請檢查 ComfyUI、權重與節點。")
+                    blockers.append("主機媒體流程尚未就緒。請檢查 ComfyUI、完整權重與節點。")
                 return {"media":state or {"state":"unavailable"}, "state":"needs-setup" if blockers else "ready",
                         "blockers":blockers,
                         "transfers":[{"runtime":client.label,"model":workflow,"destination":f"{client.host}:{client.port}",
@@ -547,15 +547,40 @@ class Desktop(Workspace):
             options = dict(data["options"])
             if options["seed"] is None:
                 options["seed"] = secrets.randbits(53)
-            path = ComfyClient(self.comfy.port).generate("image",data["prompt"],"",self.remote_output,cancel,
+            kind=data.get('kind','image')
+            app_kind=MEDIA_TYPES[kind][0]
+            path = ComfyClient(self.comfy.port).generate(app_kind,data["prompt"],data.get('lyrics',''),self.remote_output,cancel,
                                                        lambda message:update(message=message),
-                                                       workflow_id=data["workflow"],options=options,limit=REMOTE_IMAGE_LIMIT)
+                                                       workflow_id=data["workflow"],options=options,limit=MEDIA_LIMITS[kind])
             return {"message":"圖片已生成，可下載作品。","artifact":descriptor(path,data["workflow"],options,timestamp(),cancel,
                 owner=data.get('_owner'),host=data.get('_host'),job=data.get('_request'))}
         except Exception:
             if cancel.is_set():
                 return None
-            raise RuntimeError("主機無法生成圖片。請檢查 ComfyUI、圖片權重、節點與可用記憶體。") from None
+            raise RuntimeError("主機無法生成媒體。請檢查 ComfyUI、完整權重、節點與可用記憶體。") from None
+
+    def host_media_capabilities(self):
+        result={'image':self.host_image_capability()}
+        for kind in ('video',):
+            contract_kind='audio' if kind=='music' else kind
+            workflows=list(MEDIA_WORKFLOWS[contract_kind])
+            value={'installed':False,'state':'unavailable','workflows':workflows,'formats':[MEDIA_TYPES[contract_kind][1][1:]],
+                   'schema':2,'cancel':True,'progress':'status','parameters':next(item for item in workflow_manifest() if item['id']==workflows[0])['parameters'],
+                   'model_version':media_manifest(kind)['version'],'weights_verified':False,
+                   'resources':self.comfy_resources.snapshot()[0]}
+            if self.comfy.running():
+                existing=self.media_checks.get(kind,{})
+                state=self.media_readiness({'kind':kind,'workflow':workflows[0],'port':self.comfy.port,'refresh':time()-existing.get('checked_at',0)>20})
+                value.update(installed=True,**{key:state[key] for key in ('state','missing','missing_nodes') if key in state})
+                profile=getattr(self.comfy,'profile',None)
+                if profile:
+                    with self.connect() as db:records={name:json.loads(record) for name,record in db.execute('SELECT * FROM media_weight_verification')}
+                    plan=install_plan(self.data,kind,profile,records)
+                    value['weights_verified']=plan['verified']
+                if not value['weights_verified'] and value['state']=='ready':
+                    value.update(state='missing',missing=['完整固定版本權重尚未通過 SHA-256 驗證'])
+            result[contract_kind]=value
+        return result
 
     def remote_image(self, data, cancel, update, *, fetch_only=False):
         runtime = field(data,"runtime",32)
@@ -570,7 +595,8 @@ class Desktop(Workspace):
         else:
             route(data.get("policy","auto"),runtime,data.get("consent") is True,paired=True)
             request = uuid4().hex
-            payload = image_input({key:data[key] for key in ("kind","prompt","workflow","options") if key in data})
+            payload = media_input({key:data[key] for key in ("kind","prompt","workflow","options","lyrics") if key in data})
+            # Host revalidates all parameters independently; no graph is sent.
             prompt = payload["prompt"]
             self.client_media.submit(runtime,request,payload)
             update(remote_request=request,message="正在提交圖片至主機…")
@@ -593,16 +619,22 @@ class Desktop(Workspace):
         try:
             path = fetch_image(client,request,artifact,self.outputs,self.data/"remote-downloads",cancel,update)
         except ConnectionError:
+            self.client_media.downloads(runtime,request,'interrupted')
             raise ConnectionError(f"作品下載中斷。請使用任務識別碼 {request} 續傳。") from None
-        details = {"model":MODELS["image"][1],"workflow":artifact["workflow"],"runtime":"remote-comfyui",
+        except InterruptedError:
+            self.client_media.downloads(runtime,request,'cancelled');raise
+        except (ValueError,OSError):
+            self.client_media.downloads(runtime,request,'failed');raise
+        details = {"model":artifact['model'],"workflow":artifact["workflow"],"runtime":"remote-comfyui",
                    "schema":1,"status":"completed","source":{"engine":"ComfyUI","job":request,
                    "original":artifact["id"],"host":runtime,"host_label":client.label},
-                   "dimensions":media_metadata(path),"prompt":prompt,"options":artifact["options"],
+                   "dimensions":media_metadata(path),"prompt":prompt,'lyrics':saved.get('lyrics','') if saved else '',"options":artifact["options"],
+                   'media_contract':{key:artifact.get(key) for key in ('schema','job_id','media_id','owner_client_id','host_id','mime','extension','bytes','sha256','retention')},
                    "submitted":saved["submitted"] if saved else None,"prompt_recovered":saved is not None}
         with self.connect() as db:
             db.execute("INSERT OR IGNORE INTO creations VALUES(?,?)",(path.name,json.dumps(details)))
             self.client_media.complete(db,runtime,request,artifact,path.name)
-        return {"file":f"/output/{path.name}","message":"遠端圖片已校驗並儲存至作品庫。"}
+        return {"file":f"/output/{path.name}","message":"遠端媒體已校驗並儲存至作品庫。"}
 
     def reported_vram(self):
         _, available = gpu_memory(self.hardware_monitor.snapshot())
@@ -885,8 +917,6 @@ class Desktop(Workspace):
         if action == "remote-fetch-work":
             return self.remote_image(data,cancel,update,fetch_only=True)
         if action == "media" and data.get("runtime","local")!="local":
-            if data.get("kind")!="image":
-                raise ValueError("目前僅支援遠端圖片生成。")
             return self.remote_image(data,cancel,update)
         if action == "remote-host-chat":
             return self.host_chat(data, cancel, update)

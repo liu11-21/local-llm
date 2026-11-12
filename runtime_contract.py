@@ -110,9 +110,10 @@ def validate(data):
     media = data.get("media", {})
     if not isinstance(media, dict):
         raise ValueError("遠端創作能力格式無效。")
-    item = media.get("image")
     result["media"] = {}
-    if item is not None:
+    for media_kind in ('image','video','audio'):
+        item=media.get(media_kind)
+        if item is None:continue
         if (not isinstance(item, dict) or item.get("state") not in ("ready","missing","unavailable","checking")
                 or type(item.get("installed")) is not bool):
             raise ValueError("遠端圖片能力格式無效。")
@@ -122,7 +123,30 @@ def validate(data):
             if not isinstance(values, list) or len(values) > 40 or not all(string(value) for value in values):
                 raise ValueError("遠端圖片工作流程格式無效。")
             entry[key] = values
-        result["media"]["image"] = entry
+        if 'schema' in item:
+            if item['schema']!=2:raise ValueError('遠端媒體能力版本無效。')
+            entry['schema']=2
+        for key in ('cancel','weights_verified'):
+            if key in item:
+                if type(item[key]) is not bool:raise ValueError('遠端媒體能力旗標無效。')
+                entry[key]=item[key]
+        if 'model_version' in item:
+            if not string(item['model_version'],100):raise ValueError('遠端媒體模型版本無效。')
+            entry['model_version']=item['model_version']
+        if 'progress' in item:
+            if item['progress'] not in ('status','measured','unknown'):raise ValueError('遠端媒體進度格式無效。')
+            entry['progress']=item['progress']
+        if 'parameters' in item:
+            params=item['parameters']
+            if not isinstance(params,list) or len(params)>20:raise ValueError('遠端媒體參數無效。')
+            safe=[]
+            for parameter in params:
+                if (not isinstance(parameter,dict) or not string(parameter.get('key'),40) or not string(parameter.get('label'),100)
+                    or parameter.get('type') not in ('integer','text') or any(type(parameter.get(k)) is not int for k in ('min','max','step'))
+                    or not 0<=parameter['min']<=parameter['max']<=2**53-1 or parameter['step']<=0):raise ValueError('遠端媒體參數範圍無效。')
+                safe.append({k:parameter[k] for k in ('key','label','type','min','max','step')})
+            entry['parameters']=safe
+        result["media"][media_kind] = entry
     return result
 
 
@@ -135,7 +159,7 @@ def task_health(record, task):
         return "offline"
     if task in record.get("task_health", {}):
         return record["task_health"][task]
-    media = record.get("media", {}).get(task)
+    media = record.get("media", {}).get('audio' if task=='music' else task)
     if media:
         return "ready" if media["state"] == "ready" else "setup"
     return record["health"]
