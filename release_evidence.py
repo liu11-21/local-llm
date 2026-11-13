@@ -4,10 +4,10 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
-from license_audit import validate
+from license_audit import validate, WORKSPACE_LICENSE, WORKSPACE_COPYRIGHT, WORKSPACE_SCOPE
 
 ROOT = Path(__file__).resolve().parent
-POLICIES = ('LICENSE', 'PRIVACY.md', 'SECURITY.md', 'CODE_SIGNING_POLICY.md',
+POLICIES = ('LICENSE', 'LICENSE_STATUS.md', 'LICENSE_SCOPE.md', 'PRIVACY.md', 'SECURITY.md', 'CODE_SIGNING_POLICY.md',
             'THIRD_PARTY_LICENSES.md', 'RELEASE_PROCESS.md')
 
 
@@ -16,23 +16,23 @@ def seed(directory):
         shutil.copytree(ROOT / 'docs/sbom', directory)
     for name in POLICIES:
         shutil.copyfile(ROOT / name, directory / name)
-    shutil.copyfile(ROOT / 'docs/legal/LICENSE-MIT.candidate.txt', directory / 'LICENSE-MIT.candidate.txt')
     shutil.copyfile(ROOT / 'third_party/llama.cpp-b11810-LICENSE', directory / 'llama.cpp-b11810-LICENSE')
     for name in ('LICENSE_AUDIT.md', 'THIRD_PARTY_LICENSES.md', 'CODE_SIGNING_POLICY.md',
-                 'RELEASE_SIGNING_PLAN.md', 'OPEN_SOURCE_BLOCKERS.md', 'PRIVACY_STORAGE.md'):
+                 'RELEASE_SIGNING_PLAN.md', 'OPEN_SOURCE_BLOCKERS.md', 'PRIVACY_STORAGE.md',
+                 'MIT_FINAL_APPROVAL_CHECKLIST.md', 'MAINTAINER_PROVENANCE.md', 'SIGNPATH_ELIGIBILITY.md'):
         (directory / 'docs').mkdir(exist_ok=True)
         shutil.copyfile(ROOT / 'docs' / name, directory / 'docs' / name)
-    (directory / 'docs/legal').mkdir(exist_ok=True)
-    shutil.copyfile(ROOT / 'docs/legal/LICENSE-MIT.candidate.txt', directory / 'docs/legal/LICENSE-MIT.candidate.txt')
     (directory / 'README.txt').write_text(
-        'Unsigned review candidate; MIT NOT ADOPTED; SignPath NOT APPLIED.\n'
+        'Unsigned review candidate; first-party MIT ADOPTED; SignPath NOT APPLIED.\n'
+        'LICENSE_SCOPE.md excludes third-party components, runtimes, weights and separately handled assets.\n'
         'DEPENDENCY_LICENSES.json indexes original license-texts/ by SHA-256.\n'
         'workspace.spdx.json is a review SBOM, not a legal approval.\n'
         'Missing notices and source obligations remain REVIEW REQUIRED.\n'
         'Full current source/docs: https://github.com/liu11-21/local-llm/tree/dev/desktop-workspace\n', encoding='utf-8')
     (directory / 'STATUS.json').write_text(json.dumps({
-        'version': '0.7.0', 'channel': 'Development', 'project_license': 'NOASSERTION',
-        'mit_candidate_attribution': '劉仲軒', 'rights_confirmation': 'PENDING',
+        'version': '0.7.0', 'channel': 'Development', 'project_license': WORKSPACE_LICENSE,
+        'copyright': WORKSPACE_COPYRIGHT, 'rights_confirmation': 'A1-A4 APPROVED 2026-11-13; scoped first-party adoption only',
+        'license_scope': WORKSPACE_SCOPE,
         'signpath': 'NOT APPLIED; NOT APPROVED', 'distribution': 'unsigned review candidate',
         'third_party': 'Original terms apply; this directory grants no project-wide MIT license',
     }, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')

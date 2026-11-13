@@ -8,7 +8,7 @@
 | Repository | https://github.com/liu11-21/local-llm |
 | 開發來源 | dev/desktop-workspace；0.7.0 Development；每個候選以完整 SHA 與 Actions Run 識別 |
 | 用途 | Windows AI 工作台：本機／雲端聊天、Agent 工具核准、多模型 Team、模型下載、ComfyUI 媒體工作流程、遠端 Host 及 CPU／GPU／NPU 運算適配 |
-| 授權 | 擬 MIT，候選署名 劉仲軒；已記錄維護者主導 Codex／AI 輔助來源，未識別具體第一方衝突；合約／輸入例外、資產及最終範圍／採用待確認，尚非現行 OSI 授權 |
+| 授權 | 第一方已依 A1–A4 明確批准採 MIT，Copyright (c) 2026 劉仲軒；Logo／品牌／UI 截圖／合成媒體排除，第三方、Runtime／模型原授權；整包資格未放行 |
 | 發行架構 | React／TypeScript UI、Tauri Rust shell、PyInstaller Python Worker、NSIS current-user installer／uninstaller；AI Runtime／權重依使用者操作另行下載 |
 | 維護／發行 | 2026-11-08 起公開；審查起始 119 commits；已發行舊 Tk／Inno v0.6.2，Tauri Workspace 暫以限期 Actions artifact 提供 |
 | 來源驗證 | GitHub-hosted Windows 2022、固定 Action SHA／工具鏈／鎖檔、完整 commit、SHA-256、SPDX／Notices、安裝 PE inventory、GitHub provenance；BUILD.json 本身不是平台認證 |
@@ -17,7 +17,7 @@
 | Authors | 維護者角色候選，姓名／權限範圍／MFA 尚待明確指派；AI 工具不取代人類責任 |
 | Reviewers | 外部非 committer 提案由團隊審查；單人兼任候選或另邀獨立人，尚待 Foundation 確認；不假定所有本人變更強制非作者審查 |
 | Approvers | 單人兼任是否可接受待書面確認，否則另邀核准者；每次正式簽章仍需人工核准，沒有啟用自動核准 |
-| 資格結論 | 尚不具備正式申請聲明條件；本地對照 4/14 PASS，詳 SIGNPATH_ELIGIBILITY |
+| 資格結論 | 尚不具備正式申請聲明條件；本地對照 5/14 PASS，詳 SIGNPATH_ELIGIBILITY |
 
 提交前需向 Foundation 書面詢問：
 
@@ -27,7 +27,7 @@
 4. 使用者選擇下載的 Comfy portable、CUDA／FFmpeg、OpenVINO、受限制模型權重及 Agent 核准工具能力，會如何影響資格？
 5. 啟動更新查詢、可選 Runtime 的第三方 telemetry、網頁 CDN 與雲端／遠端目的地，還需哪些安裝告知或停用選項？
 
-附件建議：權利確認、現行正式 LICENSE（目前尚無）、SBOM 原始文檔、第三方 Notice／Covered Source 提供方式、PE 映射、公開 Windows Run、candidate hashes／provenance、roles／MFA／分支保護證據。不要在申請草稿附私人金鑰或真實使用者對話。
+附件建議：權利確認、現行正式 LICENSE 與 LICENSE_SCOPE（已具備）、SBOM 原始文檔、第三方 Notice／Covered Source 提供方式、PE 映射、公開 Windows Run、candidate hashes／provenance、roles／MFA／分支保護證據。不要在申請草稿附私人金鑰或真實使用者對話。
 
 ## Unsent English inquiry
 
@@ -37,7 +37,7 @@ Subject: Eligibility clarification: AI-assisted, single-maintainer Local LLM Wor
 
 Dear SignPath Foundation team,
 
-I maintain Local LLM Workspace: https://github.com/liu11-21/local-llm (dev/desktop-workspace, 0.7.0 Development). I direct its requirements and integration; first-party code is primarily Codex/AI-assisted, and the Logo is reported as AI-generated. We are preparing MIT adoption, which is not approved yet. Upstream code and assets retain their own terms; we do not claim exclusive copyright in every AI output.
+I maintain Local LLM Workspace: https://github.com/liu11-21/local-llm (dev/desktop-workspace, 0.7.0 Development). I direct its requirements and integration; first-party code is primarily Codex/AI-assisted, and the Logo is reported as AI-generated. The maintainer has explicitly approved scoped MIT adoption for first-party code, tests, build scripts and technical documentation (Copyright (c) 2026 劉仲軒). Logos, brand assets, screenshots and synthetic media are excluded for now; this does not clear the whole installer. Upstream code and assets retain their own terms; we do not claim exclusive copyright in every AI output.
 
 A separate new Logo candidate was generated with the OpenAI built-in image tool, without external image references. The installed Logo is unchanged.
 

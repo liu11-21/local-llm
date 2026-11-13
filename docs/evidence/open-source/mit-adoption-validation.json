@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "date": "2026-11-13",
+  "approved_source_commit": "d74bb27f7cba65c0bb291e0a50a5fc143fef4062",
+  "approval": "A1-A4 explicitly confirmed in separate maintainer reply",
+  "mit_body": "OSI permission and warranty text matches after whitespace/quote normalization; requested copyright attribution exact",
+  "old_license_status": "preserved verbatim as historical text",
+  "protected_existing_files_unchanged": 694,
+  "third_party_components_preserved": 641,
+  "spdx_third_party_packages_and_relationships": "unchanged",
+  "source_inventory": "all original fields preserved; adoption overlay only",
+  "npm_lock": "only own root package license added; dependency entries unchanged",
+  "signpath_counts": {
+    "PASS": 5,
+    "REVIEW REQUIRED": 7,
+    "NOT VERIFIED": 2
+  },
+  "json_toml_markdown_links": "PASS",
+  "history_scan": "NOT RUN",
+  "dependency_collect": "NOT RUN",
+  "windows_ci": "NOT RUN; skip ci prevents full dependency recollection; no workflow changes",
+  "release_tag_application_email": "NOT CREATED OR SENT",
+  "targeted_license_tests": "6 passed",
+  "spdx_schema_and_original_notice_hash_validation": "PASS",
+  "notice_bundle_preparation": "PASS",
+  "workspace_version_check": "PASS; 0.7.0 Development unchanged",
+  "frontend_build": "TypeScript and Vite PASS; existing chunk-size warning only"
+}

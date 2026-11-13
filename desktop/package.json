@@ -2,6 +2,7 @@
   "name": "localllm-desktop",
   "version": "0.7.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite --mode preview-worker",

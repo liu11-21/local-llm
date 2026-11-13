@@ -1,3 +1,7 @@
+ARCHIVED CANDIDATE — superseded by scoped root MIT adoption on 2026-11-13.
+See LICENSE, LICENSE_SCOPE.md and docs/MIT_FINAL_APPROVAL_CHECKLIST.md.
+The following is the unchanged pre-adoption review template, not current status.
+
 UNADOPTED CANDIDATE — NOT A LICENSE GRANT
 Maintainer-directed Codex/AI-assisted provenance has been recorded. Final scope,
 input/contract rights, Logo treatment and adoption are not approved. This template

@@ -1,69 +1,55 @@
-# MIT final approval checklist — 未批准
+# MIT final approval — adopted, scoped first-party code
 
-2026-11-13；審查基準 84a3af4；0.7.0 Development。本文件是可審核的決策包，**不是使用者已批准的證明**。根 LICENSE 保持原有狀態聲明；沒有將 MIT 原文作現行授權，metadata／SBOM 也沒有改成 MIT。
+2026-11-13；版本 0.7.0 Development；批准的來源基準
+`d74bb27f7cba65c0bb291e0a50a5fc143fef4062`。本輪任務提示本身沒有被視為批准；
+以下採用依據是維護者對集中核准問題的另一次明確回覆。
 
-## 狀態定義與五個結論
+## A1–A4 實際核准紀錄
 
-VERIFIED＝所述證據／有限檢查已核對，不是全面法律保證；MAINTAINER CONFIRMATION＝需維護者確認事實或決策；EXTERNAL REVIEW＝需第三方條款、Foundation 或個案專業判斷；BLOCKED＝目前不能執行的具體動作。
+維護者原文：**「a1:沒有 a2是，目前都是codex生成的 a3:是   a4 ，同意」**。
+原問題及回答的範圍整理如下；不將此陳述擴張為全面無侵權保證。
 
-| 問題 | 狀態 | 最終審查結論 |
+- [x] **A1 權利主體 — MAINTAINER CONFIRMATION / 已確認。** 問題為是否有需另行同意的雇主、共同開發者、外包者或出資者權利；維護者答「沒有」。不據此認定每行 AI 輸出均有著作權。
+- [x] **A2 已知第三方輸入 — MAINTAINER CONFIRMATION / 已確認。** 問題明列個人 Codex／OpenAI 帳號與合約、已記錄依賴／LocModel 靈感／另處理素材，以及是否有其他已知未處理輸入；維護者答「是，目前都是codex生成的」。據此記錄個人帳號及所知開發來源，沒有新增例外；不把它解釋為第三方依賴消失或 AI 輸出自動無第三方權利。
+- [x] **A3 授權範圍 — MAINTAINER CONFIRMATION / 已批准。** 第一方 Python／TypeScript／React／CSS／Rust、測試、建置與維護腳本及技術文件採 MIT。第三方元件、Runtime、模型維持原授權；Logo／品牌素材／UI 截圖及合成媒體檔暫時排除。fixture generator 程式屬第一方 MIT。Logo 的後續選擇不再阻擋程式碼 MIT。
+- [x] **A4 正式採用 — MAINTAINER CONFIRMATION / 已批准。** 維護者明確同意在上述來源與範圍正式採用標準 OSI MIT，署名 **Copyright (c) 2026 劉仲軒**，同步必要授權 metadata。
+
+現行許可：[根 LICENSE](../LICENSE)；適用邊界：[LICENSE_SCOPE.md](../LICENSE_SCOPE.md)。
+原狀態聲明完整保留於 [LICENSE_STATUS.md](../LICENSE_STATUS.md)。
+核准是範圍明確的維護者授權決策，不是 SignPath、第三方權利人或法院的核准。
+
+## 採用完成項目
+
+- 根 LICENSE 使用 OSI MIT 許可／免責原文，只代入指定署名、正規化引號／換行，不另加限制。
+- README、Contributing、npm package 與鎖檔自己的根 package、Cargo package、Notices 產生器同步第一方 MIT。
+- 現行 SBOM 僅更新 Workspace 的宣告與採用 overlay；641 項第三方元件、原授權／Notice／hash 及依賴圖保持，不重做盤點。`licenseConcluded` 仍保留 NOASSERTION，避免把宣告當成所有元件的法律結論。
+- 來源 inventory 僅增加本次採用紀錄；原 head／逐檔來源與權利觀察保留歷史語義，沒有新歷史掃描。
+- 過去 `docs/evidence/open-source/CI-*`、BUILD、簽章／來源證明及驗收結果保持原始 bytes。舊安裝包仍是當時的授權狀態，不因新文件而被重寫。
+- 下一次建置的 Notices 帶入正式 LICENSE、LICENSE_SCOPE、歷史狀態；不再把候選模板作現行許可散布。
+
+## 收斂後的結論
+
+| 問題 | 狀態 | 結論 |
 |---|---|---|
-| 1. 有具體證據阻止第一方採 MIT 嗎？ | VERIFIED | 現有證據未識別出此種衝突；AI 輔助本身、沒有逐行人類創作證明，不是已證實侵權。合約主體／輸入／範圍仍需維護者確認，亦不保證每部分有著作權 |
-| 2. 哪些第三方問題仍阻擋發行批准？ | EXTERNAL REVIEW | 對實際散布內容完成 Notice／MPL Covered Source、Python／工具鏈／Microsoft 再散布證據；下載 Runtime／模型依其條款處理。這是尚未完成的放行條件，不是已證實整個第一方須改 GPL；非 Windows／build-only 項目需先確認散布範圍 |
-| 3. Logo 如何處理？ | MAINTAINER CONFIRMATION | 舊 Logo 來源細節待確認；本輪另生成 OpenAI 候選並保存提示詞／hash，沒有提供外部圖片輸入。先選用哪個資產與許可，再另行接入產品；不宣稱取得商標權 |
-| 4. MIT 生效前還需何確認？ | BLOCKED | 尚缺維護者對下面 A1–A4 的最終確認／批准。禁止僅因來源紀錄更新就把候選模板覆蓋 root LICENSE |
-| 5. SignPath 還缺何外部核准？ | EXTERNAL REVIEW | Foundation 對 AI 來源／單人角色／混合二進位／下載 Runtime、模型及既有發行形式的答覆與正式接受；帳號 MFA／保護由維護者設定，不能用本報告代替 |
+| 第一方 MIT 的具體阻礙 | VERIFIED | 既有審查未識別具體衝突；A1–A4 已取得明確確認及批准，第一方 MIT 已採用。非絕對無侵權保證 |
+| 第三方發行義務 | EXTERNAL REVIEW | 實際 Windows payload 的 Notice／MPL Covered Source／Python 與工具鏈子元件／Microsoft 再散布證據仍需完成；不阻擋本次第一方許可決策 |
+| Logo 與資產 | MAINTAINER CONFIRMATION | 暫時排除，沒有替換產品 Logo、批准素材授權或宣稱商標權；仍是整包正式發行／SignPath 的待辦 |
+| MIT 正式生效 | VERIFIED | 已依獨立回覆批准並落地；不影響 main、Stable v0.6.2 或重授權第三方 |
+| SignPath | EXTERNAL REVIEW | 未申請／未獲准；維持獨立的 MFA、角色、產物及資格核准流程 |
 
-### LocModel 來源專項結案範圍（2026-11-13）
+## 驗證與後續
 
-新增 [LOCMODEL_PROVENANCE_AUDIT.md](LOCMODEL_PROVENANCE_AUDIT.md)，基準 a47ab25：**NO ISSUE IDENTIFIED，目前沒有足以實質阻擋 Local LLM 第一方採 MIT 的 LocModel 來源問題**。已查核可達 Git 歷史、完整檔案／詞法與形狀候選、目前與歷史圖像、選定 UI 及可見開發指示；沒有找到直接複製的具體候選。官方完整原碼、其他版本／未保存對話及方法無法涵蓋的轉化相似屬 **NOT VERIFIED**，不是已證實問題，也不標成已排除。
+本次授權為獨立提交；檢查 MIT 正文、scope 與 metadata、SBOM 官方 schema／Notice
+hash、全數第三方與歷史證據不變，以及 Notices 封裝與既有單元測試。
+既有完整 Windows workflow 會重新 collect 全部依賴；為遵守本輪不重新盤點 641 項的限制，
+本次使用 [skip ci]，保留 workflow 不變，執行本地必要驗證，不宣稱新的 Windows 安裝驗收結果。
 
-因此不新增「先取得 LocModel 概括授權」的核准欄，不取消原本 A1–A4，更不因本輪無具體問題就代為勾選。只有出現可定位的具體複製／權利主張才重開該範圍；根 LICENSE 仍是狀態聲明，MIT 尚未正式採用。
+不重掃 Git 全歷史、不重做 LocModel 或 641 依賴盤點，不建立 Release／Tag、寄信、
+提交申請或修改帳號／Windows 安全設定。下一步見
+[SignPath 資格表](SIGNPATH_ELIGIBILITY.md)、[未寄出的詢問](SIGNPATH_APPLICATION_DRAFT.md#unsent-english-inquiry)。
 
-## 第一方 MIT 候選範圍
-
-| 候選範圍 | 例示／限制 |
-|---|---|
-| 第一方應用及測試程式 | 根目錄自有 Python、desktop/src 的 TS／TSX／CSS、desktop/src-tauri/src／build.rs、docs 中的第一方網頁 HTML／CSS／mjs、第一方測試及 fixture generator |
-| 第一方建置與維護程式 | 自有 cmd／ps1／iss、GitHub workflows、設定及 manifest 中依法可授權的自有部分；鎖檔中的 upstream 版本／license 資料保持原意 |
-| 第一方技術文件 | 維護者有權釋出的自撰／AI 輔助敘述；不包含嵌入的 upstream 授權原文、受引用內容或另有授權的資料 |
-| 可另選的合成測試媒體 | sample.png／webm／flac 有 generate.py 的來源依據；是否納入需 A3，不能因此宣稱純色／音調必有專有著作權 |
-
-以上均以維護者依法可授權的權利（如有）為限。AI 輔助成分不整體排除，也不假定全部具完整人類著作權。具名第三方片段或檔案的原授權優先，不因放在第一方資料夾而變成 MIT。
-
-明確排除：third_party 原聲明、npm／Cargo／Python 及其 runtime、docs/sbom 的 upstream 原文與 SPDX schema、docs/evidence 的原始 upstream Notice／外部證據資料、各模型權重與模型卡／條款、下載 ComfyUI／OpenVINO／llama.cpp／CUDA 等、使用者資料及作品。SPDX metadata 的 CC0／schema 的 CC-BY 等獨立規則保持。舊 Logo／Icon 五個檔、新 Logo 候選及 docs/ui-preview 截圖目前另列待決，不在程式碼 MIT 候選裡。
-
-## 維護者最終核准欄（目前全部未勾選）
-
-- [ ] **A1 權限主體：** 確認本人可處分本輪第一方範圍的相關權利；列出任何雇用、出資、外包或其他作者例外。這不是確認 AI 每一行都有著作權。
-- [ ] **A2 已知第三方輸入：** 確認所知的複製片段、引用提示、參考素材與 AI 使用帳號／適用合約；有例外則附來源、授權及處置，不要求不可能的絕對無侵權保證。
-- [ ] **A3 範圍與資產：** 批准上表的程式／文件範圍及排除；決定合成測試媒體與 Logo 的明確授權方案。程式碼可獨立作決策，二進位發行仍須合法 Logo 方案。
-- [ ] **A4 正式採用：** 明確批准用「劉仲軒」作候選版權署名，並在上述範圍正式採用未加限制的 OSI MIT；指定最終採用的來源 Commit。提供姓名或表示 AI 輔助開發不等於這一項批准。
-
-第三方發行與 SignPath 是另外的 gate：A1–A4 通過不會把所有第三方變成 MIT，也不會自動取得 SignPath 憑證。若出現具體無權轉授內容，先限制在該檔／元件處理，不把整份 AI 輔助專案一律判為侵權。
-
-## 候選改動如何落地（未執行）
-
-1. 根目錄新建的 LICENSE_STATUS.md 是目前狀態的候選保存位置。正式採用時將舊狀態標成歷史，記錄核准範圍／日期／Commit；現在 root LICENSE 完全未替換。
-2. 採用時 root LICENSE 應只放 docs/legal/LICENSE-MIT.candidate.txt 的 BEGIN／END 標記間正文，移除候選說明與標記；候選包含署名「劉仲軒」。以 [OSI 官方](https://opensource.org/license/mit) 為準，只進行換行及引號的排版正規化，不加額外限制。
-3. 保留獨立範圍說明、THIRD_PARTY_LICENSES、原始 copyright／Notices。資產與商標政策放在獨立文件，不能偷偷改 MIT 的許可。
-4. 另一次獲准的授權採用提交才同步 README／package／Cargo／SBOM 與實際發行包。該提交涉及發行 metadata／建置，再執行相應建置驗證；本輪不做此步。
-
-## 本輪必要驗證
-
-確認 root LICENSE 及 Logo bytes 未變、全部既有 inventory 的 path／hash／作者／來源 Commit 欄位保持原值、只增加來源判定；原依賴清單、鎖檔、第三方原文、產品碼與 workflows 未變。檢查 JSON、文件相對連結、MIT 候選正文與官方文字、14 項表及五題狀態。來源 inventory 的 head 仍是舊快照，review_overlay 記錄本輪基準，不能當作新掃描。
-
-本輪為文件／審核用新圖提交，沒有接入新產品資產；使用 GitHub 支援的 [skip ci] 提交標記，依要求不重跑 Windows CI，也不重新設計 CI。這不會替日後修改產品、替換正式 Logo 或正式授權的提交省略必要驗證。[GitHub 說明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs)。
-
-2026-11-13 必要驗證結果：
-
-| 檢查 | 結果 |
-|---|---|
-| root LICENSE、5 個產品 Logo、依賴清單／鎖檔及原始 llama.cpp Notice | 12 個保護檔 hash 全部未變；只新增獨立審核圖 |
-| 既有來源 inventory | 698 檔 path／SHA／觀察作者／首次 Commit／宣告／保留原授權欄位保持；326 個 upstream 原文／schema 的全部既有欄位保持；增加人工分類及 review_overlay |
-| 候選 MIT | 直接取得 OSI 官方頁，比對許可／免責正文通過，僅正規化空白／引號；候選 Copyright 2026 劉仲軒；狀態搬移預覽與原 root LICENSE 文字一致 |
-| 五題與最終核准 | 五題狀態完整；A1–A4 均未勾選，不把來源說明或生成 Logo 當批准 |
-| SignPath | 保留 14 項與 4 PASS／7 REVIEW REQUIRED／1 BLOCKED／2 NOT VERIFIED；英文詢問未寄 |
-| JSON／相對文件連結／新 Logo | 語法與連結通過；候選 SHA、尺寸及三步生成／編修輸入 hash 鏈通過 |
-| 變更界線 | 文件與未接入產品的審核圖；產品碼、建置、workflows、main 與 upstream 原文未變 |
-| 本輪不執行 | Git 全歷史重掃、641 依賴重盤、Windows CI、Release／Tag、SignPath 申請、帳號／Windows 安全設定 |
+2026-11-13 實際必要驗證：MIT 正文與歷史狀態、694 個未修改保護檔、641 項第三方完整紀錄、
+SPDX 第三方 packages／relationships、來源 inventory 原欄位、npm 第三方鎖檔、14 項表與文件連結均通過。
+授權測試 6 項、Notices prepare／schema／原文 SHA、0.7.0 版本檢查與 TypeScript／Vite build 通過；
+Vite 僅有既有 bundle-size 建議警告。無新 Windows 安裝包結果。
+[本輪機器驗證紀錄](evidence/open-source/mit-adoption-validation.json)。

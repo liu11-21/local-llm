@@ -14713,5 +14713,13 @@
       "Third-party originals retain independent terms; no file is marked as formally MIT-licensed",
       "Future source_audit.py regeneration must preserve or reapply this human review overlay rather than silently discard it"
     ]
+  },
+  "license_adoption": {
+    "date": "2026-11-13",
+    "approved_source_commit": "d74bb27f7cba65c0bb291e0a50a5fc143fef4062",
+    "approval": "Maintainer explicitly confirmed A1-A4 in a separate response",
+    "scope_document": "LICENSE_SCOPE.md",
+    "dependency_inventory_rerun": false,
+    "history_rescanned": false
   }
 }

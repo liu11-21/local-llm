@@ -1,8 +1,7 @@
 {
   "schema": 1,
   "source_commit": "7b3e9639b7d0b871585106493c6016e47ad5a41a",
-  "workspace_license": "NOASSERTION",
-  "proposed_first_party_license": "MIT; NOT ADOPTED",
+  "workspace_license": "MIT",
   "coverage": {
     "npm_lock_entries": 199,
     "cargo_lock_dependencies": 404,
@@ -17760,5 +17759,15 @@
       "license_spdx": "CC-BY-3.0"
     }
   ],
-  "legal_eligibility": "REVIEW REQUIRED; scan success is not legal approval"
+  "legal_eligibility": "REVIEW REQUIRED; scan success is not legal approval",
+  "first_party_license_status": "ADOPTED",
+  "workspace_license_scope": "First-party code, tests, build scripts and technical documentation only; see LICENSE_SCOPE.md. Third-party components, runtimes, model weights, logos, brand assets, UI screenshots and synthetic media retain separate terms.",
+  "license_adoption": {
+    "date": "2026-11-13",
+    "approved_source_commit": "d74bb27f7cba65c0bb291e0a50a5fc143fef4062",
+    "approval": "Maintainer explicitly confirmed A1-A4 in a separate response",
+    "scope_document": "LICENSE_SCOPE.md",
+    "dependency_inventory_rerun": false,
+    "history_rescanned": false
+  }
 }

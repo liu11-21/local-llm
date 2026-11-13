@@ -1,8 +1,11 @@
 # License and ownership audit — 2026-11-13
 
-最新結論：**現有證據未識別出阻止第一方程式碼採 MIT 的具體衝突，可以進入正式範圍決策；MIT 仍未採用。** 維護者已補充：「維護者主導需求與產品架構，主要透過 Codex／AI 輔助產生及修改程式碼。」人類主導需求、選擇及整合是已記錄的來源事實，不是每行程式均具完整人類著作權的證明。缺乏逐行人類創作證明，也不直接構成侵權證據。剩餘 gate 為合約／輸入例外、Logo 等資產及最終範圍／採用批准，見 [來源分類](MAINTAINER_PROVENANCE.md) 與 [最終清單](MIT_FINAL_APPROVAL_CHECKLIST.md)。
+最新結論：**現有證據未識別出阻止第一方程式碼採 MIT 的具體衝突，維護者已於 2026-11-13 另外明確批准 A1–A4，第一方 MIT 已正式採用。** 維護者已補充：「維護者主導需求與產品架構，主要透過 Codex／AI 輔助產生及修改程式碼。」人類主導需求、選擇及整合是已記錄的來源事實，不是每行程式均具完整人類著作權的證明。缺乏逐行人類創作證明，也不直接構成侵權證據。A1–A4 的合約主體／已知輸入／範圍及採用已取得維護者確認；剩餘發行 gate 為 Logo 等排除資產、第三方義務及 SignPath，見 [來源分類](MAINTAINER_PROVENANCE.md) 與 [最終清單](MIT_FINAL_APPROVAL_CHECKLIST.md)。
 
-根 LICENSE 仍是未變更的狀態聲明；LICENSE_STATUS.md 是未執行搬移的候選位置，legal/LICENSE-MIT.candidate.txt 仍僅為候選。package.json／Cargo.toml／SBOM 未改成 MIT。**本輪沒有重掃歷史或重新盤點依賴**，下列數據保留為前輪證據；本輪檢查基準 84a3af4。
+根 [LICENSE](../LICENSE) 現為標準 MIT，原狀態完整保留於 [LICENSE_STATUS.md](../LICENSE_STATUS.md)。
+package／Cargo 及新建置的 Notices 已同步；現行 SBOM 僅修改第一方宣告／採用 overlay。
+第三方 641 項與原 Notice 保留，歷史 CI evidence 不改；以下數據是前輪證據，不冒充新掃描。
+本輪批准來源基準 d74bb27，既有來源審查基準 84a3af4。範圍見 [LICENSE_SCOPE.md](../LICENSE_SCOPE.md)。
 
 起始來源 adbe209a50286eb1ff1321c770dd8927c45d3e1d，dev/desktop-workspace，0.7.0 Development；當時 337 tracked files、119 reachable commits，提交名稱為 Codex／liu11-21。這只是歷史觀察，不把提交名稱當著作權人。最終工具與新文件納入後的來源快照見 evidence/open-source/source-ownership.json，其 head 是審查範圍，不冒充後續文件提交。
 
@@ -22,6 +25,6 @@ Agent 實際檢查：tool_registry.py 的 definition 拒絕非 trusted、非 rea
 
 秘密審查使用 source_audit.py，僅輸出位置／類型／hash fingerprint，不輸出值、不測試認證。起始歷史 917 個文字 blob 沒有命中已設定的 Token／provider-key／private-key 規則；兩個 user-path 命中位於歷史 evidence/v070/upgrade-worker-local.json。這是個人路徑 metadata，沒有確認為憑證事件。二進位、截圖、模型檔、自由格式對話及未匹配憑證仍需人工檢查；不能把模式未命中寫成「無秘密」。未改寫 Git 歷史。
 
-第一方 MIT 決策與二進位發行放行分開：程式碼採用只涵蓋維護者可授權範圍；Logo、模型、Runtime、第三方來源保留獨立規則。若維護者確認已知合約／輸入例外及候選範圍並明確批准，才另行替換根 LICENSE、同步 metadata。第三方 Notice／Covered Source／Microsoft 分發等仍是對應發行的放行條件，不能因程式採 MIT 就略過，也不能因第三方未結案就一概宣稱第一方侵權。
+第一方 MIT 決策與二進位發行放行分開：程式碼採用只涵蓋維護者可授權範圍；Logo、模型、Runtime、第三方來源保留獨立規則。維護者已確認所知事實並明確批准範圍與正式採用，故本次另行替換根 LICENSE、同步 metadata。第三方 Notice／Covered Source／Microsoft 分發等仍是對應發行的放行條件，不能因程式採 MIT 就略過，也不能因第三方未結案就一概宣稱第一方侵權。
 
 來源：[OSI MIT 官方模板](https://opensource.org/license/mit)。第三方版本證據及義務見 THIRD_PARTY_LICENSES.md；其原始文件不因本候選而改變。

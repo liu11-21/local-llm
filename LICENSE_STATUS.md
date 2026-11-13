@@ -1,8 +1,23 @@
-# Candidate destination for the former LICENSE status
+# License adoption and historical status
 
-**Relocation preview only — no formal MIT adoption.** Root LICENSE remains the active status notice, unchanged. This file prepares the destination requested for a later, explicitly approved license adoption. See docs/MIT_FINAL_APPROVAL_CHECKLIST.md and docs/MAINTAINER_PROVENANCE.md.
+**First-party MIT adopted on 2026-11-13 following explicit maintainer approval of A1–A4.**
+Reviewed source: `d74bb27f7cba65c0bb291e0a50a5fc143fef4062`; attribution: **Copyright (c) 2026 劉仲軒**.
+The adoption commit is the independent commit that first changes root LICENSE to MIT;
+it is identifiable with `git log -- LICENSE` (no self-referential commit hash is invented).
 
-The old status to preserve as history after approval is reproduced below. It does not grant a license. Its earlier broad pending-ownership wording is refined by the new provenance review: maintainer-directed Codex/AI-assisted development is recorded, no concrete first-party conflict has been identified, and final scope/adoption plus specific asset/input questions still require confirmation.
+The task request itself was not treated as approval. The maintainer separately replied:
+「a1:沒有 a2是，目前都是codex生成的 a3:是   a4 ，同意」.
+See [approval record](docs/MIT_FINAL_APPROVAL_CHECKLIST.md) and
+[covered/excluded scope](LICENSE_SCOPE.md).
+
+Only the scoped first-party code and documentation are covered by [LICENSE](LICENSE).
+Third-party obligations, excluded assets and SignPath remain separate gates.
+Prior binaries, main and Stable v0.6.2 are not retroactively relabeled by this commit.
+
+## Superseded status notice — preserved verbatim
+
+The following was the root LICENSE before adoption. It is historical, not the
+current first-party license and not an assertion of a remaining whole-project rights block.
 
 ```text
 PROJECT LICENSE STATUS — MIT CANDIDATE, NOT ADOPTED
@@ -19,5 +34,3 @@ license of this repository or its binaries. See docs/LICENSE_AUDIT.md.
 Third-party components retain their respective upstream licenses and notices.
 Nothing here changes licenses of dependencies, copied code, runtimes or models.
 ```
-
-Only after explicit approval should the historical notice be marked superseded and root LICENSE receive the exact MIT candidate body. No activation date or approval is asserted here.

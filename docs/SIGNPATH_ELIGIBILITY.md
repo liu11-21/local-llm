@@ -1,10 +1,10 @@
 # SignPath eligibility — 2026-11-13
 
-**4 PASS / 14；7 REVIEW REQUIRED；1 BLOCKED；2 NOT VERIFIED。** 這是對使用者指定 14 項的本地證據對照，不是 Foundation 的核准、官方計分或保證。申請尚未提交。
+**5 PASS / 14；7 REVIEW REQUIRED；0 BLOCKED；2 NOT VERIFIED。** 這是對使用者指定 14 項的本地證據對照，不是 Foundation 的核准、官方計分或保證。申請尚未提交。
 
 | # | 項目 | 狀態 | 證據／缺口 |
 |---|---|---|---|
-| 1 | OSI 專案授權 | BLOCKED | MIT 仍未正式批准／採用。已補維護者主導 Codex／AI 來源，未識別具體第一方衝突；不是因缺逐行人類創作證明而阻擋 |
+| 1 | OSI 專案授權 | PASS | 維護者另確認／批准 A1–A4；根 LICENSE 已採 MIT，署名 Copyright (c) 2026 劉仲軒。僅第一方範圍；資產／整包元件資格仍見第 2／3 項，不代表 Foundation 已接受 |
 | 2 | 專有元件／系統例外 | REVIEW REQUIRED | VC／UCRT／API sets／WebView2 的條款及 System Library 適用性待核對 |
 | 3 | 全元件授權／商業雙重授權 | REVIEW REQUIRED | 沒有已確認商業雙重授權安排；仍缺 binary、工具鏈、模型與 portable 全圖證據；一般 MIT OR Apache 選擇不等於商業雙重授權 |
 | 4 | 持續維護 | PASS | 起始 119 reachable commits、持續 Actions；不推論專案聲譽已獲接受 |
@@ -21,4 +21,4 @@
 
 本表依 [Foundation 官方條件](https://signpath.org/terms.html) 與 [GitHub trusted-build 整合](https://docs.signpath.io/trusted-build-systems/github) 建立。沒有自訂最低專案年齡要求，也不把短期維護紀錄當聲譽保證。對 Actions 發行形式、系統元件、混合二進位及下載模型的判斷均保留 REVIEW REQUIRED。
 
-2026-11-13 文件覆核：公開條件未列出 AI 輔助開發專案的專屬禁令／額外清單，也沒有明文規定三個角色必須由三個不同人擔任。這不是已確認豁免或保證接受單人自批；已準備未寄出的英文詢問，見 SIGNPATH_APPLICATION_DRAFT.md。AI 應用被列為服務專案也不能證明其程式為 AI 產生、或推定本專案獲准。沿用同一 14 項及原分數，沒有新增評分標準。
+2026-11-13 文件覆核：公開條件未列出 AI 輔助開發專案的專屬禁令／額外清單，也沒有明文規定三個角色必須由三個不同人擔任。這不是已確認豁免或保證接受單人自批；已準備未寄出的英文詢問，見 SIGNPATH_APPLICATION_DRAFT.md。AI 應用被列為服務專案也不能證明其程式為 AI 產生、或推定本專案獲准。沿用同一 14 項；只有第 1 項因明確批准與根 LICENSE 正式採用改為 PASS，其餘不變，沒有新增標準或推定整包／Foundation 已通過。

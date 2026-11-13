@@ -2,6 +2,7 @@
 name = "localllm-desktop"
 version = "0.7.0"
 description = "Local LLM desktop workspace"
+license = "MIT"
 edition = "2021"
 
 [build-dependencies]

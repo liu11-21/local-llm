@@ -2,7 +2,7 @@
 
 React／Tauri Windows AI 工作台，整合文字聊天、Agent、Team、圖片／影片／音樂創作、模型下載及本地／遠端運算。
 
-授權準備中：維護者主導需求與產品架構，主要透過 Codex／AI 輔助產生及修改程式碼。現有審查未識別具體第一方 MIT 衝突；MIT 仍僅候選，署名擬為「劉仲軒」，待確認合約／輸入例外、素材及最終授權範圍。根 LICENSE 尚非 MIT 授權，Logo 暫列獨立資產決策；第三方 Runtime／權重維持原條款。SignPath **未申請、未核准**，目前安裝包 **unsigned**。[來源紀錄](docs/MAINTAINER_PROVENANCE.md) · [MIT 最終核准清單](docs/MIT_FINAL_APPROVAL_CHECKLIST.md) · [開源準備](docs/OPEN_SOURCE_READINESS.md) · [第三方授權](THIRD_PARTY_LICENSES.md) · [隱私](PRIVACY.md) · [建置](BUILDING.md) · [Code signing policy](CODE_SIGNING_POLICY.md)。
+第一方程式碼、測試、建置腳本及技術文件已於 2026-11-13 經維護者明確批准採用 **[MIT](LICENSE)**，署名「Copyright (c) 2026 劉仲軒」。維護者主導需求與產品架構，主要透過 Codex／AI 輔助開發；不宣稱所有 AI 輸出均有著作權或絕對無第三方權利。Logo／品牌素材／UI 截圖及合成媒體檔暫時獨立處理；第三方元件、Runtime、模型權重維持原條款，詳 **[授權範圍](LICENSE_SCOPE.md)**。[核准紀錄](docs/MIT_FINAL_APPROVAL_CHECKLIST.md) · [來源紀錄](docs/MAINTAINER_PROVENANCE.md) · [開源準備](docs/OPEN_SOURCE_READINESS.md) · [第三方授權](THIRD_PARTY_LICENSES.md) · [隱私](PRIVACY.md) · [建置](BUILDING.md) · [Code signing policy](CODE_SIGNING_POLICY.md)。SignPath **未申請、未核准**，安裝包仍 **unsigned**；MIT 不等於整包發行或簽章資格已獲准。
 
 Windows 10/11 x64，需 WebView2；原始碼建置需 Python／Node／Rust／MSVC，固定版本見 BUILDING。聊天、Agent 工具核准與 Team 可依選擇在本機、雲端或配對 Host 執行；選用雲端／遠端會把必要內容送至該目的地。更新檢查、模型／Runtime 安裝及缺少 WebView2 時的安裝另有網路請求。模型所需 RAM／VRAM 依模型與工作流程而變。
 

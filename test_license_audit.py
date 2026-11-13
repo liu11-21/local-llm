@@ -27,8 +27,27 @@ class LicenseAuditTests(unittest.TestCase):
         cargo = tomllib.loads((root / 'desktop/src-tauri/Cargo.lock').read_text(encoding='utf-8'))
         self.assertEqual(sum(c['ecosystem'] == 'npm' for c in data['components']), len(npm['packages']) - 1)
         self.assertEqual(sum(c['ecosystem'] == 'cargo' for c in data['components']), len(cargo['package']) - 1)
-        self.assertEqual(data['workspace_license'], 'NOASSERTION')
+        self.assertEqual(data['workspace_license'], 'MIT')
+        bom = json.loads((root / 'docs/sbom/workspace.spdx.json').read_text(encoding='utf-8'))
+        own = next(p for p in bom['packages'] if p['SPDXID'] == 'SPDXRef-Workspace')
+        self.assertEqual(own['licenseDeclared'], 'MIT')
+        self.assertTrue(all(p['licenseConcluded'] == 'NOASSERTION' for p in bom['packages']))
         self.assertTrue(all(c['license_concluded'] == 'NOASSERTION' for c in data['components']))
+
+    def test_notice_bundle_uses_adopted_first_party_license_without_granting_asset_rights(self):
+        import release_evidence
+        root = Path(__file__).resolve().parent
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp) / 'notices'
+            release_evidence.seed(directory)
+            status = json.loads((directory / 'STATUS.json').read_text(encoding='utf-8'))
+            self.assertEqual(status['project_license'], 'MIT')
+            self.assertEqual(status['signpath'], 'NOT APPLIED; NOT APPROVED')
+            self.assertEqual((directory / 'LICENSE').read_bytes(), (root / 'LICENSE').read_bytes())
+            self.assertEqual((directory / 'LICENSE_SCOPE.md').read_bytes(), (root / 'LICENSE_SCOPE.md').read_bytes())
+            self.assertFalse((directory / 'LICENSE-MIT.candidate.txt').exists())
+            with contextlib.redirect_stdout(io.StringIO()):
+                license_audit.validate(directory)
 
     def test_modified_notice_is_rejected(self):
         source = Path(__file__).resolve().parent / 'docs/sbom'

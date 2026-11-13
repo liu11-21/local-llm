@@ -1,6 +1,6 @@
 # Contributing
 
-目前專案授權仍在審查；根目錄 LICENSE 是狀態說明，不能把 MIT 候選內容當作現行授權。歡迎回報問題；在維護者完成授權與貢獻政策前，請先討論新增程式碼的權利及預定授權。
+第一方程式碼與技術文件已採 [MIT](LICENSE)，適用範圍及排除見 [LICENSE_SCOPE.md](LICENSE_SCOPE.md)。提交第一方貢獻時，請確認你有權以此授權提供，並明確列出第三方來源／條款；外部內容不會因合併就自動變成 MIT。不同授權或素材貢獻請先與維護者討論。
 
 開發基準為 dev/desktop-workspace，保留版本 0.7.0 Development。依 BUILDING.md 建置，PR 說明問題、行為改變、驗證與限制。UI 變動附截圖；不能把 mock、偵測結果當作實體硬體驗收。
 

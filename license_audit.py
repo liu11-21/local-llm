@@ -21,6 +21,9 @@ from urllib.request import Request, urlopen
 import zipfile
 
 ROOT=Path(__file__).resolve().parent
+WORKSPACE_LICENSE='MIT'
+WORKSPACE_COPYRIGHT='Copyright (c) 2026 劉仲軒'
+WORKSPACE_SCOPE='First-party code, tests, build scripts and technical documentation only; see LICENSE_SCOPE.md. Third-party components, runtimes, model weights, logos, brand assets, UI screenshots and synthetic media retain separate terms.'
 CACHE=ROOT/'build/open-source-audit/cache'
 NOTICE=re.compile(r'(?i)(?:^|[/_.-])(licen[cs]e[^/]*|copying[^/]*|notice[^/]*|copyright[^/]*)$')
 
@@ -248,7 +251,8 @@ def collect(output,network=False,cargo_metadata=None,crate_archives=False):
     (output/'spdx-schema.json').write_bytes(schema)
     (output/'schema-attribution.txt').write_text('Unmodified SPDX 2.3 JSON schema, published by the SPDX project.\nSource: '+schema_url+'\nLicense: CC-BY-3.0; original license indexed in DEPENDENCY_LICENSES.json.\nSPDX metadata CC0 does not relicense the schema or application.\n',encoding='utf-8')
     head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
-    result={'schema':1,'source_commit':head,'workspace_license':'NOASSERTION','proposed_first_party_license':'MIT; NOT ADOPTED',
+    result={'schema':1,'source_commit':head,'workspace_license':WORKSPACE_LICENSE,'first_party_license_status':'ADOPTED',
+        'workspace_license_scope':WORKSPACE_SCOPE,
         'coverage':{'npm_lock_entries':len(lock['packages'])-1,'cargo_lock_dependencies':len(cargo)-1,'python_build_pins':len(pins),'python_audit_pins':len(audit_pins)},
         'components':components,'legal_eligibility':'REVIEW REQUIRED; scan success is not legal approval'}
     (output/'DEPENDENCY_LICENSES.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
@@ -268,7 +272,8 @@ def collect(output,network=False,cargo_metadata=None,crate_archives=False):
         'documentNamespace':f'https://github.com/liu11-21/local-llm/sbom/{head}/license-review-'+hashlib.sha256(json.dumps(result,sort_keys=True).encode()).hexdigest()[:16],
         'creationInfo':{'creators':['Tool: LocalLLM license_audit.py'],'created':datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')},
         'packages':[{'SPDXID':'SPDXRef-Workspace','name':'Local LLM Workspace','versionInfo':'0.7.0','downloadLocation':'https://github.com/liu11-21/local-llm',
-                     'filesAnalyzed':False,'licenseConcluded':'NOASSERTION','licenseDeclared':'NOASSERTION','copyrightText':'NOASSERTION'},*packages],
+                     'filesAnalyzed':False,'licenseConcluded':'NOASSERTION','licenseDeclared':WORKSPACE_LICENSE,
+                     'copyrightText':WORKSPACE_COPYRIGHT,'comment':WORKSPACE_SCOPE},*packages],
         'relationships':[{'spdxElementId':'SPDXRef-DOCUMENT','relationshipType':'DESCRIBES','relatedSpdxElement':'SPDXRef-Workspace'},
                         *[{'spdxElementId':'SPDXRef-Workspace','relationshipType':'DEPENDS_ON','relatedSpdxElement':p['SPDXID']} for p in packages]],
         'comment':'Nonstandard or uncollected license texts are NOASSERTION in SPDX; upstream labels and review issues remain in DEPENDENCY_LICENSES.json. No placeholder license body is fabricated.'}

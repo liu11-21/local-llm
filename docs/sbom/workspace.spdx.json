@@ -3,12 +3,13 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "LocalLLM-Workspace-0.7.0-license-review",
-  "documentNamespace": "https://github.com/liu11-21/local-llm/sbom/7b3e9639b7d0b871585106493c6016e47ad5a41a/license-review-edfbeb48b159190f",
+  "documentNamespace": "https://github.com/liu11-21/local-llm/sbom/7b3e9639b7d0b871585106493c6016e47ad5a41a/license-review-edfbeb48b159190f-mit-adoption-20261113",
   "creationInfo": {
     "creators": [
-      "Tool: LocalLLM license_audit.py"
+      "Tool: LocalLLM license_audit.py",
+      "Tool: scoped MIT adoption overlay (no dependency rescan)"
     ],
-    "created": "2026-11-13T10:23:20Z"
+    "created": "2026-11-13T14:48:49Z"
   },
   "packages": [
     {
@@ -18,8 +19,9 @@
       "downloadLocation": "https://github.com/liu11-21/local-llm",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION"
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright (c) 2026 劉仲軒",
+      "comment": "First-party code, tests, build scripts and technical documentation only; see LICENSE_SCOPE.md. Third-party components, runtimes, model weights, logos, brand assets, UI screenshots and synthetic media retain separate terms."
     },
     {
       "SPDXID": "SPDXRef-3a3b2e4a7c666e0b5d3a512e",
@@ -18280,5 +18282,5 @@
       "relatedSpdxElement": "SPDXRef-ea4530ac2c5ace328689b1ba"
     }
   ],
-  "comment": "Nonstandard or uncollected license texts are NOASSERTION in SPDX; upstream labels and review issues remain in DEPENDENCY_LICENSES.json. No placeholder license body is fabricated."
+  "comment": "Nonstandard or uncollected license texts are NOASSERTION in SPDX; upstream labels and review issues remain in DEPENDENCY_LICENSES.json. No placeholder license body is fabricated. First-party declaration updated after maintainer A1-A4 approval on 2026-11-13 at d74bb27f7cba65c0bb291e0a50a5fc143fef4062; all dependency packages and relationships preserved from the original snapshot. No dependency rescan; not an aggregate installer license clearance."
 }
