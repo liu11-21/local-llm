@@ -1,14 +1,18 @@
 UNADOPTED CANDIDATE — NOT A LICENSE GRANT
-Only the proposed attribution has been confirmed. Rights in code and assets
-remain unconfirmed. The following OSI MIT template is retained for review only.
-Adoption requires a separate maintainer decision after the ownership review.
-Third-party software and model weights are excluded from project relicensing.
+Maintainer-directed Codex/AI-assisted provenance has been recorded. Final scope,
+input/contract rights, Logo treatment and adoption are not approved. This template
+applies only as a candidate to rights the maintainer may lawfully license, if any;
+it does not assert copyright in every AI output or convert third-party rights.
+See docs/MIT_FINAL_APPROVAL_CHECKLIST.md. Logo/icons are a separate pending asset
+decision; third-party software, runtime, evidence texts and model weights retain
+their own terms. Only the text between the markers would become root LICENSE
+after explicit approval. The markers and this note are not license terms.
 Official template: https://opensource.org/license/mit
 
 --- BEGIN UNADOPTED MIT TEMPLATE ---
 MIT License
 
-Copyright (c) 2026 劉仲軒
+Copyright 2026 劉仲軒
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

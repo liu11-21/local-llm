@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "status": "REVIEW CANDIDATE; NOT ADOPTED; NOT INCLUDED IN APPLICATION",
+  "generated_on": "2026-11-13",
+  "timezone": "Asia/Taipei",
+  "service": "OpenAI built-in image generation tool",
+  "tool": "image_gen.imagegen",
+  "execution_mode": "built-in; no fallback CLI/API key used",
+  "model": "NOT EXPOSED BY TOOL RESPONSE",
+  "provider_account_contract_principal": "MAINTAINER CONFIRMATION",
+  "external_reference_images_supplied": false,
+  "existing_project_logo_used_as_input": false,
+  "output": {
+    "file": "logo-candidate-v1.png",
+    "sha256": "4aac92357a32875cd3f2f06089f3d839ad2e3dd69a674666c68d2676f6caaf16",
+    "format": "PNG",
+    "size": [
+      1254,
+      1254
+    ],
+    "mode": "RGB",
+    "transparent_background_requested": false
+  },
+  "steps": [
+    {
+      "step": 1,
+      "intent": "generate",
+      "prompt": "Use case: logo-brand\nAsset type: a new review-only app emblem for Local LLM, a local AI workspace.\nPrimary request: Create one original, minimal emblem communicating local computation and multiple models working together. Build a compact architectural symbol from two offset open square frames gathered around one small central square, with a distinctive balanced silhouette and clear negative space.\nStyle: flat, precise, vector-friendly raster artwork; modern restrained technology identity; crisp edges and excellent legibility at 32 pixels.\nColor palette: charcoal graphite for the main symbol with one restrained red accent.\nComposition: one centered emblem on a genuinely transparent square canvas with generous clear padding.\nText: none.\nConstraints: one emblem only, no typography, no mockup, no presentation board, no gradients, no shadows, no 3D, no watermark. Do not imitate existing brands or use third-party reference artwork. No reference images are supplied. This is a fresh candidate, not an edit of the current project logo.",
+      "output_sha256": "38246ab0060bba375bceb45742f17219f629ad979a1ac5090810d40f4ce76831",
+      "input_sha256": [],
+      "transparent_background_requested": true
+    },
+    {
+      "step": 2,
+      "intent": "edit same-session candidate",
+      "prompt": "Use case: logo-brand; refine the supplied generated candidate, which is an edit target generated in this same session, not third-party reference artwork. Change only rendering quality: retain the two offset open square frames and single red center square, their layout and overall silhouette. Convert the artwork to completely clean flat fills: uniform solid charcoal graphite frames and a uniform solid red center square, with crisp straight edges. Remove ALL glow, gradients, shadows, texture, colored halos, speckling, and stray pixels throughout the negative space and around the emblem. Every area outside the three filled geometric shapes must be fully transparent. Preserve a genuinely transparent square background and generous padding. No text, new objects, borders, mockups or watermark.",
+      "output_sha256": "039472307494071e78a940b12006219e60d3a60a0a29bf49a6e0d5be5d27c93f",
+      "input_sha256": [
+        "38246ab0060bba375bceb45742f17219f629ad979a1ac5090810d40f4ce76831"
+      ],
+      "transparent_background_requested": true
+    },
+    {
+      "step": 3,
+      "intent": "edit same-session candidate",
+      "prompt": "Use case: logo-brand. Edit the supplied same-session AI-generated candidate into a clean review plate. Preserve the existing symbol geometry: two offset open square frames around one central square. Replace the ENTIRE transparent background with perfectly uniform opaque white (#FFFFFF), including all negative spaces. Render the two frames with uniform solid dark graphite (#20252B) and the central square uniform solid red (#EE3344). Precisely clean all boundaries and remove every glow, shadow, gradient, texture, scribble, stray colored pixel and outline. This must look like crisp flat vector artwork printed on white, not a photograph or 3D object. No typography, watermark, border, extra objects, or mockup. One centered symbol with generous white margin. The input was generated in this session, with no third-party artwork supplied.",
+      "output_sha256": "4aac92357a32875cd3f2f06089f3d839ad2e3dd69a674666c68d2676f6caaf16",
+      "input_sha256": [
+        "039472307494071e78a940b12006219e60d3a60a0a29bf49a6e0d5be5d27c93f"
+      ],
+      "transparent_background_requested": false
+    }
+  ],
+  "terms_reviewed": [
+    "https://openai.com/policies/row-terms-of-use/",
+    "https://openai.com/policies/services-agreement/",
+    "https://openai.com/policies/service-terms/"
+  ],
+  "rights": "Generation provenance only; no exclusive copyright, noninfringement, trademark clearance, MIT adoption or service indemnity asserted. Actual contract principal and asset license require maintainer confirmation.",
+  "selection": "Final opaque candidate chosen for review; earlier transparent drafts not committed. Existing product PNG/ICO unchanged."
+}

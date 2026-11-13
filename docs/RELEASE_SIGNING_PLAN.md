@@ -4,7 +4,7 @@
 
 `.github/workflows/signing-review.yml` 只有 workflow_dispatch，job 使用 literal false，無 secrets、無服務呼叫。`signpath/signing-request-step.yml.example` 是非執行範例，所有必要值空白；不會被一般 push／PR 觸發。這不是已運作的正式簽章管線。
 
-未來啟用前必須：完成權利及第三方審查、決定同形式公開發行、Foundation 核准、全團隊 MFA、Authors／Reviewers／Approvers、審查強制規則、受保護的 release-signing 環境、SignPath App 與 branch／workflow／runner policies。這些設定本輪均未擅自啟用。
+未來啟用前必須：完成範圍與第三方審查、決定同形式公開發行、Foundation 核准、全團隊 MFA、明確的 Authors／Reviewers／Approvers、符合獲准角色方案的審查規則、受保護 release-signing 環境、SignPath App 與 branch／workflow／runner policies。單人兼任是否允許待服務方確認；不將非作者審查的較嚴建議冒充官方一律要求。這些設定本輪均未啟用。
 
 正式設計應由獨立、人工啟動的受保護 release workflow 在固定來源 SHA 上建置／驗證，先上傳 unsigned artifact，再將該 upload 的 artifact-id 傳給核准 action；全部前置 jobs 使用 GitHub-hosted Runner。若跨 workflow 選取既有 candidate，需先確認平台 origin／artifact ID 驗證，不可用任意重上傳規避來源鏈。範例僅示意 request step，並非完整可投入生產流程。
 

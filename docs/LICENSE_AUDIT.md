@@ -1,10 +1,12 @@
 # License and ownership audit — 2026-11-13
 
-結論：**尚不具備正式 MIT 採用條件**。維護者已指定候選署名「劉仲軒」，並明確表示其餘權利待確認。提交作者、AI 產碼、公開庫或沒有 LICENSE 都不能證明可重新授權。根 LICENSE 僅記錄狀態；候選全文位於 legal/LICENSE-MIT.candidate.txt，package.json／Cargo.toml 未宣告 MIT。
+最新結論：**現有證據未識別出阻止第一方程式碼採 MIT 的具體衝突，可以進入正式範圍決策；MIT 仍未採用。** 維護者已補充：「維護者主導需求與產品架構，主要透過 Codex／AI 輔助產生及修改程式碼。」人類主導需求、選擇及整合是已記錄的來源事實，不是每行程式均具完整人類著作權的證明。缺乏逐行人類創作證明，也不直接構成侵權證據。剩餘 gate 為合約／輸入例外、Logo 等資產及最終範圍／採用批准，見 [來源分類](MAINTAINER_PROVENANCE.md) 與 [最終清單](MIT_FINAL_APPROVAL_CHECKLIST.md)。
+
+根 LICENSE 仍是未變更的狀態聲明；LICENSE_STATUS.md 是未執行搬移的候選位置，legal/LICENSE-MIT.candidate.txt 仍僅為候選。package.json／Cargo.toml／SBOM 未改成 MIT。**本輪沒有重掃歷史或重新盤點依賴**，下列數據保留為前輪證據；本輪檢查基準 84a3af4。
 
 起始來源 adbe209a50286eb1ff1321c770dd8927c45d3e1d，dev/desktop-workspace，0.7.0 Development；當時 337 tracked files、119 reachable commits，提交名稱為 Codex／liu11-21。這只是歷史觀察，不把提交名稱當著作權人。最終工具與新文件納入後的來源快照見 evidence/open-source/source-ownership.json，其 head 是審查範圍，不冒充後續文件提交。
 
-逐檔記錄：hash、分類、觀察到的提交作者、首次提交、來源、宣告、可否 MIT、是否保留原授權、是否需同意及未知點。Python、React／TS、Rust、網頁、建置、Logo／圖示／截圖／媒體 fixture 都列入。現有 third_party/llama.cpp-b11810-LICENSE 保持原文；其餘檔案在缺少證明時一律不做權利推定。尚未對所有歷史程式做外部來源相似度比對；Logo 與媒體的生成／引用紀錄也需維護者提供。
+逐檔記錄保留原 head、hash、作者名稱與首次 Commit；人工 review_overlay 更新來源及權利決策分類，不冒充新掃描。第一方程式標為維護者主導 AI 輔助候選；vendor／schema／授權原文保留 upstream；Logo 是 AI 來源陳述、服務及輸入待確認；截圖另處理，合成 fixture 有 generator 可佐證。既有 inventory 只有 Codex／liu11-21 兩個提交名稱，沒有證據把它們認定為兩個獨立人類權利人。現有來源／copyright／SPDX／複製標示的有限檢查，未見明確無權複製或不相容片段；沒有進行全面相似度比對，不能承諾完全不存在第三方內容。
 
 依賴掃描以 npm／Cargo 鎖檔全部項目、Python 封裝與審查工具固定版本、可選 OpenVINO wheel、Runtime／模型 manifest 為範圍。docs/sbom/DEPENDENCY_LICENSES.json 保留原始 label；SPDX 接受清單內名稱，Cargo 舊 slash 表記依官方慣例正規化為 OR；無法正規化時 NOASSERTION，不生成虛假的自訂授權全文。licenseConcluded 均不代替法律決定。
 
@@ -20,6 +22,6 @@ Agent 實際檢查：tool_registry.py 的 definition 拒絕非 trusted、非 rea
 
 秘密審查使用 source_audit.py，僅輸出位置／類型／hash fingerprint，不輸出值、不測試認證。起始歷史 917 個文字 blob 沒有命中已設定的 Token／provider-key／private-key 規則；兩個 user-path 命中位於歷史 evidence/v070/upgrade-worker-local.json。這是個人路徑 metadata，沒有確認為憑證事件。二進位、截圖、模型檔、自由格式對話及未匹配憑證仍需人工檢查；不能把模式未命中寫成「無秘密」。未改寫 Git 歷史。
 
-MIT 採用前需確認各作者／素材權利，處理第三方引用與 Notice／相容性後，以獨立可審查提交將候選正文正式放入 LICENSE，同步 README／metadata／SBOM。確認署名不等於批准這一步。本輪無正式授權變更。
+第一方 MIT 決策與二進位發行放行分開：程式碼採用只涵蓋維護者可授權範圍；Logo、模型、Runtime、第三方來源保留獨立規則。若維護者確認已知合約／輸入例外及候選範圍並明確批准，才另行替換根 LICENSE、同步 metadata。第三方 Notice／Covered Source／Microsoft 分發等仍是對應發行的放行條件，不能因程式採 MIT 就略過，也不能因第三方未結案就一概宣稱第一方侵權。
 
 來源：[OSI MIT 官方模板](https://opensource.org/license/mit)。第三方版本證據及義務見 THIRD_PARTY_LICENSES.md；其原始文件不因本候選而改變。
