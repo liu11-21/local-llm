@@ -15,3 +15,5 @@
 | Windows Cargo／打包／安裝／provenance | 待本輪公開 Windows CI，完成後在此補入 Run／Commit／artifact／PE 結果，不以本機 UI 測試代替 |
 
 source-ownership.json 與 public-history-screen.json 記錄各自掃描的完整 head。產生報告本身必須在後續提交保存，因此不宣稱報告可對包含其自身新 hash 的同一 commit 完成自我列舉。repository-state.json 為 API 擷取時點快照，不代表未來設定。
+
+第一輪 Windows Run 43409027304：完整測試暴露 Agent restart fixture 的排程 ticker race，清理時仍可能執行先前排隊的任務並持有 SQLite。修正 test_agent_workflow.py：_dispatch mock 保留到 Desktop 關閉，兩個實例都在暫存目錄清理前關閉。保留所有核准／版本／restart 斷言，沒有忽略例外或略過測試；18 項 Agent／授權回歸本機通過。這是測試生命週期修正，未改產品資料庫或排程語意，待新 Windows Run 全驗證。

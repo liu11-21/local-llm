@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextlib import ExitStack
 from dataclasses import replace
 import json
 from tempfile import TemporaryDirectory
@@ -94,8 +95,13 @@ class ToolRegistryTests(TestCase):
 
 class AgentPlanTests(TestCase):
     def test_versions_independent_approval_and_restart(self):
-        with TemporaryDirectory() as directory:
+        with TemporaryDirectory() as directory, ExitStack() as cleanup:
             desktop = Desktop(Path(directory))
+            # A queued task starts a scheduler ticker even while _dispatch is
+            # mocked. Keep the mock until Desktop.close() has stopped it, so
+            # this restart fixture cannot launch inference during teardown.
+            cleanup.enter_context(patch.object(desktop.scheduler, "_dispatch"))
+            cleanup.callback(desktop.close)
             controlled_engine(desktop)
             desktop.models.mkdir()
             (desktop.models / "fixture.gguf").touch()
@@ -105,12 +111,12 @@ class AgentPlanTests(TestCase):
             self.assertNotEqual(first["id"], other["id"])
             revised = desktop.rpc("agent-plan", {**form, "previous": first["id"], "version": first["version"], "tools": []})
             self.assertEqual(revised["version"], 2)
-            with patch.object(desktop.scheduler, "_dispatch"):
-                payload = {"action": "agent", "confirmed": True, "id": first["id"]}
-                with self.assertRaises(ValueError):
-                    desktop.rpc("run", {**payload, "version": 1})
-                task = desktop.rpc("run", {**payload, "version": 2})
+            payload = {"action": "agent", "confirmed": True, "id": first["id"]}
+            with self.assertRaises(ValueError):
+                desktop.rpc("run", {**payload, "version": 1})
+            task = desktop.rpc("run", {**payload, "version": 2})
             reopened = Desktop(Path(directory))
+            cleanup.callback(reopened.close)
             self.assertEqual(reopened.agent_plans.get(other["id"])["state"], "awaiting_approval")
             self.assertEqual(reopened.agent_plans.get(first["id"])["state"], "interrupted")
             self.assertEqual(reopened.task_list()[0]["id"], task["id"])
