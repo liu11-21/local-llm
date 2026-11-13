@@ -1,0 +1,4 @@
+Unmodified SPDX 2.3 JSON schema, published by the SPDX project.
+Source: https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json
+License: CC-BY-3.0; original license indexed in DEPENDENCY_LICENSES.json.
+SPDX metadata CC0 does not relicense the schema or application.

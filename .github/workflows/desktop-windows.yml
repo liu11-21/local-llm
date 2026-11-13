@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: ['dev/desktop-workspace']
-    paths: ['desktop/**', '*.py', 'logo.ico', 'third_party/**', '.gitattributes', '.github/workflows/desktop-windows.yml']
+    paths: ['desktop/**', '*.py', 'logo.ico', 'third_party/**', 'LICENSE', '*POLICY.md', 'PRIVACY.md', 'SECURITY.md', 'THIRD_PARTY_LICENSES.md', 'RELEASE_PROCESS.md', 'docs/legal/**', 'docs/sbom/**', '.gitattributes', '.github/workflows/desktop-windows.yml']
   pull_request:
     paths: ['desktop/**', '*.py', 'logo.ico', 'third_party/**', '.gitattributes', '.github/workflows/desktop-windows.yml']
 
@@ -13,7 +13,11 @@ permissions:
 jobs:
   windows-x64:
     runs-on: windows-2022
-    timeout-minutes: 35
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     env:
       CARGO_TERM_COLOR: always
       PYTHONIOENCODING: utf-8
@@ -36,6 +40,8 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           "RUSTUP_TOOLCHAIN=$env:RUST_TOOLCHAIN" >> $env:GITHUB_ENV
           python -m pip install --only-binary=:all: -r desktop/requirements-windows.lock
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m pip install --only-binary=:all: -r desktop/requirements-audit.lock
       - name: Test Python and build the onedir worker
         shell: pwsh
         run: |
@@ -81,7 +87,11 @@ jobs:
         working-directory: desktop
         shell: pwsh
         run: |
-          cargo metadata --locked --format-version 1 --manifest-path src-tauri/Cargo.toml | Out-Null
+          cargo metadata --locked --format-version 1 --manifest-path src-tauri/Cargo.toml | Set-Content ../build/cargo-license-metadata.json -Encoding utf8
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python ../license_audit.py collect --output ../build/release-notices --network --crate-archives --cargo-metadata ../build/cargo-license-metadata.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python ../release_evidence.py prepare-notices --directory ../build/release-notices
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           npm run tauri -- build --target x86_64-pc-windows-msvc -- --locked
       - name: Verify installer inventory and produce checksums
@@ -119,6 +129,25 @@ jobs:
         run: |
           $installer = Get-ChildItem build/windows-review -Filter '*.exe' -File
           ./desktop/smoke-install.ps1 -Installer $installer.FullName -BaselineInstaller 'build/upgrade-baseline/Local LLM Workspace_0.6.2_x64-setup.exe'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Copy-Item -LiteralPath build/release-notices -Destination build/windows-review/notices -Recurse
+          python release_evidence.py verify --directory build/windows-review
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Attest candidate build provenance (not Windows code signing)
+        id: provenance
+        if: github.event_name != 'pull_request'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: build/windows-review/*.exe
+      - name: Preserve provenance bundle
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          BUNDLE_PATH: ${{ steps.provenance.outputs.bundle-path }}
+          ATTESTATION_URL: ${{ steps.provenance.outputs.attestation-url }}
+        run: |
+          Copy-Item -LiteralPath $env:BUNDLE_PATH -Destination build/windows-review/provenance.sigstore.json
+          @{source_commit=$env:GITHUB_SHA;run=$env:GITHUB_RUN_ID;attestation_url=$env:ATTESTATION_URL;authenticode='NotSigned';license='NOASSERTION';signpath='NOT APPLIED'} | ConvertTo-Json | Set-Content build/windows-review/PROVENANCE.json
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: LocalLLM-workspace-Windows-x64-unsigned

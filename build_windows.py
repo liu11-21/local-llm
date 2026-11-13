@@ -61,9 +61,12 @@ def build_installer(iscc, payload, thumbprint):
         if not signtool:
             raise SystemExit("SignTool is required on PATH for a signed build.")
         signing = ["sign", "/sha1", thumbprint, "/fd", "sha256", "/tr", "http://timestamp.digicert.com", "/td", "sha256"]
-        for path in sorted(payload.rglob("*")):
-            if path.suffix.lower() not in {".exe", ".dll", ".pyd"}:
-                continue
+        # Explicit wrapper only. Never re-sign Python, Microsoft, llama.cpp or other
+        # upstream binaries under this project's identity. Foundation approval of
+        # the PyInstaller wrapper/installer is still a separate prerequisite.
+        for path in (payload / "LocalLLM.exe",):
+            if not path.is_file() or path.is_symlink():
+                raise SystemExit("Missing or unsafe own application signing target.")
             valid = subprocess.run([signtool, "verify", "/pa", str(path)], capture_output=True).returncode == 0
             if not valid:
                 subprocess.run([signtool, *signing, str(path)], check=True)

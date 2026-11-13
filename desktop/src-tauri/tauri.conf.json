@@ -41,7 +41,8 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../../build/desktop-worker/LocalLLMWorker/": "worker/"
+      "../../build/desktop-worker/LocalLLMWorker/": "worker/",
+      "../../build/release-notices/": "notices/"
     },
     "windows": {
       "nsis": {

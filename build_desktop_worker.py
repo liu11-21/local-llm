@@ -8,6 +8,7 @@ import sys
 import json
 from check_workspace_version import check
 from workspace_version import build_info
+from release_evidence import seed
 
 ROOT = Path(__file__).resolve().parent
 BUILD = ROOT / "build"
@@ -44,6 +45,9 @@ def main():
         for file in package.files or ():
             if file.name.startswith("LICENSE"):
                 shutil.copyfile(package.locate_file(file), notices / f"{name}-{file.name}.txt")
+    # Keep source development usable without fetching Cargo sources. Release CI
+    # replaces this tracked review snapshot with its exact resolved build graph.
+    seed(BUILD / "release-notices")
 
 
 if __name__ == "__main__":

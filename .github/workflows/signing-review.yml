@@ -1,0 +1,13 @@
+name: Signing policy review (disabled candidate)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  policy-review-only:
+    if: ${{ false }}
+    runs-on: windows-2022
+    steps:
+      - name: Explain inactive candidate
+        shell: pwsh
+        run: Write-Output 'No signing request is configured. Review docs/RELEASE_SIGNING_PLAN.md first.'

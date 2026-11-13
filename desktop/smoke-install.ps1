@@ -65,6 +65,10 @@ try {
     if ($LASTEXITCODE) { throw 'Installed worker identity mismatch.' }
     python workspace_perf.py --worker $workerExe --repeats 3 --output build/windows-review/performance-packaged-worker.json
     if ($LASTEXITCODE) { throw 'Packaged worker baseline failed.' }
+    ./desktop/pe-inventory.ps1 -Root $installDir -Output build/windows-review/installed-pe-inventory.json
+    foreach ($notice in @('STATUS.json','workspace.spdx.json','DEPENDENCY_LICENSES.json','PRIVACY.md','LICENSE')) {
+        if (!(Test-Path -LiteralPath (Join-Path $installDir "notices/$notice"))) { throw "Installed notice missing: $notice" }
+    }
     @{status='PASS';baseline_source='4354605004c7d8db1f88bca8e3cc1ef38b135b55';baseline_version='0.6.2';version='0.7.0';
       baseline_startup_ms=$baselineStartup;process_cold_startup_ms=$startup;scope='WebView launch to live worker and database; OS cache not flushed';
       desktop_shortcut=$true;start_menu_shortcut=$true;worker_cleanup=$true;in_place_upgrade=$true} | ConvertTo-Json | Set-Content build/windows-review/installer-smoke.json

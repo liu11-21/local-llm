@@ -2,6 +2,10 @@
 
 React／Tauri Windows AI 工作台，整合文字聊天、Agent、Team、圖片／影片／音樂創作、模型下載及本地／遠端運算。
 
+授權準備中：MIT 僅為候選，署名擬為「劉仲軒」，程式碼與素材權利仍待確認；根 LICENSE 尚非 MIT 授權。第三方 Runtime／權重維持原條款。SignPath **未申請、未核准**，目前安裝包 **unsigned**。[開源準備與阻礙](docs/OPEN_SOURCE_READINESS.md) · [第三方授權](THIRD_PARTY_LICENSES.md) · [隱私與網路](PRIVACY.md) · [原始碼建置](BUILDING.md) · [Code signing policy](CODE_SIGNING_POLICY.md)。
+
+Windows 10/11 x64，需 WebView2；原始碼建置需 Python／Node／Rust／MSVC，固定版本見 BUILDING。聊天、Agent 工具核准與 Team 可依選擇在本機、雲端或配對 Host 執行；選用雲端／遠端會把必要內容送至該目的地。更新檢查、模型／Runtime 安裝及缺少 WebView2 時的安裝另有網路請求。模型所需 RAM／VRAM 依模型與工作流程而變。
+
 | 通道 | 版本／分支 | 取得方式 |
 |---|---|---|
 | Stable | v0.6.2 · main | [既有正式發行](https://github.com/liu11-21/local-llm/releases/tag/v0.6.2)，保留舊桌面版 |

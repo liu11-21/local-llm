@@ -1,0 +1,15 @@
+# NON-EXECUTABLE REVIEW EXAMPLE. Never copy into a live job without approval.
+# Intended placement: independent protected release workflow, after a verified
+# unsigned artifact upload, protected environment and per-request human approval.
+# No token, org, project, policy or artifact ID is configured here.
+- name: Submit approved own-artifact request (INACTIVE EXAMPLE)
+  if: ${{ false }}
+  uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+  with:
+    api-token: ''
+    organization-id: ''
+    project-slug: ''
+    signing-policy-slug: ''
+    github-artifact-id: ''
+    wait-for-completion: true
+    output-artifact-directory: signed-review
