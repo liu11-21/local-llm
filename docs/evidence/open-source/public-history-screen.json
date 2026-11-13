@@ -1,0 +1,43 @@
+{
+  "head": "7b3e9639b7d0b871585106493c6016e47ad5a41a",
+  "reachable_commits": 120,
+  "reachable_text_blobs_checked": 1281,
+  "binary_or_large_blobs_not_semantically_inspected": 92,
+  "findings": [
+    {
+      "path": "docs/evidence/v070/upgrade-worker-local.json",
+      "blob": "88a302a2b9e555fc1d4a19321beaf893ca7536f5",
+      "line": 90,
+      "type": "user-path",
+      "fingerprint": "acdaae7d0aae",
+      "status": "REVIEW REQUIRED",
+      "classification": "privacy-metadata",
+      "secret_value": "NOT EXPORTED"
+    },
+    {
+      "path": "docs/evidence/v070/upgrade-worker-local.json",
+      "blob": "16bdfb778d558cbcca4ce0a737e33d9c78a9f10f",
+      "line": 90,
+      "type": "user-path",
+      "fingerprint": "acdaae7d0aae",
+      "status": "REVIEW REQUIRED",
+      "classification": "privacy-metadata",
+      "secret_value": "NOT EXPORTED"
+    }
+  ],
+  "credential_status": "No matching credential patterns found; not proof of absence",
+  "limitations": [
+    "Offline pattern screening; no token validation or use",
+    "Screenshots/large/binary objects require human content review",
+    "Commit author names/emails are public metadata, not ownership evidence",
+    "No Git history was rewritten"
+  ],
+  "current_file_categories": {
+    "documentation-and-evidence": 104,
+    "build-and-dependency-manifest": 14,
+    "project-source": 168,
+    "asset-or-screenshot": 80,
+    "media-fixture": 3,
+    "vendored-license-or-schema": 326
+  }
+}

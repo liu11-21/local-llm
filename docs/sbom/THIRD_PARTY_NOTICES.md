@@ -1,6 +1,6 @@
 # Third-party inventory — generated, not a project license grant
 
-Source: adbe209a50286eb1ff1321c770dd8927c45d3e1d
+Source: 7b3e9639b7d0b871585106493c6016e47ad5a41a
 A: tracked repository. B: installer or potential compiled dependency. C: downloaded after installation. D: user supplied.
 Declared licenses are upstream metadata, not an independent legal conclusion. Complete lock graph includes non-shipped build/optional targets.
 

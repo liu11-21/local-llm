@@ -16,6 +16,8 @@
 
 必須人工處理：MPL 對應來源提供；PyInstaller 例外適用範圍；Python／OpenSSL／libffi／SQLite 及工具鏈嵌入元件；Microsoft 再散布來源／條款；Comfy portable 的 transitive CUDA／Torch／FFmpeg；OpenVINO wheel 子元件；各模型權重及轉換條款；網頁 CDN 完整依賴。這些未知不等於已發現違法，也不等於批准散布。
 
+Agent 實際檢查：tool_registry.py 的 definition 拒絕非 trusted、非 read-only、network 或 modifies_state 工具；內建只有 hardware／models／engines／tasks／work 五種查詢，沒有任意 shell 或檔案寫入工具。agent_plans.py 保存核准及事件，重啟會中斷舊執行；desktop_agent.py 綁定工具契約及目的地同意。Runtime 安裝會執行另外下載的第三方程式，不能因 Agent 的唯讀 allowlist 就把下載器與所有第三方程式安全視為 PASS。尚無發現用於漏洞利用或繞過執行環境防護的內建 Agent 工具；這不是 Foundation 的資格認定。
+
 秘密審查使用 source_audit.py，僅輸出位置／類型／hash fingerprint，不輸出值、不測試認證。起始歷史 917 個文字 blob 沒有命中已設定的 Token／provider-key／private-key 規則；兩個 user-path 命中位於歷史 evidence/v070/upgrade-worker-local.json。這是個人路徑 metadata，沒有確認為憑證事件。二進位、截圖、模型檔、自由格式對話及未匹配憑證仍需人工檢查；不能把模式未命中寫成「無秘密」。未改寫 Git 歷史。
 
 MIT 採用前需確認各作者／素材權利，處理第三方引用與 Notice／相容性後，以獨立可審查提交將候選正文正式放入 LICENSE，同步 README／metadata／SBOM。確認署名不等於批准這一步。本輪無正式授權變更。

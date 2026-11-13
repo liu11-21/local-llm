@@ -3,12 +3,12 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "LocalLLM-Workspace-0.7.0-license-review",
-  "documentNamespace": "https://github.com/liu11-21/local-llm/sbom/adbe209a50286eb1ff1321c770dd8927c45d3e1d/license-review-71fb8d45581770e1",
+  "documentNamespace": "https://github.com/liu11-21/local-llm/sbom/7b3e9639b7d0b871585106493c6016e47ad5a41a/license-review-edfbeb48b159190f",
   "creationInfo": {
     "creators": [
       "Tool: LocalLLM license_audit.py"
     ],
-    "created": "2026-11-13T10:21:21Z"
+    "created": "2026-11-13T10:23:20Z"
   },
   "packages": [
     {
