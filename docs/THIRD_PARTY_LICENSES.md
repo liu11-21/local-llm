@@ -27,3 +27,30 @@ MIT／BSD／ISC 通常允許商用、修改及再散布，但仍須保留聲明�
 下載元件與模型沒有在本輪刪除或重新授權。未完成的來源、全文、binary mapping、隱私與 SignPath 問題見 LICENSE_AUDIT／OPEN_SOURCE_BLOCKERS。原始文件位元組與 hash 由 license_audit.py validate 驗證。
 
 依據：[PyInstaller 官方 COPYING](https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt)、[Cargo license 欄位規則](https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields)、[Microsoft 再散布說明](https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files)。版本專屬證據以 SBOM 內原始內容優先。
+
+## 現有 Windows payload 的限定映射
+
+本輪僅沿用 [installed-pe-inventory.json](evidence/open-source/installed-pe-inventory.json) 的
+72 PE，以及同一舊 Run 43409624156／來源 12869bc 的
+[CI-NOTICE-INDEX.json](evidence/open-source/CI-NOTICE-INDEX.json) 與
+[CI_NOTICES.md](evidence/open-source/CI_NOTICES.md)。不是新二進位或全 641 項盤點。
+表中簽章候選身分不表示已獲 Foundation 批准；新建置須再次匹配實際 payload。
+
+| 實際 PE 分組 | 數量 | 已有來源／原文對應 | 尚需處理 |
+|---|---:|---|---|
+| Rust shell／Worker／NSIS uninstaller | 3 | `localllm-desktop.exe`、`worker/LocalLLMWorker.exe`、`uninstall.exe`；第一方程式現為 MIT，嵌入上游仍另計 | 靜態 Rust 圖、PyInstaller bootloader、NSIS 生成碼的可簽範圍需 Foundation；Worker 原包 PE FileVersion 缺失，不冒稱已修 |
+| CPython DLL／擴充模組 | 18 | CI index 的 CPython 3.12.10、Python-2.0；原包 Python-LICENSE 及 CI 原文保留 | 以該發行版綜合 LICENSE 對應嵌入子元件，不用根 MIT 取代 |
+| Microsoft API sets／UCRT／VC Runtime | 45 | PE 路徑及既有簽章證據已定位 | 合法再散布來源／條款及 Foundation System Library 接受度；不是重簽對象 |
+| cffi `_cffi_backend` | 1 | cffi 2.1.1 宣告 MIT-0；原文 hash `5ba24ddc57067f9249add644c3afc41a5d6dc37e23433ef759d95df370b0af63` | 保留 upstream 身分／原文，不因 NotSigned 就納入自己的簽章 |
+| cryptography `_rust.pyd` | 1 | 50.0.2，Apache-2.0 OR BSD-3-Clause；CI 已有 LICENSE／LICENSE.APACHE／LICENSE.BSD | 內含元件與所選授權義務對應，不重簽 upstream PYD |
+| OpenSSL DLL | 2 | libcrypto／libssl，既有 PE 版本 3.0.16；CI Apache-2.0 原文 | 確認該版本的完整 Notice／嵌入來源；不假設所有 crypto 只一份頂層授權 |
+| libffi／SQLite DLL | 2 | `libffi-8.dll`／`sqlite3.dll`，既有 Python payload 證據 | 核對 CPython 綜合 LICENSE 對其版本的涵蓋，缺失則補對應上游原文；不推定已侵權 |
+
+安裝器本體在 installed inventory 外，另由 BUILD.json／SHA256SUMS 識別；應與上述三個自身產物
+分別設定可簽範圍，不做遞迴「簽所有 EXE／DLL／PYD」。WebView2 bootstrapper／系統安裝及
+Tauri 靜態程式不會只靠這 72 個檔案全部涵蓋。MPL Covered Source 義務應針對實際編入的檔案
+確認並提供，不把僅存在完整 lock graph 的其他平台依賴直接當作 Windows 缺陷。
+
+所以目前沒有新增已證實迫使第一方放棄 MIT 的相容性問題；正式整包放行仍待上述實際映射、
+適用授權／來源提供及 Logo 資產方案完成。這些待確認事項不是全部都需要 Foundation 判法律；
+維護者可先完成可核對的 Notice／來源材料，再讓 Foundation 決定其自己的服務資格。

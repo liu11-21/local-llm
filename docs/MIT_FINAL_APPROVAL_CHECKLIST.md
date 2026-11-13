@@ -14,6 +14,8 @@
 - [x] **A3 授權範圍 — MAINTAINER CONFIRMATION / 已批准。** 第一方 Python／TypeScript／React／CSS／Rust、測試、建置與維護腳本及技術文件採 MIT。第三方元件、Runtime、模型維持原授權；Logo／品牌素材／UI 截圖及合成媒體檔暫時排除。fixture generator 程式屬第一方 MIT。Logo 的後續選擇不再阻擋程式碼 MIT。
 - [x] **A4 正式採用 — MAINTAINER CONFIRMATION / 已批准。** 維護者明確同意在上述來源與範圍正式採用標準 OSI MIT，署名 **Copyright (c) 2026 劉仲軒**，同步必要授權 metadata。
 
+獨立採用 Commit：`fae698d30a82340a04384571575fc440679b01e2`。
+
 現行許可：[根 LICENSE](../LICENSE)；適用邊界：[LICENSE_SCOPE.md](../LICENSE_SCOPE.md)。
 原狀態聲明完整保留於 [LICENSE_STATUS.md](../LICENSE_STATUS.md)。
 核准是範圍明確的維護者授權決策，不是 SignPath、第三方權利人或法院的核准。

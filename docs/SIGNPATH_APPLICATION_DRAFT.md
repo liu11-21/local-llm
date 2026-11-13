@@ -19,13 +19,15 @@
 | Approvers | 單人兼任是否可接受待書面確認，否則另邀核准者；每次正式簽章仍需人工核准，沒有啟用自動核准 |
 | 資格結論 | 尚不具備正式申請聲明條件；本地對照 5/14 PASS，詳 SIGNPATH_ELIGIBILITY |
 
-提交前需向 Foundation 書面詢問：
+## 最少需要 Foundation 回覆的四組問題
 
-1. Tauri 的限期 Actions artifact 能否作相同形式既有發行證據？若不足，持久公開的 unsigned NSIS 發行應附何資料？
-2. 系統再散布 VC／UCRT／API sets、WebView2 bootstrapper 是否適用允許範圍？需要哪些來源／授權證據？
-3. Rust shell 靜態連結 OSS、PyInstaller bootloader wrapper、NSIS installer／uninstaller 的可簽範圍及 artifact configuration 為何？上游 DLL 保持原簽章可否接受？
-4. 使用者選擇下載的 Comfy portable、CUDA／FFmpeg、OpenVINO、受限制模型權重及 Agent 核准工具能力，會如何影響資格？
-5. 啟動更新查詢、可選 Runtime 的第三方 telemetry、網頁 CDN 與雲端／遠端目的地，還需哪些安裝告知或停用選項？
+本次不把抽象 AI 著作權疑慮重新設為 MIT gate。公開條件未列 AI 輔助專屬要求，
+在來源說明中如實揭露，請 Foundation 如有額外文件要求一併指出即可。
+
+1. **單人責任與來源文件：** 一人兼任 Author／審查外部提案／逐次 Approver 是否可接受，需要何種可執行的保障？如 AI 輔助來源有額外要求，請明示。
+2. **確切產物與系統元件：** Tauri 靜態 OSS、PyInstaller Worker、NSIS installer／uninstaller 的可簽清單／嵌套順序，及 Microsoft runtime／WebView2 的 System Library 要件。Logo 尚須另完成可接受許可，不要求豁免其全部元件規則；Worker 版本資源須在請求前補齊。
+3. **可選下載與隱私：** 未隨包的 ComfyUI／OpenVINO／llama.cpp 與獨立授權模型（包括受限模型）是否影響資格，以及相關 telemetry／啟動更新查詢需要的安裝告知與可停用安排。
+4. **既有發行證據：** 限期的同形式 unsigned NSIS Actions 產物是否足夠；若不足，先建立持久公開 Workspace 預發行版及應附證據為何？本輪未建立 Release／Tag。
 
 附件建議：權利確認、現行正式 LICENSE 與 LICENSE_SCOPE（已具備）、SBOM 原始文檔、第三方 Notice／Covered Source 提供方式、PE 映射、公開 Windows Run、candidate hashes／provenance、roles／MFA／分支保護證據。不要在申請草稿附私人金鑰或真實使用者對話。
 
@@ -33,25 +35,47 @@
 
 **DRAFT ONLY — not sent; not an application or statement of eligibility.**
 
-Subject: Eligibility clarification: AI-assisted, single-maintainer Local LLM Workspace
+Subject: Eligibility clarification — Local LLM Workspace (MIT, single maintainer)
 
 Dear SignPath Foundation team,
 
-I maintain Local LLM Workspace: https://github.com/liu11-21/local-llm (dev/desktop-workspace, 0.7.0 Development). I direct its requirements and integration; first-party code is primarily Codex/AI-assisted, and the Logo is reported as AI-generated. The maintainer has explicitly approved scoped MIT adoption for first-party code, tests, build scripts and technical documentation (Copyright (c) 2026 劉仲軒). Logos, brand assets, screenshots and synthetic media are excluded for now; this does not clear the whole installer. Upstream code and assets retain their own terms; we do not claim exclusive copyright in every AI output.
+I maintain Local LLM Workspace: https://github.com/liu11-21/local-llm
+(dev/desktop-workspace, 0.7.0 Development). I direct its requirements and integration;
+first-party development is primarily Codex/AI-assisted. Following explicit maintainer
+approval, first-party code, tests, build scripts and technical documentation now use
+MIT (Copyright (c) 2026 劉仲軒; adoption commit fae698d).
 
-A separate new Logo candidate was generated with the OpenAI built-in image tool, without external image references. The installed Logo is unchanged.
+Third-party components retain their terms. Logos, brand assets, screenshots and
+synthetic media are excluded from that grant for now; we will resolve distributable
+asset licensing before applying. The installed Logo is reported as AI-generated;
+a separate review candidate has recorded OpenAI generation inputs. We do not assert
+copyright in every AI output or claim that the entire installer is cleared.
 
 Before applying, could you clarify:
 
-1. Are there additional provenance or rights-documentation requirements for AI-assisted source or an AI-generated Logo?
-2. May a single maintainer hold Author, Reviewer and Approver responsibilities, review external contributions and manually approve each signing request, or is another human required? Which safeguards would you require?
-3. Which artifacts could be signed: a Tauri shell with linked OSS crates, a PyInstaller Worker with upstream bootloader, and generated NSIS installer/uninstaller? We would preserve upstream DLL/PYD signatures and address the Worker's missing PE version metadata.
-4. Does an application that optionally downloads ComfyUI portable, OpenVINO, llama.cpp and separately licensed AI weights qualify? Models/runtimes are not bundled in the Workspace installer. Please advise on restricted model terms, system libraries and third-party telemetry.
-5. Is the existing expiring unsigned Tauri NSIS Actions artifact sufficient evidence of prior release, or should we first publish a persistent corresponding unsigned release?
+1. May one maintainer be Author, review external contributions and manually approve
+   each signing request? What safeguards are required? Please also identify any
+   additional provenance requirements for AI-assisted source or generated assets.
+2. Can your artifact policy cover a Tauri shell with linked OSS, a PyInstaller Worker
+   and NSIS installer/uninstaller? What nested-signing order and Microsoft runtime /
+   WebView2 system-library evidence are required? Upstream DLL/PYD files would not be
+   re-signed; the Worker's missing PE version metadata must be addressed first.
+3. Do optional post-install downloads of ComfyUI, OpenVINO, llama.cpp and separately
+   licensed model weights (including restricted models) affect eligibility? What
+   installer notices or opt-outs are required for third-party telemetry and update
+   checks? These optional AI runtimes/weights are not bundled; Python is bundled.
+4. Is an expiring, unsigned Tauri NSIS GitHub Actions artifact sufficient prior-release
+   evidence, or must a persistent corresponding unsigned release be published first?
 
-We have GitHub-hosted build evidence, SBOM, notices, PE inventory and verified provenance. Roles, MFA/protection evidence and remaining redistribution obligations will be resolved before any application or signing request.
+We have GitHub-hosted build evidence, SBOM, original notices, PE inventory and verified
+provenance. Redistribution/asset obligations, named roles and MFA/protection evidence
+will be resolved before an application or signing request.
 
 Thank you,
-Local LLM Workspace maintainer (sender identity to be confirmed)
+Local LLM Workspace maintainer (sender identity/contact to be confirmed)
 
-本草稿不包含有效 Token、私人金鑰或已批准的角色；送件身分與內容仍由維護者確認。本輪只保存文字，未向 Foundation 聯絡。公開條款的 AI／單人安排缺口見 SIGNPATH_ELIGIBILITY.md；帳號操作步驟見 CODE_SIGNING_POLICY.md。
+本草稿 **未寄出、不是申請、不是資格通過聲明**。送件身分與聯絡方式仍待維護者確認；
+未授權寄信或送件前不對外提交。沒有 Token、金鑰、使用者對話或機密附件。
+正式入口為 [官方申請頁](https://signpath.org/apply.html)，其嵌入表單尚未填寫，未取得欄位不臆填。
+公開條件的解讀與外部待決見 [14 項表](SIGNPATH_ELIGIBILITY.md)，
+帳號操作見 [Code signing policy](CODE_SIGNING_POLICY.md)。

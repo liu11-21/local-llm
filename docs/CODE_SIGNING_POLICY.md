@@ -22,3 +22,11 @@
 4. 保存角色、規則、MFA 及一次人工核准流程的非敏感證據，再更新同一 14 項資格表。本輪只提供步驟，沒有改帳號、分支或環境設定。
 
 依據：[Foundation 條件](https://signpath.org/terms.html)、[SignPath approval configuration](https://docs.signpath.io/projects#approval-process)、[GitHub 2FA](https://docs.github.com/en/authentication/securing-your-account-with-two-factor-authentication-2fa/configuring-two-factor-authentication)、[分支保護](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/managing-a-branch-protection-rule)。
+
+## MIT 採用後的唯讀核對（2026-11-13）
+
+第一方 MIT 已採用，但此簽章政策仍是候選，沒有 Foundation 贊助或服務啟用。
+以既有認證唯讀 GET 核對：`dev/desktop-workspace` 的 `protected=false`，repo rulesets 為 0；
+`/user` 沒有提供 MFA 欄位，故不判定已啟用或未啟用。仍需維護者依上列步驟確認 GitHub MFA，
+指派實際角色並安排保護；日後取得 SignPath 帳號後另確認全員 MFA。
+沒有代改任何安全設定，也不提供繞過人工核准的方案。

@@ -2,8 +2,8 @@
 
 **First-party MIT adopted on 2026-11-13 following explicit maintainer approval of A1–A4.**
 Reviewed source: `d74bb27f7cba65c0bb291e0a50a5fc143fef4062`; attribution: **Copyright (c) 2026 劉仲軒**.
-The adoption commit is the independent commit that first changes root LICENSE to MIT;
-it is identifiable with `git log -- LICENSE` (no self-referential commit hash is invented).
+The independent MIT adoption commit is `fae698d30a82340a04384571575fc440679b01e2`.
+It changes root LICENSE after the separate maintainer approval.
 
 The task request itself was not treated as approval. The maintainer separately replied:
 「a1:沒有 a2是，目前都是codex生成的 a3:是   a4 ，同意」.

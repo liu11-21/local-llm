@@ -1,0 +1,30 @@
+{
+  "review_date": "2026-11-13",
+  "method": "read-only authenticated GitHub REST; no account/settings writes",
+  "login": "liu11-21",
+  "github_mfa": "NOT EXPOSED by this credential/API response",
+  "development_branch_protected": false,
+  "repository_ruleset_count": 0,
+  "signpath_mfa": "NOT VERIFIED; no approved SignPath account/project",
+  "roles": "NOT VERIFIED; not assigned or approved",
+  "notes": "Single-account observations do not establish all-team MFA or SignPath eligibility.",
+  "mit_adoption_commit": "fae698d30a82340a04384571575fc440679b01e2",
+  "existing_payload": {
+    "source_commit": "12869bc64cedea0a7a8d562da30384223ed2e531",
+    "run": 43409624156,
+    "pe_count": 72,
+    "groups": {
+      "own_artifact_candidates": 3,
+      "CPython_binaries_extensions": 18,
+      "Microsoft_runtime": 45,
+      "cffi": 1,
+      "cryptography": 1,
+      "OpenSSL": 2,
+      "libffi": 1,
+      "SQLite": 1
+    },
+    "scope": "existing evidence mapping only; no new build, dependency collection or legal clearance"
+  },
+  "external_application": "NOT SENT",
+  "account_or_rules_mutations": "NONE"
+}

@@ -10,7 +10,7 @@
 | T1 | EXTERNAL REVIEW | 對實際隨包散布的元件完成原 Notice／MPL Covered Source／工具鏈、Python 子元件及 Microsoft 再散布對應 | 阻擋宣稱整包授權已全數放行；已保存 SBOM／325 原文仍不代表義務全履行。build-only／其他平台缺口不可直接推定都是 Windows 違規 |
 | T2 | EXTERNAL REVIEW | Comfy portable、CUDA／Torch／FFmpeg、OpenVINO、CDN 與模型的各自條款／來源 | 對應 Runtime／模型下載與再散布需個別結案；不把 C／D 類權重改 MIT，不因此一律否定第一方程式碼 |
 | S1 | EXTERNAL REVIEW | Foundation 對 AI 輔助來源、單人兼任角色、Rust 靜態碼／Worker bootloader／NSIS uninstaller 的接受度 | 簽章資格與可簽清單需書面答覆；Worker 缺 PE FileVersion 須補齊／確認規則；不重簽 upstream DLL／PYD |
-| S2 | MAINTAINER CONFIRMATION | MFA、實際角色、分支／環境保護及私人安全受理人 | 維護者自行設定並保留證據；本輪未更動帳號／規則，步驟見 CODE_SIGNING_POLICY.md |
+| S2 | MAINTAINER CONFIRMATION | MFA、實際角色、分支／環境保護及私人安全受理人；本輪唯讀分支 protected=false、rulesets=0，/user 未提供 MFA 欄位 | 維護者自行設定並保留證據；本輪未更動帳號／規則，步驟見 CODE_SIGNING_POLICY.md |
 | S3 | EXTERNAL REVIEW | Actions artifact 是否符合對應形式發行；更新／第三方 telemetry 的告知與可停用要求；下載 Runtime／模型影響 | 需 Foundation 審閱；未寄出英文草稿見 SIGNPATH_APPLICATION_DRAFT.md |
 | P1 | MAINTAINER CONFIRMATION | 舊證據的兩筆 user-path metadata 與截圖／對話的隱私人工複核 | 沿用既有位置報告，不重掃歷史或輸出值；沒有已確認有效憑證事件，不擅自改寫歷史 |
 
