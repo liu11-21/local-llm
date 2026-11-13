@@ -14,6 +14,12 @@ VERIFIED＝所述證據／有限檢查已核對，不是全面法律保證；MAI
 | 4. MIT 生效前還需何確認？ | BLOCKED | 尚缺維護者對下面 A1–A4 的最終確認／批准。禁止僅因來源紀錄更新就把候選模板覆蓋 root LICENSE |
 | 5. SignPath 還缺何外部核准？ | EXTERNAL REVIEW | Foundation 對 AI 來源／單人角色／混合二進位／下載 Runtime、模型及既有發行形式的答覆與正式接受；帳號 MFA／保護由維護者設定，不能用本報告代替 |
 
+### LocModel 來源專項結案範圍（2026-11-13）
+
+新增 [LOCMODEL_PROVENANCE_AUDIT.md](LOCMODEL_PROVENANCE_AUDIT.md)，基準 a47ab25：**NO ISSUE IDENTIFIED，目前沒有足以實質阻擋 Local LLM 第一方採 MIT 的 LocModel 來源問題**。已查核可達 Git 歷史、完整檔案／詞法與形狀候選、目前與歷史圖像、選定 UI 及可見開發指示；沒有找到直接複製的具體候選。官方完整原碼、其他版本／未保存對話及方法無法涵蓋的轉化相似屬 **NOT VERIFIED**，不是已證實問題，也不標成已排除。
+
+因此不新增「先取得 LocModel 概括授權」的核准欄，不取消原本 A1–A4，更不因本輪無具體問題就代為勾選。只有出現可定位的具體複製／權利主張才重開該範圍；根 LICENSE 仍是狀態聲明，MIT 尚未正式採用。
+
 ## 第一方 MIT 候選範圍
 
 | 候選範圍 | 例示／限制 |
