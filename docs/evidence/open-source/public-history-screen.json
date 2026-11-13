@@ -1,7 +1,7 @@
 {
-  "head": "7b3e9639b7d0b871585106493c6016e47ad5a41a",
-  "reachable_commits": 120,
-  "reachable_text_blobs_checked": 1281,
+  "head": "12869bc64cedea0a7a8d562da30384223ed2e531",
+  "reachable_commits": 122,
+  "reachable_text_blobs_checked": 1292,
   "binary_or_large_blobs_not_semantically_inspected": 92,
   "findings": [
     {
@@ -33,7 +33,7 @@
     "No Git history was rewritten"
   ],
   "current_file_categories": {
-    "documentation-and-evidence": 104,
+    "documentation-and-evidence": 107,
     "build-and-dependency-manifest": 14,
     "project-source": 168,
     "asset-or-screenshot": 80,

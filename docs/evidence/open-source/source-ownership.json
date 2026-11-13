@@ -1,5 +1,5 @@
 {
-  "head": "7b3e9639b7d0b871585106493c6016e47ad5a41a",
+  "head": "12869bc64cedea0a7a8d562da30384223ed2e531",
   "proposed_attribution": "劉仲軒",
   "rights_confirmation": "PENDING",
   "files": [
@@ -150,7 +150,7 @@
     },
     {
       "path": "DEPENDENCY_LICENSES.json",
-      "sha256": "e648a10e406d6e1b302676354f1ca1ebbae7c5025e7c4d21763bcc01e8906486",
+      "sha256": "e99b37eb75c305a59c0f8b79d60d8399e687e8e1801b7c8ab38ca5ef64328aa0",
       "category": "documentation-and-evidence",
       "observed_commit_authors": [
         "Codex"
@@ -214,7 +214,7 @@
     },
     {
       "path": "PRIVACY.md",
-      "sha256": "0ff522c7d5f957d8b3c4716c5246b1065f727f69f7d287e013d36bb9863bd118",
+      "sha256": "7bda61256ffd2851b490f93e22d1c7e0a293bbf5a23f7dd27d4b36e3ca50a15e",
       "category": "documentation-and-evidence",
       "observed_commit_authors": [
         "Codex"
@@ -1773,7 +1773,7 @@
     },
     {
       "path": "docs/LICENSE_AUDIT.md",
-      "sha256": "e4d625d527700b1d142fd478f67e129e4946c7113b126049b9c37fc68a5fe80f",
+      "sha256": "b1fc3799c8f9655ac107428ec21f45bf0d1b4bdc2927ac5d0ab6f9cfcb9dc1a0",
       "category": "documentation-and-evidence",
       "observed_commit_authors": [
         "Codex"
@@ -2589,12 +2589,60 @@
     },
     {
       "path": "docs/evidence/open-source/VALIDATION.md",
-      "sha256": "df8fa2b11e09baf1a052eb7b897f63306930b495dc4dcbc30ed786db36e66dd4",
+      "sha256": "e4994006ee1197042e313bd0ffd9a4c8e36127592bc886a4b4ba863d556ca3bf",
       "category": "documentation-and-evidence",
       "observed_commit_authors": [
         "Codex"
       ],
       "first_observed_commit": "7b3e9639b7d0b871585106493c6016e47ad5a41a",
+      "original_author": "NOT VERIFIED; commit authors are not legal ownership proof",
+      "source": "Repository history; external/AI/material provenance not independently established",
+      "declared_license": "NOASSERTION",
+      "mit_relicensing": "BLOCKED pending rights confirmation",
+      "retain_original_license": false,
+      "third_party_consent": "REVIEW REQUIRED if external contributions/materials",
+      "status": "REVIEW REQUIRED"
+    },
+    {
+      "path": "docs/evidence/open-source/public-history-screen.json",
+      "sha256": "74446edd16c498da8f9e869f9e29345e1a8a04e9ac168d4e97cfa5d6a62d33f0",
+      "category": "documentation-and-evidence",
+      "observed_commit_authors": [
+        "Codex"
+      ],
+      "first_observed_commit": "eafb6eeadd7183b3295f3a1656c24fb7387811f3",
+      "original_author": "NOT VERIFIED; commit authors are not legal ownership proof",
+      "source": "Repository history; external/AI/material provenance not independently established",
+      "declared_license": "NOASSERTION",
+      "mit_relicensing": "BLOCKED pending rights confirmation",
+      "retain_original_license": false,
+      "third_party_consent": "REVIEW REQUIRED if external contributions/materials",
+      "status": "REVIEW REQUIRED"
+    },
+    {
+      "path": "docs/evidence/open-source/repository-state.json",
+      "sha256": "a87a8a492bffeda327d58872de4e59a8b01f58f16ebf7ded65e576ca905d0167",
+      "category": "documentation-and-evidence",
+      "observed_commit_authors": [
+        "Codex"
+      ],
+      "first_observed_commit": "eafb6eeadd7183b3295f3a1656c24fb7387811f3",
+      "original_author": "NOT VERIFIED; commit authors are not legal ownership proof",
+      "source": "Repository history; external/AI/material provenance not independently established",
+      "declared_license": "NOASSERTION",
+      "mit_relicensing": "BLOCKED pending rights confirmation",
+      "retain_original_license": false,
+      "third_party_consent": "REVIEW REQUIRED if external contributions/materials",
+      "status": "REVIEW REQUIRED"
+    },
+    {
+      "path": "docs/evidence/open-source/source-ownership.json",
+      "sha256": "20b8a9c756baf2892b3961526bedca380d2da036db37bc350c31b88bfbbea3de",
+      "category": "documentation-and-evidence",
+      "observed_commit_authors": [
+        "Codex"
+      ],
+      "first_observed_commit": "eafb6eeadd7183b3295f3a1656c24fb7387811f3",
       "original_author": "NOT VERIFIED; commit authors are not legal ownership proof",
       "source": "Repository history; external/AI/material provenance not independently established",
       "declared_license": "NOASSERTION",
@@ -3085,7 +3133,7 @@
     },
     {
       "path": "docs/sbom/DEPENDENCY_LICENSES.json",
-      "sha256": "8ea11f3aa92ccb8084adfdbc809e5f0e46bb6bcfb145cba67473a7a41ffaf4db",
+      "sha256": "c2ee8c36501566b0fa57880f6aa109edc0e0b5e2bda77b3b7c051734e4b8c147",
       "category": "documentation-and-evidence",
       "observed_commit_authors": [
         "Codex"
@@ -3101,7 +3149,7 @@
     },
     {
       "path": "docs/sbom/THIRD_PARTY_NOTICES.md",
-      "sha256": "a6c550d38a7c32a7d956f9a23e93380c56b7f98ca466b08f7a64b26e5968b6b6",
+      "sha256": "969afe4fdb49daa499c667ed0658989620cb39fcddec04688677c84cafb65da9",
       "category": "documentation-and-evidence",
       "observed_commit_authors": [
         "Codex"
@@ -8333,7 +8381,7 @@
     },
     {
       "path": "docs/sbom/workspace.spdx.json",
-      "sha256": "aed8f3eaf93ac1bdf3a71b80d68145dc90ac5f6a41565835e4aad8aa163cd6ec",
+      "sha256": "ae7b00729a5f871a9d1d63de6407e535d810c9d2adf27a6cd619ebeba8270c66",
       "category": "documentation-and-evidence",
       "observed_commit_authors": [
         "Codex"
@@ -10305,7 +10353,7 @@
     },
     {
       "path": "test_agent_workflow.py",
-      "sha256": "06dc9f0ea285071b6787df75384788cb1fb8e81a2b8bba843316eef49e04b1eb",
+      "sha256": "57f20e309e6ef8bb0e7c9ac067eaa3cc7da4ab45dfbfae4871e8e3b9aef758d9",
       "category": "project-source",
       "observed_commit_authors": [
         "Codex"

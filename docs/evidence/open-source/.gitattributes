@@ -1,0 +1,10 @@
+# Imported CI evidence and upstream notices retain their exact bytes on checkout.
+/ci-extra-license-texts/** -text whitespace=cr-at-eol
+/provenance.sigstore.json -text whitespace=cr-at-eol
+/CI-SBOM.spdx.json -text whitespace=cr-at-eol
+/CI-NOTICE-INDEX.json -text whitespace=cr-at-eol
+/BUILD.json -text whitespace=cr-at-eol
+/PROVENANCE.json -text whitespace=cr-at-eol
+/installed-pe-inventory.json -text whitespace=cr-at-eol
+/installer-smoke.json -text whitespace=cr-at-eol
+/SHA256SUMS.txt -text whitespace=cr-at-eol

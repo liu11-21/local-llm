@@ -16,3 +16,5 @@ MIT：**候選，未採用**。SignPath：**未申請／未核准**。Windows：
 文件索引：[權利與授權](LICENSE_AUDIT.md)、[依賴義務](THIRD_PARTY_LICENSES.md)、[機器清單與原文](sbom/)、[SignPath 資格](SIGNPATH_ELIGIBILITY.md)、[申請草稿](SIGNPATH_APPLICATION_DRAFT.md)、[簽章政策](CODE_SIGNING_POLICY.md)、[發行規劃](RELEASE_SIGNING_PLAN.md)、[阻礙清單](OPEN_SOURCE_BLOCKERS.md)。
 
 Windows 安裝包需包含所有應有原始 Notices，並保留 upstream PE 身分；本輪增加獨立 notices resource，修正舊版遞迴重簽風險。缺失的上游著作權 Notice／Covered Source 或 Microsoft 分發證據必須在正式採用／申請前補齊。不能用把整包命名 MIT 的方式通過。
+
+本輪公開 [Windows Run 43409624156](https://github.com/liu11-21/local-llm/actions/runs/43409624156) 全通過，來源 12869bc64cedea0a7a8d562da30384223ed2e531；候選下載後的 SHA、72 PE、SPDX／Notices 與 GitHub 來源證明均已獨立核對。[完整驗收與原始證據](evidence/open-source/VALIDATION.md) · [實際 CI Notices](evidence/open-source/CI_NOTICES.md)。Worker PE FileVersion 尚未提供，正式簽章範圍與 metadata 仍需確認。版本仍為 0.7.0 Development，沒有新增正式 Release 或簽章請求。

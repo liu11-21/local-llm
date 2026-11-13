@@ -1,0 +1,26 @@
+{
+  "run": 43409624156,
+  "commit": "12869bc64cedea0a7a8d562da30384223ed2e531",
+  "artifact_id": 14029707170,
+  "archive_sha256": "f20c7afd26bff100b3f0a3e2b1960cb0d2b994abd893d273efdece9e8b6b74ea",
+  "installer_sha256": "c0b1e5c6a92ff7cc339561617b73762b0daa29fbbeba8631d1e6a29466842116",
+  "bytes": 13457394,
+  "authenticode": "NotSigned",
+  "url": "https://github.com/liu11-21/local-llm/actions/runs/43409624156",
+  "provenance_verification": "PASS",
+  "verifier": "GitHub CLI 2.104.0",
+  "predicate_type": "https://slsa.dev/provenance/v1",
+  "certificate": {
+    "sourceRepositoryURI": "https://github.com/liu11-21/local-llm",
+    "sourceRepositoryDigest": "12869bc64cedea0a7a8d562da30384223ed2e531",
+    "sourceRepositoryRef": "refs/heads/dev/desktop-workspace",
+    "sourceRepositoryIdentifier": "1449910217",
+    "runnerEnvironment": "github-hosted",
+    "buildConfigURI": "https://github.com/liu11-21/local-llm/.github/workflows/desktop-windows.yml@refs/heads/dev/desktop-workspace",
+    "buildConfigDigest": "12869bc64cedea0a7a8d562da30384223ed2e531",
+    "runInvocationURI": "https://github.com/liu11-21/local-llm/actions/runs/43409624156/attempts/1",
+    "subjectAlternativeName": "https://github.com/liu11-21/local-llm/.github/workflows/desktop-windows.yml@refs/heads/dev/desktop-workspace"
+  },
+  "command": "gh attestation verify <installer> --repo liu11-21/local-llm --signer-workflow liu11-21/local-llm/.github/workflows/desktop-windows.yml --source-digest 12869bc64cedea0a7a8d562da30384223ed2e531 --source-ref refs/heads/dev/desktop-workspace --deny-self-hosted-runners --format json",
+  "scope": "GitHub build provenance only; Windows installer remains NotSigned; no MIT rights or SignPath approval"
+}

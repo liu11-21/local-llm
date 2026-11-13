@@ -1,0 +1,1 @@
+c0b1e5c6a92ff7cc339561617b73762b0daa29fbbeba8631d1e6a29466842116  Local LLM Workspace_0.7.0_x64-setup.exe

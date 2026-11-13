@@ -1,0 +1,16 @@
+{
+  "runner": "Windows",
+  "worker_version": "0.7.0",
+  "channel": "Development",
+  "authenticode": "NotSigned",
+  "version": "0.7.0",
+  "python": "Python 3.12.10",
+  "node": "v24.22.1",
+  "bytes": 13457394,
+  "installer_version": "0.7.0",
+  "target": "x86_64-pc-windows-msvc",
+  "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "commit": "12869bc64cedea0a7a8d562da30384223ed2e531",
+  "run": "43409624156",
+  "sha256": "c0b1e5c6a92ff7cc339561617b73762b0daa29fbbeba8631d1e6a29466842116"
+}
