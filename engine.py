@@ -23,16 +23,31 @@ class LocalEngine:
         self.port = None
         self.key = None
         self.lock = Lock()
+        self.executable = None
+        self.last_generation = {}
+        self.thinking = False
 
     def running(self):
         with self.lock:
             return self.process is not None and self.process.poll() is None
 
+    def resolve_model(self, model):
+        model = Path(model).resolve(strict=True)
+        check_gguf(model)
+        return model
+
+    def command(self, executable, args):
+        return [str(executable), *args]
+
+    def request_options(self, thinking, max_tokens):
+        if thinking:
+            raise ValueError("THINKING_UNSUPPORTED · 此引擎尚未驗證 Thinking 能力。")
+        return {}
+
     def start(self, executable, model, cancel=None, plan=None, *, context=2048, native_tools=False, on_process=None, threads=None):
         cancel = cancel or Event()
         executable = Path(executable).resolve(strict=True)
-        model = Path(model).resolve(strict=True)
-        check_gguf(model)
+        model = self.resolve_model(model)
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
@@ -52,9 +67,9 @@ class LocalEngine:
             log = TemporaryFile()
             try:
                 process = subprocess.Popen(
-                    [str(executable), "--model", str(model), "--alias", "local-model",
+                    self.command(executable, ["--model", str(model), "--alias", "local-model",
                      "--host", "127.0.0.1", "--port", str(port), "--ctx-size", str(context),
-                     "--parallel", "1", *(["--threads",str(threads)] if threads else []), *(["--jinja"] if native_tools else []), *placement],
+                     "--parallel", "1", *(["--threads",str(threads)] if threads else []), *(["--jinja"] if native_tools else []), *placement]),
                     cwd=executable.parent, env=env, stdin=subprocess.DEVNULL,
                     stdout=log, stderr=subprocess.STDOUT,
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
@@ -64,6 +79,7 @@ class LocalEngine:
                 raise
             self.process, self.log = process, log
             self.port, self.key, self.model = port, key, model
+            self.executable = executable
 
         try:
             if on_process:
@@ -82,7 +98,7 @@ class LocalEngine:
                 if process.poll() is not None:
                     self.log.seek(0, os.SEEK_END)
                     self.log.seek(max(0, self.log.tell() - 4096))
-                    detail = self.log.read().decode("utf-8", errors="replace").replace(key, "[已遮蔽金鑰]").strip()
+                    detail = self.log.read().decode("utf-8", errors="replace").replace(key, "[已遮蔽金鑰]").replace(str(self.model), "[模型]").replace(str(self.executable), "[Runtime]").strip()
                     raise RuntimeError(f"llama-server 結束（代碼 {process.returncode}）。\n{detail[-1800:]}")
             connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
             try:
@@ -112,7 +128,12 @@ class LocalEngine:
                 return
             try:
                 if self.process.poll() is None:
-                    self.process.terminate()
+                    if os.name == "nt":
+                        subprocess.run(["taskkill", "/PID", str(self.process.pid), "/T", "/F"],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8,
+                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                    else:
+                        self.process.terminate()
                     try:
                         self.process.wait(timeout=3)
                     except subprocess.TimeoutExpired:
@@ -162,15 +183,28 @@ class LocalEngine:
         finally:
             connection.close()
 
-    def stream(self, messages, *, max_tokens=512, temperature=0.4, cancel=None):
-        with closing(self.completion_events(messages, max_tokens=max_tokens, temperature=temperature, cancel=cancel)) as events:
+    def stream(self, messages, *, max_tokens=512, temperature=0.4, cancel=None, thinking=None, on_event=None):
+        self.last_generation = {"reasoning": "", "usage": {}, "timings": {}}
+        answer = ""
+        with closing(self.completion_events(messages, max_tokens=max_tokens, temperature=temperature,
+                                           cancel=cancel, thinking=thinking)) as events:
             for event in events:
+                if event.get("usage"): self.last_generation["usage"] = event["usage"]
+                if event.get("timings"): self.last_generation["timings"] = event["timings"]
                 for choice in event.get("choices", []):
-                    token = choice.get("delta", {}).get("content")
+                    delta = choice.get("delta", {})
+                    thought = delta.get("reasoning_content")
+                    if isinstance(thought, str): self.last_generation["reasoning"] += thought
+                    token = delta.get("content")
                     if isinstance(token, str) and token:
+                        answer += token
                         yield token
+                    if choice.get("finish_reason"): self.last_generation["finish_reason"] = choice["finish_reason"]
+                if on_event: on_event(self.last_generation)
+        if not (cancel and cancel.is_set()) and not answer.strip():
+            raise RuntimeError("EMPTY_ANSWER · 模型只有思考或沒有正式回答，請關閉 Thinking 或提高回答預算。")
 
-    def completion_events(self, messages, *, max_tokens=512, temperature=0.4, cancel=None, tools=None, benchmark=False):
+    def completion_events(self, messages, *, max_tokens=512, temperature=0.4, cancel=None, tools=None, benchmark=False, thinking=None):
         port, key = self.endpoint()
         body = json.dumps({
             "model": "local-model",
@@ -178,6 +212,8 @@ class LocalEngine:
             "stream": True,
             "max_tokens": max_tokens,
             "temperature": temperature,
+            **self.request_options(self.thinking if thinking is None else thinking, max_tokens),
+            "stream_options": {"include_usage": True},
             **({"cache_prompt":False,"ignore_eos":True,"seed":0,"stream_options":{"include_usage":True}} if benchmark else {}),
             **({"tools": tools, "tool_choice": "auto", "parallel_tool_calls": False} if tools else {}),
         }, ensure_ascii=False).encode("utf-8")
@@ -202,8 +238,12 @@ class LocalEngine:
             with connection.getresponse() as response:
                 if response.status != 200:
                     detail = response.read(2048).decode("utf-8", errors="replace")
-                    raise RuntimeError(f"模型回應 HTTP {response.status}：{detail}")
+                    raise RuntimeError(f"模型回應 HTTP {response.status}；請檢查 Runtime 診斷與模型範本。")
                 for line in response:
+                    if cancel is not None and cancel.is_set():
+                        return
+                    if len(line) > 1024 * 1024:
+                        raise ValueError("Runtime SSE event exceeds limit")
                     if not line.startswith(b"data:"):
                         continue
                     data = line[5:].strip()
@@ -211,7 +251,7 @@ class LocalEngine:
                         return
                     event = json.loads(data)
                     if event.get("error"):
-                        raise RuntimeError(str(event["error"]))
+                        raise RuntimeError("Runtime 回傳推理錯誤；請檢查已遮蔽的診斷。")
                     yield event
             raise ConnectionError("模型串流提前結束。")
         finally:

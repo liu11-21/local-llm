@@ -10,6 +10,7 @@ from threading import Event, Thread
 from urllib.parse import urlsplit
 
 from engine import LocalEngine
+from llama_app_engine import engine_for
 from hardware import MIB, detect_hardware
 from load_plan import allocate, plan_load
 
@@ -137,7 +138,7 @@ def merge_messages(prompt, drafts, limit=None):
 
 def ask_local(member, executable, plan, prompt, drafts, cancel, report, *, history=()):
     check_cancel(cancel)
-    engine = LocalEngine()
+    engine = engine_for(executable)
     finished = Event()
 
     def cancel_engine():

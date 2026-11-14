@@ -72,7 +72,8 @@ class DeviceRecommendations:
                 except ValueError:pass
             native.update(mapping=mapping,backend_version=self.app.openvino.detected.get("version") if current_probe and self.app.openvino.detected["state"]=="reported" else None)
         elif engine=="llama.cpp":
-            executable = engine_path(self.app.data)
+            try:executable = self.app.engine()
+            except ValueError:executable = None
             if executable:
                 digest = self.digest(executable)
                 with self.lock:saved = self.cache.get(("version",digest))

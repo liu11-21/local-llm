@@ -31,6 +31,8 @@ from desktop_agent import create_plan, messages_for_plan
 from download_recovery import exclusive,owned,recover_downloads
 from downloads import check_gguf, download_model
 from engine import LocalEngine
+from runtime_manager import RuntimeManager
+from runtime_trust import code_integrity,launch_diagnostic
 from engine_health import EngineHealth
 from hardware import ResourceMonitor, detect_hardware, estimate_ram
 from hardware_monitor import HardwareMonitor
@@ -78,7 +80,7 @@ MAX_LINE = 256 * 1024
 WORKSPACE_VERSION = "0.8.0"
 ACTIONS = {"chat", "download", "team", "team-workflow", "comfy-start", "comfy-stop", "media", "engine-start",
            "engine-stop", "engine-install", "comfy-install", "media-install", "agent", "update-download", "remote-fetch-work",
-           "openvino-install","openvino-remove","openvino-detect","openvino-import","openvino-infer","benchmark"}
+           "runtime-install","runtime-audit","openvino-install","openvino-remove","openvino-detect","openvino-import","openvino-infer","benchmark"}
 
 
 def chat_id(data):
@@ -132,7 +134,8 @@ class Desktop(Workspace):
     @protected_initialization
     def __init__(self, data):
         super().__init__(data)
-        self.local = LocalEngine()
+        self.runtime_manager = RuntimeManager(self.data, lambda: engine_path(self.data))
+        self.local = self.runtime_manager.factory()
         self.llama_health = EngineHealth(self.local.running, self.local.health_probe)
         self.comfy_health = EngineHealth(self.comfy.running, self.comfy.health_probe)
         self.active = None
@@ -161,6 +164,7 @@ class Desktop(Workspace):
               CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY, action TEXT, state TEXT, message TEXT,
                                               touched TEXT DEFAULT CURRENT_TIMESTAMP);
               CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
+              CREATE TABLE IF NOT EXISTS chat_generations(chat TEXT,message INTEGER,details TEXT,PRIMARY KEY(chat,message));
               CREATE TABLE IF NOT EXISTS agent_reports(id TEXT PRIMARY KEY, role TEXT, model TEXT,
                   prompt TEXT, answer TEXT, steps TEXT, created TEXT DEFAULT CURRENT_TIMESTAMP);
               CREATE TABLE IF NOT EXISTS task_metadata(id TEXT PRIMARY KEY, snapshot TEXT NOT NULL);
@@ -209,10 +213,12 @@ class Desktop(Workspace):
     def history(self, chat, with_runtime=False):
         with self.connect() as db:
             if with_runtime:
-                return [{"role": role, "content": text, **({"runtime": runtime, "model": model, "provider": provider} if runtime else {})}
-                        for role, text, runtime, model, provider in db.execute("""SELECT messages.role,messages.text,
-                        r.runtime,r.model,r.provider FROM messages LEFT JOIN chat_runtime AS r
-                        ON r.chat=messages.chat AND r.message=messages.rowid WHERE messages.chat=? ORDER BY messages.rowid""", (chat,))]
+                return [{"role": role, "content": text, **({"runtime": runtime, "model": model, "provider": provider} if runtime else {}),
+                         **({"reasoning":json.loads(details).get("reasoning",""),"generation":json.loads(details)} if details else {})}
+                        for role, text, runtime, model, provider, details in db.execute("""SELECT messages.role,messages.text,
+                        r.runtime,r.model,r.provider,g.details FROM messages LEFT JOIN chat_runtime AS r
+                        ON r.chat=messages.chat AND r.message=messages.rowid LEFT JOIN chat_generations AS g
+                        ON g.chat=messages.chat AND g.message=messages.rowid WHERE messages.chat=? ORDER BY messages.rowid""", (chat,))]
             return [{"role": role, "content": value} for role, value in db.execute(
                 "SELECT role,text FROM messages WHERE chat=? ORDER BY rowid", (chat,))]
 
@@ -319,18 +325,32 @@ class Desktop(Workspace):
                 item["dimensions"] = media_metadata(work_file(self.outputs,item["name"]))
         return {"items": page, "models": models, 'runtimes':runtimes,"total": len(matches)}
 
+    def engine(self):
+        path = self.runtime_manager.executable()
+        if not path:
+            raise ValueError("請先安裝或選擇文字引擎。")
+        return path
+
+    def has_engine(self):
+        try:return self.runtime_manager.executable() is not None
+        except (OSError,ValueError):return False
+
     def prepare(self, data, cancel, update):
         name = field(data, "model", 180)
         mode = data.get("mode", "auto")
         context = data.get("context", 2048)
         native = data.get("native_tools") is True
+        layers = data.get("gpu_layers")
+        if layers is not None and (type(layers) is not int or not 0 <= layers <= 1024):
+            raise ValueError("GPU Layers 須為 0–1024 或自動。")
+        self.requested_gpu_layers = layers
         if mode not in ("auto", "cpu") or context not in (2048, 4096, 8192):
             raise ValueError("請選擇有效的運算模式與上下文長度。")
         if self.comfy.running() and not getattr(self,'execution_scoped',False):
             raise ValueError("請先停止 ComfyUI，釋放記憶體後再載入文字模型。")
         path, executable = self.model(name), self.engine()
         if (self.active and self.active[:3] == (name, mode, context) and self.active_native == native
-                and self.llama_health.usable()):
+                and self.llama_health.usable() and layers is None):
             return self.active[-1]
         with self.llama_health.transition(True, cancel):
             plan = self.load_model(path, executable, mode, context, cancel, update, native)
@@ -352,6 +372,18 @@ class Desktop(Workspace):
         else:plan = plan_load(executable, path)
         if mode == "cpu" and not target:
             plan = allocate(path.stat().st_size, plan.total_layers, [], mmap_args=plan.mmap_args)
+        requested = getattr(self,"requested_gpu_layers",None)
+        if requested is not None:
+            if requested > plan.layers:
+                raise ValueError("VRAM_BUDGET · 手動層數超過目前安全估算，不會超額載入。")
+            if requested == 0:
+                plan = allocate(path.stat().st_size,plan.total_layers,[])
+            else:
+                from dataclasses import replace
+                extra = max(0,plan.layers-requested)*path.stat().st_size//max(1,plan.total_layers)
+                plan = replace(plan,layers=requested,ram=plan.ram+extra)
+        if target and plan.ram > target.memory:
+            raise ValueError("RAM_BUDGET · 此層數超過已保留的 RAM，請重新選擇設備。")
         ram = detect_hardware(self.models).ram_available
         if ram is not None and plan.ram > ram:
             raise ValueError("可用記憶體可能不足。請關閉其他程式、改用更小的模型，或手動選擇其他運算環境。")
@@ -360,6 +392,13 @@ class Desktop(Workspace):
             def guard(process):self.llama_job_memory=self.session_guards.enter_context(memory_limit(process,target.memory))
             options={"threads":target.threads,"on_process":guard} if target else {}
             self.local.start(executable, path, cancel, plan, context=context, native_tools=native,**options)
+            if self.runtime_manager.report:
+                self.runtime_manager.report.update(launch_success=True,gpu_identified=bool(engine_devices(executable)))
+        except OSError as error:
+            detail=launch_diagnostic(error,executable)
+            if self.runtime_manager.report:self.runtime_manager.report.update(detail)
+            names=', '.join(Path(p).name for p in detail['blocking_files'])
+            raise RuntimeError(detail['code']+' · '+(names or 'Runtime 啟動被拒絕')+'；請至運算環境查看診斷，勿停用安全政策。') from None
         except RuntimeError as error:
             if not target and plan.layers and not cancel.is_set() and (ram is None or estimate_ram(path.stat().st_size) <= ram):
                 plan = allocate(path.stat().st_size, plan.total_layers, [], mmap_args=plan.mmap_args)
@@ -407,7 +446,7 @@ class Desktop(Workspace):
         comfy_busy = any(task["action"] == "remote-host-media" or
                          task["action"] == "media" and task["runtime"] == "local" for task in active)
         comfy_installed = any(installed(install_directory(self.data / "comfyui", profile)) for profile in PROFILES)
-        return {"llama": self.llama_health.snapshot(engine_path(self.data) is not None, llama_busy),
+        return {"llama": self.llama_health.snapshot(self.has_engine(), llama_busy),
                 "comfyui": self.comfy_health.snapshot(comfy_installed, comfy_busy)}
 
     def runtime_capabilities(self, info):
@@ -514,7 +553,7 @@ class Desktop(Workspace):
                       and all(ord(char) >= 32 for char in path.name))[:250]
 
     def host_engine(self):
-        installed = engine_path(self.data) is not None
+        installed = self.has_engine()
         state = self.engine_health()["llama"]["state"]
         busy = any(task["lane"] == "compute" and task["state"] == "running" for task in self.scheduler.list())
         error = ("主機需要安裝 llama.cpp。" if not installed else "請先在主機停止 ComfyUI。"
@@ -909,6 +948,15 @@ class Desktop(Workspace):
                 result=scoped.perform(action,data,cancel,update)
             update(execution=execution)
             return {**(result or {}),"execution":execution}
+        if action == "runtime-install":
+            return self.runtime_manager.install(cancel,update)
+        if action == "runtime-audit":
+            report=self.runtime_manager.inspect(self.engine())
+            if self.local.running():
+                report.update(self.runtime_manager.trust.modules(self.local.process))
+                report['launch_success']=True
+            report['code_integrity']=code_integrity()
+            return {"message":"信任證據已更新；簽章不等於 SAC 已驗證。","trust":report}
         if action=="team-node":return run_team_node(self,data,cancel,update)
         if action=="benchmark":
             return self.benchmarks.run(data,cancel,update)
@@ -1019,6 +1067,8 @@ class Desktop(Workspace):
                 plan = self.prepare(data, cancel, update)
             messages = old + [{"role": "user", "content": prompt}]
             usage = None
+            thinking = data.get("thinking",False)
+            if type(thinking) is not bool:raise ValueError("Thinking 設定無效。")
             if chosen == "local":
                 original = len(messages)
                 while (input_tokens := self.local.prompt_tokens(messages)) + budget > self.active[2]:
@@ -1042,7 +1092,15 @@ class Desktop(Workspace):
                     **({"threads":target.threads,"memory":target.memory} if isinstance(target,DispatchTarget) else {}))
                 stream = (fragment for fragment in ())
             elif chosen == "local":
-                stream = self.local.stream(messages, max_tokens=budget, temperature=temperature, cancel=cancel)
+                samples=[]
+                def telemetry(stats):
+                    if not samples or time()-samples[-1]['at']>=2:
+                        samples.append({'at':time(),'hardware':self.hardware_monitor.snapshot()})
+                        del samples[:-30]
+                    stats['resource_samples']=samples
+                    update(reasoning=stats.get('reasoning',''),generation=stats)
+                stream = self.local.stream(messages, max_tokens=budget, temperature=temperature, cancel=cancel,
+                                           thinking=thinking,on_event=telemetry)
             elif paired:
                 stream = paired.stream(model, messages, budget, temperature, cancel, update)
             else:
@@ -1062,7 +1120,13 @@ class Desktop(Workspace):
                 answer = answer.replace(provider.token, "[已遮蔽金鑰]")
             if not answer.strip():
                 raise RuntimeError("模型沒有傳回可顯示的文字。")
+            generation = self.local.last_generation if chosen=='local' else {}
+            if usage is not None and generation:
+                usage = {**usage,**generation.get('usage',{}),**generation.get('timings',{})}
+            if chosen=='local' and self.runtime_manager.report:
+                self.runtime_manager.report['inference_success']=True
             with self.connect() as db:
+                db.execute("CREATE TABLE IF NOT EXISTS chat_generations(chat TEXT,message INTEGER,details TEXT,PRIMARY KEY(chat,message))")
                 db.execute("INSERT OR IGNORE INTO chats(id,title) VALUES(?,?)", (chat, prompt[:42]))
                 db.execute("UPDATE chats SET touched=CURRENT_TIMESTAMP WHERE id=?", (chat,))
                 if replace:
@@ -1080,7 +1144,8 @@ class Desktop(Workspace):
                 db.execute("INSERT OR REPLACE INTO chat_runtime VALUES(?,?,?,?,?)",
                            (chat, message, chosen, model, provider_label))
                 db.execute("INSERT OR REPLACE INTO settings VALUES('recent_model',?)", (model,))
-            return {"answer": answer, "plan": plan, "usage": usage, "message": "回答已儲存。"}
+                db.execute("INSERT OR REPLACE INTO chat_generations VALUES(?,?,?)",(chat,message,json.dumps(generation)))
+            return {"generation":generation,"reasoning":generation.get('reasoning',''),"answer": answer, "plan": plan, "usage": usage, "message": "回答已儲存。"}
         if action == "media":
             kind = field(data, "kind", 12)
             selected = field(data, "workflow", 40, optional=True) or DEFAULT_WORKFLOWS.get(kind)
@@ -1124,6 +1189,30 @@ class Desktop(Workspace):
         return result
 
     def rpc(self, op, data):
+        if op == "model-remove":
+            if data.get("confirmed") is not True:raise ValueError("請確認永久刪除這個模型檔案。")
+            if self.local.running() or any(t['state'] in ('running','queued','paused') for t in self.scheduler.list()):
+                raise ValueError("MODEL_BUSY · 請停止模型並完成或取消任務，再刪除。")
+            name=field(data,'model',180);path=self.model(name)
+            if path.is_symlink():raise ValueError("模型路徑不安全。")
+            freed=path.stat().st_size;path.unlink()
+            with self.connect() as db:
+                db.execute("DELETE FROM model_sources WHERE name=?",(name,))
+                db.execute("DELETE FROM settings WHERE key='recent_model' AND value=?",(name,))
+            return {"freed_bytes":freed,"message":"模型已刪除，對話與作品仍保留。"}
+        if op == "runtime-diagnostics":return code_integrity()
+        if op == "runtime-status":return self.runtime_manager.status()
+        if op == "runtime-inspect":return self.runtime_manager.inspect(field(data,'path',2000))
+        if op == "runtime-select":
+            if any(t['state'] in ('running','queued','paused') for t in self.scheduler.list()):
+                raise ValueError("RUNTIME_BUSY · 請先停止或完成任務，再切換引擎。")
+            self.stop_local()
+            result=self.runtime_manager.select(data)
+            self.local=self.runtime_manager.factory()
+            self.llama_health=EngineHealth(self.local.running,self.local.health_probe)
+            self.hardware_cache=None
+            return result
+
         if op == 'storage-status':
             return self.storage_status
         if op == "build-info":
@@ -1327,9 +1416,13 @@ class Desktop(Workspace):
         if op == "info":
             info = self.info()
             if self.hardware_cache is None:
-                executable = engine_path(self.data)
+                executable = self.runtime_manager.executable()
                 self.hardware_cache = engine_devices(executable) if executable else []
                 self.hardware_sample_at = time()
+            if self.runtime_manager.record["kind"]=="llama-app":info["engine"] = self.has_engine()
+            info["llama_runtime"] = self.runtime_manager.status()
+            if self.runtime_manager.record['kind']=='llama-app':
+                info['engine_version']=self.runtime_manager.record.get('version')
             info.update(devices=self.hardware_cache, active=self.active if self.local.running() else None,
                         dedicated_vram_available=self.reported_vram(),
                         media=MODELS, output_folder=str(self.outputs),
@@ -1341,6 +1434,8 @@ class Desktop(Workspace):
                 recent = db.execute("SELECT value FROM settings WHERE key='recent_model'").fetchone()
                 sources = {name.casefold(): json.loads(details) for name, details in db.execute("SELECT * FROM model_sources")}
             info["registry"] = workspace_registry(info, self.models, ENGINE_VERSION, sources)
+            if self.runtime_manager.record['kind']=='llama-app':
+                info['registry']['engines'][0].update(label='llama.app (llama.cpp)',version=self.runtime_manager.record.get('version','unknown'),adapter='llama-app')
             for runtime in info["registry"]["runtimes"]:
                 if "chat" in runtime["tasks"]:
                     runtime["tasks"]=list(dict.fromkeys([*runtime["tasks"],"agent","team"]))

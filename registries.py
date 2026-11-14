@@ -8,6 +8,7 @@ from pathlib import Path
 
 from comfy_runtime import PROFILES, VERSION as COMFY_VERSION
 from hardware import estimate_ram
+from gguf_metadata import metadata
 from media import DEFAULT_WORKFLOWS, workflow_manifest
 from media_install import manifest as media_manifest
 
@@ -44,7 +45,7 @@ def installed_models(directory, names, sources):
         size = identity[0]
         repo = record.get("repository")
         quant, parameters = QUANT.search(Path(name).stem), SIZE.search(model_label(name))
-        result.append({"id": name, "label": model_label(name), "format": "GGUF", "publisher": repo.split("/")[0] if repo else None,
+        result.append({"id": name, **metadata(path), "label": model_label(name), "format": "GGUF", "publisher": repo.split("/")[0] if repo else None,
                        "version": record.get("version"), "parameters": parameters[1].upper() if parameters else None,
                        "quantization": quant[1].upper() if quant else None, "bytes": size, "ram": estimate_ram(size),
                        "tasks": ["chat", "agent", "team"], "engine": "llama", "runtime": "local",

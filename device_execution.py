@@ -34,7 +34,7 @@ class DispatchTarget:
 class DeviceExecution:
     def __init__(self,app):
         self.app,self.lock,self.scopes = app,Lock(),{}
-        self.new_local=LocalEngine
+        self.new_local=lambda: app.runtime_manager.factory()
         with app.connect() as db:
             db.execute("CREATE TABLE IF NOT EXISTS dispatch_runs(id TEXT PRIMARY KEY,task TEXT,state TEXT,details TEXT,created TEXT,finished TEXT)")
             db.execute("UPDATE dispatch_runs SET state='interrupted',finished=? WHERE state='running'",(timestamp(),))

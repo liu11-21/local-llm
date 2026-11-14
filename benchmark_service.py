@@ -26,8 +26,10 @@ class BenchmarkService:
                    "npu_candidate":item.get("npu_candidate",False)} for item in ov["models"]]
         models += [{"id":path.name,"label":path.name,"kind":"text","engine":"llama.cpp"}
                    for path in self.app.models.glob("*.gguf") if path.is_file()]
+        try:llama_devices=[item[0] for item in engine_devices(self.app.engine())]
+        except (ValueError,OSError):llama_devices=[]
         return {"schema":1,"models":models,"devices":{"openvino":ov["devices"] if ov["installed"] else [],
-                "llama.cpp":["CPU"]},"limits":{"timeout_seconds":[15,600],"memory_mib":[512,8192]},
+                "llama.cpp":["CPU",*llama_devices]},"limits":{"timeout_seconds":[15,600],"memory_mib":[512,8192]},
                 "remote":{"state":"unsupported","reason":"Remote benchmark execution not implemented."},
                 "automatic_execution":False,"hetero":"unsupported"}
 

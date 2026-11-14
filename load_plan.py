@@ -78,7 +78,7 @@ def block_count(model):
 def engine_output(executable, option):
     try:
         output = subprocess.run(
-            [str(executable), option], cwd=Path(executable).parent, env=engine_environment(),
+            [str(executable), *(["version"] if option=="--version" else ["serve",option]) ] if Path(executable).name.lower() in ("llama.exe","llama") else [str(executable), option], cwd=Path(executable).parent, env=engine_environment(),
             capture_output=True, timeout=8, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
     except (OSError, subprocess.TimeoutExpired):
@@ -90,6 +90,9 @@ def engine_output(executable, option):
 
 def engine_devices(executable):
     log = engine_output(executable, "--list-devices")
+    if Path(executable).name.lower() in ("llama.exe","llama"):
+        # CUDA needs a separately validated hardware run before enabling it in 0.8.
+        log = "\n".join(line for line in log.splitlines() if not line.lstrip().startswith("CUDA"))
     # Vulkan's device list can report a shared heap. Budget against host RAM
     # whenever it cannot be identified as dedicated.
     return [
@@ -104,7 +107,7 @@ def allocate(model_bytes, blocks, devices, ram_available=None, mmap_args=()):
         (name, min(free, max(0, (ram_available or 0) - 1024 * MIB)) if shared else free, shared)
         for name, free, shared in devices
     ]
-    device, free, shared = max(budgets, key=lambda item: (item[1], not item[2]), default=(None, 0, False))
+    device, free, shared = max(budgets, key=lambda item: (not item[2], item[1]), default=(None, 0, False))
     per_layer = (model_bytes + blocks - 1) // blocks if blocks else 0
     layers = min(blocks, max(0, (free - reserve) // per_layer)) if per_layer else 0
     if not layers:

@@ -12,6 +12,10 @@ from downloads import model_filename
 
 HUB = "https://huggingface.co"
 RECOMMENDED = {
+    "unsloth/Qwen3-0.6B-GGUF": (
+        "Qwen3 輕量中文／Thinking（新版 Runtime）", "Qwen3-0.6B-Q4_0.gguf",
+        382156480, "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+    ),
     "bartowski/SmolLM2-135M-Instruct-GGUF": (
         "小型英文測試", "SmolLM2-135M-Instruct-Q4_K_M.gguf",
         105454432, "09816acd5d99df7be770d85ea30822623dab342c",

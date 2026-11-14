@@ -10,6 +10,7 @@ from tempfile import TemporaryDirectory
 from time import monotonic, perf_counter
 
 from engine import LocalEngine
+from llama_app_engine import engine_for
 from hardware import detect_hardware
 from load_plan import allocate, block_count, engine_devices, engine_environment
 from openvino_adapter import memory_limit
@@ -70,7 +71,7 @@ class LlamaBenchmark:
         self.executable,self.model = Path(executable),Path(model)
 
     def run(self, model, device, params, workloads, windows, budget, receive):
-        version = subprocess.run([str(self.executable),"--version"],capture_output=True,timeout=min(8,budget.remaining()),
+        version = subprocess.run([str(self.executable),*( ["version"] if self.executable.name.lower() in ("llama.exe","llama") else ["--version"]) ],capture_output=True,timeout=min(8,budget.remaining()),
             env=engine_environment(),creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
         if version.returncode:
             raise ValueError("PROVIDER_MISSING")
@@ -86,7 +87,7 @@ class LlamaBenchmark:
             raise MemoryError("INSUFFICIENT_VRAM")
         if plan.ram>params["memory_mib"]*1024**2:
             raise MemoryError("INSUFFICIENT_RAM")
-        engine = LocalEngine()
+        engine = engine_for(self.executable)
         evidence = {"requested_device":device,"available_devices":["CPU",*[item[0] for item in devices]],
                     "execution_devices":[],"verified_inference":False,"operator_allocation":"unknown",
                     "fallback":"unknown","verification_limit":"Configured layers are not operator placement evidence.",

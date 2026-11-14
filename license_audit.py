@@ -181,8 +181,8 @@ def collect(output,network=False,cargo_metadata=None,crate_archives=False):
             try:info=json.loads(fetch(f'https://pypi.org/pypi/{name}/{version}/json',network))['info'];evidence='pypi exact-version metadata'
             except Exception:pass
         license=(dist.metadata.get('License-Expression') or dist.metadata.get('License')) if dist and dist.version==version else info.get('license_expression') or info.get('license')
-        component=package('pypi',name,version,license,['B'] if name.lower() in ('cryptography','cffi','pycparser') else [],
-            'worker dependency' if name.lower() in ('cryptography','cffi','pycparser') else 'build tooling; PyInstaller bootloader also in worker',f'https://pypi.org/project/{name}/{version}/',evidence=evidence)
+        component=package('pypi',name,version,license,['B'] if name.lower() in ('cryptography','cffi','pycparser','zstandard') else [],
+            'worker dependency' if name.lower() in ('cryptography','cffi','pycparser','zstandard') else 'build tooling; PyInstaller bootloader also in worker',f'https://pypi.org/project/{name}/{version}/',evidence=evidence)
         if name.lower()=='pyinstaller':component['license_declared']='GPL-2.0-or-later WITH Bootloader-exception'
         if dist and dist.version==version:
             for file in dist.files or []:
@@ -190,6 +190,12 @@ def collect(output,network=False,cargo_metadata=None,crate_archives=False):
                     path=Path(dist.locate_file(file))
                     if path.is_file() and path.stat().st_size<1024**2:notice(component,str(file),path.read_bytes())
         components.append(component)
+    app_manifest=json.loads((ROOT/'llama-app-runtime.json').read_text(encoding='utf-8'))
+    app_runtime=package('runtime','llama.app official Vulkan x64',app_manifest['version'],'MIT',['C'],
+        'optional separate runtime; downloaded only after user action; signature does not certify SAC',app_manifest['url'],
+        executable_sha256=app_manifest['sha256'],compressed_sha256=app_manifest['compressed_sha256'],revision=app_manifest['commit'])
+    notice(app_runtime,'llama.cpp b12360 LICENSE',(ROOT/'third_party/llama.cpp-b12360-LICENSE').read_bytes())
+    components.append(app_runtime)
     python=package('runtime','CPython','3.12.10','Python-2.0',['B','C'],'interpreter and stdlib; bundled subcomponents retain their own terms','https://www.python.org/downloads/release/python-31210/')
     notice(python,'CPython LICENSE.txt',(Path(sys.base_prefix)/'LICENSE.txt').read_bytes());components.append(python)
     for filename in ['LICENSE-LLVM-OpenMP','LICENSE-llama.cpp']:
