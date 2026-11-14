@@ -48,11 +48,19 @@ class RuntimeTests(unittest.TestCase):
                 probe.assert_not_called()
             self.assertEqual(manager.record['kind'],'legacy');self.assertFalse(manager.file.exists())
 
+    def test_signer_name_substring_does_not_authorize_an_unrelated_publisher(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);path=root/'llama.exe';path.write_bytes(b'not executed')
+            manager=RuntimeManager(root,lambda:None)
+            with patch('runtime_trust.signature',return_value={'status':'Valid','signer':'CN=Not Hugging Face, O=Other publisher'}),patch('runtime_manager.engine_profile') as probe:
+                with self.assertRaises(ValueError):manager.select({'kind':'llama-app','path':str(path),'confirmed':True})
+                probe.assert_not_called()
+
     def test_switch_and_content_pin_and_persistence(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);exe=root/'llama.exe';exe.write_bytes(b'not executed')
             manager=RuntimeManager(root,lambda:root/'llama-server.exe')
-            with patch('runtime_trust.signature',return_value={'status':'Valid','signer':'CN=Hugging Face'}),patch('runtime_manager.engine_profile',return_value={'version':'build 12360'}):
+            with patch('runtime_trust.signature',return_value={'status':'Valid','signer':'CN=Hugging Face, O=Hugging Face'}),patch('runtime_manager.engine_profile',return_value={'version':'build 12360'}):
                 manager.select({'kind':'llama-app','path':str(exe),'confirmed':True})
             restored=RuntimeManager(root,lambda:None);self.assertEqual(restored.executable(),exe)
             exe.write_bytes(b'changed')

@@ -50,6 +50,13 @@ def signature(path):
     except (OSError,ValueError,subprocess.TimeoutExpired):return {"status":"NOT VERIFIED","signer":None}
 
 
+def expected_signer(auth,expected='Hugging Face'):
+    """Bind the official runtime to exact subject identities, not a substring."""
+    if auth.get('status')!='Valid':return False
+    parts={part.strip().casefold() for part in (auth.get('signer') or '').split(',')}
+    return ('cn='+expected.casefold()) in parts and ('o='+expected.casefold()) in parts
+
+
 def discover():
     candidates=[]
     for name in ("llama.exe","llama"):

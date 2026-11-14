@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 from urllib.request import urlopen
 from download_recovery import owned
-from runtime_trust import RuntimeTrust,discover,sha256,OFFICIAL,BASELINE,code_integrity,launch_diagnostic
+from runtime_trust import RuntimeTrust,discover,sha256,OFFICIAL,BASELINE,code_integrity,launch_diagnostic,expected_signer
 from llama_app_engine import LlamaAppEngine,engine_profile
 from engine import LocalEngine
 
@@ -53,7 +53,7 @@ class RuntimeManager:
         if kind=='llama-app':
             report=self.inspect(data.get('path',''))
             auth=report['authenticode']
-            if auth.get('status')!='Valid' or 'Hugging Face' not in (auth.get('signer') or ''):
+            if not expected_signer(auth,MANIFEST['expected_signer']):
                 raise ValueError('RUNTIME_SIGNATURE · 新版官方 Runtime 需有效 Hugging Face 簽章；未執行此檔案。')
             try:caps=engine_profile(Path(report['path']))
             except OSError as error:
@@ -94,7 +94,7 @@ class RuntimeManager:
                     if written>MANIFEST['bytes']:raise ValueError('Runtime 解壓大小不符。')
                     out.write(block)
             report=self.trust.inspect(path,expected=MANIFEST['sha256'],source=OFFICIAL)
-            if written!=MANIFEST['bytes'] or not report['sha256_verified'] or report['authenticode'].get('status')!='Valid' or 'Hugging Face' not in (report['authenticode'].get('signer') or ''):
+            if written!=MANIFEST['bytes'] or not report['sha256_verified'] or not expected_signer(report['authenticode'],MANIFEST['expected_signer']):
                 raise ValueError('Runtime 完整性或官方簽章未通過，未安裝。')
             license_path=ROOT/'third_party'/'llama.cpp-b12360-LICENSE'
             if not license_path.is_file() or sha256(license_path)!=MANIFEST['license_sha256']:raise ValueError('缺少或不符對應 Runtime 授權原文。')
