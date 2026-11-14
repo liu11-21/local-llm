@@ -419,7 +419,15 @@ try {
   assert.deepEqual(exceptions, [])
   }
 } finally {
-  if (browser) await browser.close()
+  if (browser) {
+    // Drain route.fetch handlers before disposing request contexts. Polling may
+    // still be in flight after the final assertion, especially on CI runners.
+    for (const context of browser.contexts()) {
+      for (const page of context.pages()) await page.unrouteAll({behavior:'wait'})
+      await context.unrouteAll({behavior:'wait'})
+    }
+    await browser.close()
+  }
   if (server) await server.close()
   const target = await realpath(profile)
   if (dirname(target) === root && basename(target).startsWith('localllm-layout-')) {
