@@ -6,7 +6,7 @@ from pathlib import Path
 import http.client
 import json
 from engine import LocalEngine
-from load_plan import engine_environment
+from load_plan import engine_environment, DEVICE_LINE
 
 
 @lru_cache(maxsize=8)
@@ -19,7 +19,13 @@ def profile(path, stamp):
     version=run(["version"]);help_text=run(["serve","--help"])
     required=("--host","--port","--model","--alias","--cors-origins")
     if any(flag not in help_text for flag in required):raise ValueError("RUNTIME_CAPABILITY · 此版本尚未驗證必要的安全啟動參數。")
-    return {"version":version[:500],"help":help_text,"supports_cors":True}
+    try:devices_text=run(["serve","--list-devices"])
+    except (ValueError,subprocess.TimeoutExpired):devices_text=''
+    devices=[{'id':name,'name':adapter,'reported_total_mib':int(total.replace(',','')),
+              'reported_free_mib':int(free.replace(',','')),'backend':'Vulkan' if name.startswith('Vulkan') else 'CUDA',
+              'available':name.startswith('Vulkan'),'memory_type':'shared-or-unified' if any(part in adapter.lower() for part in ('iris','uhd','intel graphics','intel(r) graphics')) else 'needs-physical-mapping'}
+             for name,adapter,total,free in DEVICE_LINE.findall(devices_text)]
+    return {"version":version[:500],"help":help_text,"supports_cors":True,"devices":devices}
 
 
 def engine_profile(path):

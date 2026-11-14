@@ -1,3 +1,4 @@
+import {exerciseRuntimeV080} from './runtime-v080-ui.mjs'
 import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -35,7 +36,11 @@ try {
       'Google', 'Chrome', 'Application', 'chrome.exe'),
   })
   const page = await browser.newPage({viewport:{width:1280,height:900}, colorScheme:'dark', reducedMotion:'reduce'})
-  if(process.env.LOCALLLM_STABILITY_ONLY==='1') {
+  if(process.env.LOCALLLM_RUNTIME_ONLY==='1') {
+    await page.goto(url)
+    await page.getByText('本機工作台已連線').waitFor()
+    await exerciseRuntimeV080(page)
+  } else if(process.env.LOCALLLM_STABILITY_ONLY==='1') {
     await page.goto(url)
     await page.evaluate(async()=>{
       for(const op of ['fixture-openvino','fixture-many-chats']){
@@ -410,6 +415,7 @@ try {
   await exerciseDevices(page,navigate)
   await exerciseMediaUX(page)
   await exerciseStability(page)
+  await exerciseRuntimeV080(page)
   assert.deepEqual(exceptions, [])
   }
 } finally {

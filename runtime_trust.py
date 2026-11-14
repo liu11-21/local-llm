@@ -89,17 +89,41 @@ class RuntimeTrust:
     def modules(self,process):
         if os.name!="nt":return {"resolved_image":None,"dependencies":[],"dependency_scan":"NOT VERIFIED"}
         env={k:v for k,v in os.environ.items() if k.upper()!='PSMODULEPATH'};env['LOCALLLM_TRUST_PID']=str(int(process.pid))
-        script="[Console]::OutputEncoding=[Text.UTF8Encoding]::new();$p=Get-Process -Id ([int]$env:LOCALLLM_TRUST_PID) -ErrorAction Stop;@{image=$p.Path;modules=@($p.Modules | ForEach-Object {$_.FileName})}|ConvertTo-Json -Depth 3 -Compress"
+        script=r"""
+        [Console]::OutputEncoding=[Text.UTF8Encoding]::new()
+        $rootId=[int]$env:LOCALLLM_TRUST_PID
+        $all=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+        $ids=@($rootId)
+        for($round=0;$round -lt 16;$round++) {
+            $next=@($all | Where-Object { $_.ParentProcessId -in $ids -and $_.ProcessId -notin $ids } | ForEach-Object {[int]$_.ProcessId})
+            if(!$next.Count){break};$ids+= $next
+        }
+        $images=@();$paths=@();$unreadable=@()
+        foreach($idValue in $ids) {
+            try {$p=Get-Process -Id $idValue -ErrorAction Stop;$images+=@{pid=$idValue;path=$p.Path};$paths+=@($p.Modules | ForEach-Object {$_.FileName})}
+            catch {$unreadable+= $idValue}
+        }
+        $unique=@($paths | Sort-Object -Unique);$rows=@()
+        foreach($path in ($unique | Select-Object -First 256)) {
+            try {$hash=(Get-FileHash -LiteralPath $path -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant();$sig=Get-AuthenticodeSignature -LiteralPath $path -ErrorAction Stop;
+                $rows+=@{name=[IO.Path]::GetFileName($path);path=$path;sha256=$hash;authenticode=@{status=$sig.Status.ToString();signer=$sig.SignerCertificate.Subject;issuer=$sig.SignerCertificate.Issuer}}}
+            catch {$rows+=@{name=[IO.Path]::GetFileName($path);path=$path;sha256=$null;authenticode=@{status='NOT VERIFIED';signer=$null}}}
+        }
+        @{images=$images;dependencies=$rows;unreadable_processes=$unreadable;observed_modules=$unique.Count;truncated=($unique.Count -gt 256)} | ConvertTo-Json -Depth 6 -Compress
+        """
         shell=shutil.which('pwsh.exe') or shutil.which('powershell.exe')
         if not shell:return {"resolved_image":None,"dependencies":[],"dependency_scan":"NOT VERIFIED"}
         try:
-            r=subprocess.run([shell,'-NoProfile','-NonInteractive','-Command',script],env=env,capture_output=True,timeout=20,creationflags=FLAGS,encoding='utf-8',errors='replace')
-            data=json.loads(r.stdout.lstrip('\ufeff'));modules=[]
-            for path in dict.fromkeys(data.get('modules',[])):
-                if Path(path).is_file():modules.append({"name":Path(path).name,"path":path,"sha256":sha256(path),"authenticode":signature(path)})
-            image=data.get('image')
-            return {"resolved_image":{ "path":image,"sha256":sha256(image),"authenticode":signature(image)} if image and Path(image).is_file() else None,
-                    "dependencies":modules,"dependency_scan":"observed process modules only; delay-loaded modules may appear later"}
+            run=subprocess.run([shell,'-NoProfile','-NonInteractive','-Command',script],env=env,capture_output=True,timeout=45,creationflags=FLAGS,encoding='utf-8',errors='replace')
+            if run.returncode:raise ValueError('module inspection unavailable')
+            data=json.loads(run.stdout.lstrip('\ufeff'));images=data.get('images') or [];dependencies=data.get('dependencies') or []
+            for item in images:
+                match=next((d for d in dependencies if d['path'].casefold()==(item.get('path') or '').casefold()),None)
+                if match:item.update(sha256=match['sha256'],authenticode=match['authenticode'])
+            return {'resolved_image':next((item for item in images if item['pid']==process.pid),None),
+                    'child_images':[item for item in images if item['pid']!=process.pid],'dependencies':dependencies,
+                    'unreadable_processes':data.get('unreadable_processes',[]),'truncated':data.get('truncated',False),
+                    'dependency_scan':'observed process tree and loaded modules only; delay-loaded or unreadable files remain NOT VERIFIED'}
         except (OSError,ValueError,subprocess.TimeoutExpired):return {"resolved_image":None,"dependencies":[],"dependency_scan":"NOT VERIFIED; process module inspection unavailable"}
 
 

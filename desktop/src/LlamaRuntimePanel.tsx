@@ -4,7 +4,7 @@ import type {Run} from './taskQueue'
 import {Panel} from './ui'
 
 type Trust={sha256:string;source_confirmed:boolean;sha256_verified:boolean;authenticode:{status:string;signer?:string};launch_success:boolean;gpu_identified:boolean;inference_success:boolean;sac:string;version?:string;dependency_scan?:string;dependencies?:{name:string;sha256:string;authenticode:{status:string}}[];code_integrity?:{events:{id:number;files:string[];time:string}[];guidance:string}}
-type Status={selected:string;selection:{path?:string;version?:string};discovered:string[];managed_installed:boolean;manifest:{id:string;version:string;sha256:string};trust?:Trust}
+type Status={selected:string;selection:{path?:string;version?:string;devices?:{id:string;name:string;backend:string;available:boolean;memory_type:string;reported_total_mib:number;reported_free_mib:number}[]};discovered:string[];managed_installed:boolean;manifest:{id:string;version:string;sha256:string};trust?:Trust}
 export function LlamaRuntimePanel({run,report,refresh}:{run:Run;report:(e:unknown)=>void;refresh:()=>Promise<void>}) {
  const [state,setState]=useState<Status>();const [path,setPath]=useState('');const [busy,setBusy]=useState(false)
  async function load(){const next=await rpc<Status>('runtime-status');setState(next);if(!path)setPath(next.selection.path || next.discovered[0] || '')}
@@ -16,6 +16,7 @@ export function LlamaRuntimePanel({run,report,refresh}:{run:Run;report:(e:unknow
   <div className="row"><span className="tag">{state?.selected==='llama-app' ? 'llama.app · serve' : '相容引擎 · llama-server'}</span><small className="muted">0.8.0 Development</small></div>
   <div className="row section-note"><button className="button primary" disabled={busy} onClick={()=>void install()}>下載官方固定版本 · 約 13 MB</button>
    <button className="button" disabled={busy} onClick={()=>void load().catch(report)}>偵測已安裝版本</button></div>
+  {state?.selected==='llama-app' && state.selection.devices?.map(device=><div className="list-row" key={device.id}><span style={{overflowWrap:'anywhere'}}><b>{device.id} · {device.name}</b><small>{device.backend} · {device.available ? 'Runtime 已辨識' : '尚未通過實機驗證，不可用'}</small><small>偵測時可用 {device.reported_free_mib.toLocaleString()} / {device.reported_total_mib.toLocaleString()} MiB · {device.memory_type==='shared-or-unified' ? '共享／統一記憶體，非獨立顯存' : '需對照實體記憶體；不是可直接加總的顯存'}</small></span></div>)}
   <details><summary>選擇引擎與信任證據</summary>
    <label>已安裝的 llama.exe<input value={path} list="llama-installed" placeholder="偵測 PATH／Windows App Alias，或輸入實際位置" onChange={e=>setPath(e.target.value)}/></label>
    <datalist id="llama-installed">{state?.discovered.map(p=><option key={p} value={p}/>)}</datalist>

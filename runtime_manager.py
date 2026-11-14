@@ -58,7 +58,8 @@ class RuntimeManager:
             except OSError as error:
                 detail=launch_diagnostic(error,Path(report['path']));report.update(detail)
                 raise ValueError(detail['code']+' · '+detail['hint']) from None
-            record.update(path=report['path'],sha256=report['sha256'],version=caps['version'],confirmed=True)
+            record.update(path=report['path'],sha256=report['sha256'],version=caps['version'],devices=caps.get('devices',[]),confirmed=True)
+            report['gpu_identified']=bool(caps.get('devices'))
             report['version']=caps['version'];report['cli_probe_success']=True
         staged=self.file.with_suffix('.tmp');staged.write_text(json.dumps(record,ensure_ascii=False),encoding='utf-8');os.replace(staged,self.file)
         self.record=record
