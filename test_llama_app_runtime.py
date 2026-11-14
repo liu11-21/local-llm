@@ -57,7 +57,9 @@ class RuntimeTests(unittest.TestCase):
             restored=RuntimeManager(root,lambda:None);self.assertEqual(restored.executable(),exe)
             exe.write_bytes(b'changed')
             with self.assertRaises(ValueError):restored.executable()
+            restored.report={'authenticode':{'status':'Valid'},'source_confirmed':True}
             restored.select({'kind':'legacy','confirmed':True});self.assertIsNone(restored.executable())
+            self.assertIsNone(restored.report,'Trust from a different binary must not survive an adapter switch')
 
     def test_error_redaction_preserves_useful_diagnosis(self):
         engine=LlamaAppEngine();engine.key='secret-123';engine.model=Path('C:/private/model.gguf')

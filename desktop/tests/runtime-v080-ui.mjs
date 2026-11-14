@@ -5,7 +5,7 @@ export async function exerciseRuntimeV080(page) {
   {id:'Vulkan0',name:'Controlled NVIDIA '+ 'LongName'.repeat(25),backend:'Vulkan',available:true,memory_type:'needs-physical-mapping',reported_total_mib:15995,reported_free_mib:15227},
   {id:'Vulkan1',name:'Controlled Intel Graphics',backend:'Vulkan',available:true,memory_type:'shared-or-unified',reported_total_mib:27649,reported_free_mib:24000}]},
   discovered:['C:\\Controlled\\llama.exe'],managed_installed:installed,manifest:{id:'controlled-only',version:'b12360',sha256:'a'.repeat(64)},
-  trust:{sha256:'a'.repeat(64),source_confirmed:true,sha256_verified:false,authenticode:{status:'Valid',signer:'Controlled UI fixture'},launch_success:false,gpu_identified:true,inference_success:false,sac:'NOT VERIFIED'}})
+  trust:selected==='llama-app' ? {sha256:'a'.repeat(64),source_confirmed:true,sha256_verified:false,authenticode:{status:'Valid',signer:'Controlled UI fixture'},launch_success:false,gpu_identified:true,inference_success:false,sac:'NOT VERIFIED'} : undefined})
  const handler=async route=>{
   const {op,data}=route.request().postDataJSON();const reply=value=>route.fulfill({json:{ok:true,value}})
   if(op==='runtime-status')return reply(state())
@@ -35,6 +35,8 @@ export async function exerciseRuntimeV080(page) {
   }
  }
  await page.getByRole('button',{name:'使用舊版相容引擎',exact:true}).click();assert.equal(selected,'legacy')
+ await page.getByText('相容引擎 · llama-server',{exact:true}).waitFor()
+ assert.equal(await page.getByText(/Smart App Control：尚未完成獨立實機驗證/).count(),0,'Old image trust must not be displayed after a switch')
  await page.unroute('**/__desktop_dev_rpc',handler)
  console.log('PASS controlled 0.8 Runtime install without auto-switch, confirmed selection, named GPU/memory types, independent trust/SAC states, four sizes and both themes; no real downloads or inference')
 }

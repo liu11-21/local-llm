@@ -49,6 +49,7 @@ class RuntimeManager:
         if kind not in ('legacy','llama-app') or data.get('confirmed') is not True:
             raise ValueError('RUNTIME_CONFIRM · 請確認要切換的引擎。')
         record={'kind':kind}
+        if kind=='legacy':self.report=None
         if kind=='llama-app':
             report=self.inspect(data.get('path',''))
             auth=report['authenticode']
