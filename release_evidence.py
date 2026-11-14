@@ -30,7 +30,7 @@ def seed(directory):
         'Missing notices and source obligations remain REVIEW REQUIRED.\n'
         'Full current source/docs: https://github.com/liu11-21/local-llm/tree/dev/desktop-workspace\n', encoding='utf-8')
     (directory / 'STATUS.json').write_text(json.dumps({
-        'version': '0.7.0', 'channel': 'Development', 'project_license': WORKSPACE_LICENSE,
+        'version': '0.8.0', 'channel': 'Development', 'project_license': WORKSPACE_LICENSE,
         'copyright': WORKSPACE_COPYRIGHT, 'rights_confirmation': 'A1-A4 APPROVED 2026-11-13; scoped first-party adoption only',
         'license_scope': WORKSPACE_SCOPE,
         'signpath': 'NOT APPLIED; NOT APPROVED', 'distribution': 'unsigned review candidate',
@@ -46,7 +46,7 @@ def prepare(directory):
 def verify(directory):
     build = json.loads((directory / 'BUILD.json').read_text(encoding='utf-8-sig'))
     inventory = json.loads((directory / 'installed-pe-inventory.json').read_text(encoding='utf-8-sig'))
-    assert build['authenticode'] == 'NotSigned' and build['version'] == '0.7.0'
+    assert build['authenticode'] == 'NotSigned' and build['version'] == '0.8.0'
     assert inventory['source_commit'] == build['commit']
     files = inventory['files']
     assert any(f['path'] == 'localllm-desktop.exe' for f in files)

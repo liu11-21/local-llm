@@ -34,7 +34,7 @@ def fetch(url,network):
     if not network:raise ValueError('Evidence not cached')
     for attempt in range(3):
         try:
-            with urlopen(Request(url,headers={'User-Agent':'LocalLLM-license-review/0.7.0 (metadata only)'}),timeout=30) as response:
+            with urlopen(Request(url,headers={'User-Agent':'LocalLLM-license-review/0.8.0 (metadata only)'}),timeout=30) as response:
                 if not response.url.startswith('https://'):raise ValueError('Non-HTTPS evidence redirect')
                 data=response.read(16*1024**2+1)
             if len(data)>16*1024**2:raise ValueError('Evidence exceeds limit')
@@ -268,10 +268,10 @@ def collect(output,network=False,cargo_metadata=None,crate_archives=False):
         if component.get('archive_sha256'):entry['checksums']=[{'algorithm':'SHA256','checksumValue':component['archive_sha256']}]
         elif (component.get('integrity') or '').startswith('sha512-'):
             entry['checksums']=[{'algorithm':'SHA512','checksumValue':base64.b64decode(component['integrity'].split('-',1)[1]).hex()}]
-    bom={'spdxVersion':'SPDX-2.3','dataLicense':'CC0-1.0','SPDXID':'SPDXRef-DOCUMENT','name':'LocalLLM-Workspace-0.7.0-license-review',
+    bom={'spdxVersion':'SPDX-2.3','dataLicense':'CC0-1.0','SPDXID':'SPDXRef-DOCUMENT','name':'LocalLLM-Workspace-0.8.0-license-review',
         'documentNamespace':f'https://github.com/liu11-21/local-llm/sbom/{head}/license-review-'+hashlib.sha256(json.dumps(result,sort_keys=True).encode()).hexdigest()[:16],
         'creationInfo':{'creators':['Tool: LocalLLM license_audit.py'],'created':datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')},
-        'packages':[{'SPDXID':'SPDXRef-Workspace','name':'Local LLM Workspace','versionInfo':'0.7.0','downloadLocation':'https://github.com/liu11-21/local-llm',
+        'packages':[{'SPDXID':'SPDXRef-Workspace','name':'Local LLM Workspace','versionInfo':'0.8.0','downloadLocation':'https://github.com/liu11-21/local-llm',
                      'filesAnalyzed':False,'licenseConcluded':'NOASSERTION','licenseDeclared':WORKSPACE_LICENSE,
                      'copyrightText':WORKSPACE_COPYRIGHT,'comment':WORKSPACE_SCOPE},*packages],
         'relationships':[{'spdxElementId':'SPDXRef-DOCUMENT','relationshipType':'DESCRIBES','relatedSpdxElement':'SPDXRef-Workspace'},

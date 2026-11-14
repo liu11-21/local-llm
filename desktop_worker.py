@@ -75,7 +75,7 @@ ENGINE_HASH = "96a04cf289479b3404a559eab0db7dba9877080a61f5f5fdba9d85eb6ca0f324"
 ENGINE_BYTES = 36868097
 ENGINE_LICENSE_HASH = "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
 MAX_LINE = 256 * 1024
-WORKSPACE_VERSION = "0.7.0"
+WORKSPACE_VERSION = "0.8.0"
 ACTIONS = {"chat", "download", "team", "team-workflow", "comfy-start", "comfy-stop", "media", "engine-start",
            "engine-stop", "engine-install", "comfy-install", "media-install", "agent", "update-download", "remote-fetch-work",
            "openvino-install","openvino-remove","openvino-detect","openvino-import","openvino-infer","benchmark"}
