@@ -67,6 +67,9 @@ class RuntimeTests(unittest.TestCase):
         self.assertIn('controlled reviewer failure',result)
         for secret in ('secret-123','C:/private/model.gguf','Bearer abc'):self.assertNotIn(secret,result)
 
+    def test_pinned_upstream_notice_keeps_exact_bytes_on_windows_checkout(self):
+        self.assertEqual(sha256(Path(__file__).parent/'third_party/llama.cpp-b12360-LICENSE'),MANIFEST['license_sha256'])
+
     def test_installer_conflict_does_not_overwrite(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);target=root/'runtimes'/MANIFEST['id'];target.mkdir(parents=True)

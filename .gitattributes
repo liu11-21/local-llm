@@ -1,5 +1,6 @@
 # The bundled upstream license is verified against its exact SHA-256.
 /third_party/llama.cpp-b11810-LICENSE text eol=lf
+/third_party/llama.cpp-b12360-LICENSE text eol=lf
 # Preserve upstream notice/schema evidence byte-for-byte on Windows checkout.
 /docs/sbom/license-texts/** -text
 /docs/sbom/spdx-schema.json -text
