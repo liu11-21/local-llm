@@ -56,10 +56,10 @@ jobs:
           python check_workspace_version.py --build build/workspace-build.json --worker build/desktop-worker/LocalLLMWorker/LocalLLMWorker.exe
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: '4354605004c7d8db1f88bca8e3cc1ef38b135b55'
+          ref: 'e2ba3476c6a58574db3c488e9aa4296f4cd4dc4c'
           path: build/upgrade-source
           persist-credentials: false
-      - name: Build actual Workspace 0.6.2 upgrade baseline
+      - name: Build actual Workspace 0.7.0 upgrade baseline
         shell: pwsh
         run: |
           python build/upgrade-source/build_desktop_worker.py
@@ -72,7 +72,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           Pop-Location
           Remove-Item Env:CARGO_TARGET_DIR
-          $baseline = Get-Item 'desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Local LLM Workspace_0.6.2_x64-setup.exe'
+          $baseline = Get-Item 'desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Local LLM Workspace_0.7.0_x64-setup.exe'
           New-Item -ItemType Directory -Force build/upgrade-baseline | Out-Null
           Move-Item -LiteralPath $baseline.FullName -Destination build/upgrade-baseline/
       - name: Exercise desktop layout in Chromium
@@ -92,6 +92,8 @@ jobs:
           python ../license_audit.py collect --output ../build/release-notices --network --crate-archives --cargo-metadata ../build/cargo-license-metadata.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python ../release_evidence.py prepare-notices --directory ../build/release-notices
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo test --locked --manifest-path src-tauri/Cargo.toml
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           npm run tauri -- build --target x86_64-pc-windows-msvc -- --locked
       - name: Verify installer inventory and produce checksums
@@ -128,7 +130,7 @@ jobs:
         shell: pwsh
         run: |
           $installer = Get-ChildItem build/windows-review -Filter '*.exe' -File
-          ./desktop/smoke-install.ps1 -Installer $installer.FullName -BaselineInstaller 'build/upgrade-baseline/Local LLM Workspace_0.6.2_x64-setup.exe'
+          ./desktop/smoke-install.ps1 -Installer $installer.FullName -BaselineInstaller 'build/upgrade-baseline/Local LLM Workspace_0.7.0_x64-setup.exe'
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           Copy-Item -LiteralPath build/release-notices -Destination build/windows-review/notices -Recurse
           python release_evidence.py verify --directory build/windows-review
@@ -147,7 +149,7 @@ jobs:
           ATTESTATION_URL: ${{ steps.provenance.outputs.attestation-url }}
         run: |
           Copy-Item -LiteralPath $env:BUNDLE_PATH -Destination build/windows-review/provenance.sigstore.json
-          @{source_commit=$env:GITHUB_SHA;run=$env:GITHUB_RUN_ID;attestation_url=$env:ATTESTATION_URL;authenticode='NotSigned';license='NOASSERTION';signpath='NOT APPLIED'} | ConvertTo-Json | Set-Content build/windows-review/PROVENANCE.json
+          @{source_commit=$env:GITHUB_SHA;run=$env:GITHUB_RUN_ID;attestation_url=$env:ATTESTATION_URL;authenticode='NotSigned';license='MIT (scoped first-party; see LICENSE_SCOPE.md)';signpath='NOT APPLIED'} | ConvertTo-Json | Set-Content build/windows-review/PROVENANCE.json
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: LocalLLM-workspace-Windows-x64-unsigned

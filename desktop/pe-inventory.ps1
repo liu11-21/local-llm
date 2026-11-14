@@ -18,5 +18,5 @@ $items = @(Get-ChildItem -LiteralPath $inventoryRoot -Recurse -File | Where-Obje
         source_reference=if ($relative -eq 'localllm-desktop.exe') {'desktop/src-tauri/src/main.rs; Cargo.lock'} elseif ($relative -eq 'worker/LocalLLMWorker.exe') {'desktop_worker.py; build_desktop_worker.py; requirements-windows.lock'} elseif ($relative -eq 'uninstall.exe') {'tauri.conf.json; Tauri NSIS template/toolchain'} else {'notices/DEPENDENCY_LICENSES.json; exact upstream binary attribution pending review'}
     }
 })
-@{schema=1;source_commit=$env:GITHUB_SHA;version='0.7.0';files=$items;scope='Installed payload including uninstaller; no user data or absolute paths'} | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Output -Encoding utf8
+@{schema=1;source_commit=$env:GITHUB_SHA;version='0.8.0';files=$items;scope='Installed payload including uninstaller; no user data or absolute paths'} | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Output -Encoding utf8
 Write-Output "Recorded $($items.Count) installed PE files."

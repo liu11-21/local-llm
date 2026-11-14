@@ -59,6 +59,9 @@ class LlamaAppEngine(LocalEngine):
         except (OSError,ValueError,http.client.HTTPException):pass
         finally:connection.close()
 
+    def template_options(self):
+        return {"chat_template_kwargs":{"enable_thinking":bool(self.thinking)}} if self.supports_thinking else {}
+
     def request_options(self,thinking,max_tokens):
         if thinking and not self.supports_thinking:raise ValueError("THINKING_UNSUPPORTED · 模型範本未宣告 Thinking，未套用 reasoning_effort。")
         if not self.supports_thinking:return {}

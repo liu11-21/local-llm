@@ -56,6 +56,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const [budget, setBudget] = useState(512)
   const [temperature, setTemperature] = useState(0.4)
   const [mode, setMode] = useState('auto')
+  const [thinking,setThinking] = useState(false)
+  const [gpuLayers,setGpuLayers] = useState('')
   const [device,setDevice]=useState('')
   const [recommendation,setRecommendation]=useState<string>()
   const [openvinoDevice,setOpenvinoDevice] = useState('CPU')
@@ -117,7 +119,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
       setPending({text, regenerate}); setJob(undefined); setUsage(undefined); stick.current = true
       if (!regenerate) setPrompt('')
       const result = await run('chat', { chat, prompt:text, model, runtime, policy, consent, context, mode,
-        max_tokens:runtime==='openvino' ? Math.min(budget,512) : budget, temperature, regenerate,
+        max_tokens:runtime==='openvino' ? Math.min(budget,512) : budget, temperature, regenerate, thinking, ...(gpuLayers ? {gpu_layers:Number(gpuLayers)} : {}),
         device:openvinoDevice,...(device && ['local','openvino'].includes(runtime) ? {execution:{device,confirmed:true,recommendation_id:recommendation}} : {}) }, setJob)
       if (result?.answer) {
         const rows = await rpc<Message[]>('history', {chat,with_runtime:true})
@@ -143,7 +145,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
   const display: Message[] = pending ? [
     ...messages.slice(0, pending.regenerate ? -1 : messages.length),
     ...(!pending.regenerate ? [{role:'user', content:pending.text}] : []),
-    ...(job?.answer ? [{role:'assistant', content:job.answer}] : []),
+    ...(job?.answer || job?.reasoning ? [{role:'assistant', content:job.answer || '', reasoning:job.reasoning}] : []),
   ] : messages
   const tokens = job?.usage ?? usage
 
@@ -198,6 +200,7 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         {display.map((message, index) => <article className={'message ' + message.role} key={index}>
           <b>{message.role === 'user' ? '你' : '模型'}</b>
           {message.model && <div className="small muted pre">{message.provider} · {message.model}</div>}
+          {message.reasoning && <details className="reasoning-trace"><summary>思考過程</summary><Reply content={message.reasoning}/></details>}
           {message.role === 'user' ? <p>{message.content}</p> : <Reply content={message.content}/>}
           {message.role === 'assistant' && !(pending && index === display.length - 1) && <div className="message-tools row">
             <button className="icon" title="複製回答" onClick={() => void navigator.clipboard.writeText(message.content).then(() => notice('已複製回答。'), report)}><Copy size={15}/></button>
@@ -212,6 +215,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
           <label>溫度<input type="number" min={0} max={2} step={0.1} value={temperature} onChange={e => setTemperature(+e.target.value)}/></label>
           <label>最大輸出 Token<input type="number" min={64} max={2048} step={1} value={budget} onChange={e => setBudget(+e.target.value)}/></label>
           {runtime === 'local' && <>
+            {info?.llama_runtime?.selected==='llama-app' && <label><input type="checkbox" checked={thinking} onChange={e=>setThinking(e.target.checked)}/>Thinking（需模型範本支援，預設關閉）</label>}
+            <label>GPU Layers<input type="number" min={0} max={1024} placeholder="自動安全分層" value={gpuLayers} onChange={e=>setGpuLayers(e.target.value)}/></label>
             <label>上下文<select value={context} onChange={e => setContext(+e.target.value)}>{[2048,4096,8192].map(value => <option key={value}>{value}</option>)}</select></label>
             <label>本機裝置<select value={mode} onChange={e => setMode(e.target.value)}><option value="auto">自動分層</option><option value="cpu">只使用 CPU</option></select></label>
           </>}
@@ -229,6 +234,9 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         {runtime==='openvino' && <p className="small muted">OpenVINO IR · 輸入上限 1024 Token，每次最多輸出 512 Token。指定裝置的實際算子分配待驗證，生成採固定貪婪解碼。</p>}
         <p className="small muted">{tokens ? <>輸入 {tokens.input} / {tokens.context} Token · 最多輸出 {tokens.max_output}{tokens.omitted_turns > 0 && ' · 略過較早 ' + tokens.omitted_turns + ' 輪'}</> :
           <>{runtime === 'local' ? '上下文上限 ' + context + ' Token' : runtime==='openvino' ? '本機 OpenVINO · ' + openvinoDevice : '端點未回報上下文用量'} · Ctrl + Enter 送出</>} · 目前支援文字輸入</p>
+        {tokens && <p className="small muted">{tokens.completion_tokens != null && `已生成 ${tokens.completion_tokens} Token · `}
+          {tokens.prompt_per_second != null && `Prompt ${tokens.prompt_per_second.toFixed(2)} Token/s · `}
+          {tokens.predicted_per_second != null && `Generation ${tokens.predicted_per_second.toFixed(2)} Token/s`}</p>}
       </footer>
     </section>
   </div>

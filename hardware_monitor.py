@@ -35,7 +35,7 @@ def windows_inventory(cancel=None):
     }) | ConvertTo-Json -Compress
     """
     with subprocess.Popen([str(executable),"-NoProfile","-NonInteractive","-Command",script],
-                          stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+                          stdout=subprocess.PIPE,stderr=subprocess.PIPE,env={k:v for k,v in os.environ.items() if k.upper()!="PSMODULEPATH"},
                           creationflags=subprocess.CREATE_NO_WINDOW) as process:
         deadline = monotonic()+20
         while True:

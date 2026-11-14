@@ -51,7 +51,7 @@ def measure(data,repeats,worker=None):
             return result['value']
         try:
             identity=rpc('build-info');timings['worker_first_identity'].append((perf_counter()-started)*1000)
-            if identity['version']!='0.7.0':raise RuntimeError('Wrong worker baseline version')
+            if identity['version']!=__import__('workspace_version').VERSION:raise RuntimeError('Wrong worker baseline version')
             for name,op,options in [('info','info',{}),('home_summary','home-summary',{}),
                 ('chats_page','chats-page',{'offset':1000}),('chats_search','chats-page',{'query':'00199'}),
                 ('works_page','works-library',{'offset':240}),('runtime_refresh','runtime-capability-refresh',{'id':'local'}),

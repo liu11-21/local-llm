@@ -11,7 +11,7 @@ from downloads import model_filename
 from device_resources import ResourceDemand,admission,conflicts
 
 ACTIVE = {"queued", "running", "paused"}
-RETRYABLE = {"download", "engine-install", "comfy-install", "media-install", "update-download", "openvino-install"}
+RETRYABLE = {"runtime-install", "download", "engine-install", "comfy-install", "media-install", "update-download", "openvino-install"}
 CAPACITY = {"compute": 1, "network": 2, "remote": 2,"device":4,"control":2}
 RESOURCES = {"compute": ["local-compute"], "network": ["network", "disk"], "remote": ["network", "external-runtime"],
              "device":["declared-device","host-ram"],"control":["orchestration"]}

@@ -30,13 +30,13 @@ export function ModelLibrary({ info, tasks, run, report, go, refresh }: {
     try { setFiles(await rpc('files', {repo: name})) } catch (error) { report(error) } finally { setReading(false) }
   }
   return <>
-          <div className="dashboard"><Panel title="本機模型" description={info?.model_folder || '正在讀取資料夾'}>
+          <div className="dashboard"><Panel title="本機模型" description={info ? `${info.model_folder} · 可用空間 ${gb(info.hardware.disk_available ?? 0)}` : '正在讀取資料夾'}>
             {!models.length && <Empty>尚未安裝 GGUF。可以從下方推薦或 Hugging Face 搜尋下載。</Empty>}
             {(info?.registry.models ?? []).map(entry => <div key={entry.id}>
               <details><summary>模型運算建議 · {entry.label}</summary><DeviceChoice info={info} task="chat" runtime="local" model={entry.id}/></details>
-              <div className="list-row"><span><b>{entry.label}</b><small>{[entry.format, entry.quantization, gb(entry.bytes)].filter(Boolean).join(" · ")}</small>
+              <div className="list-row"><span><b>{entry.label}</b><small>{[entry.format, entry.quantization, gb(entry.bytes),entry.context_length ? `Context ${entry.context_length.toLocaleString()}` : null].filter(Boolean).join(" · ")}</small>
                 <small>{verification[entry.verification]}</small></span>
-                <button className="button" disabled={!info?.engine || reading} onClick={async()=>{setReading(true);try{setPlan(await rpc('plan',{model:entry.id}))}catch(e){report(e)}finally{setReading(false)}}}>估算</button></div>
+                <button className="button" disabled={!info?.engine || reading} onClick={async()=>{setReading(true);try{setPlan(await rpc('plan',{model:entry.id}))}catch(e){report(e)}finally{setReading(false)}}}>估算</button><button className="button" disabled={reading || tasks.some(activeTask)} onClick={async()=>{if(!window.confirm(`永久刪除 ${entry.label}（${gb(entry.bytes)}）？對話與作品將保留。`))return;setReading(true);try{await rpc('model-remove',{model:entry.id,confirmed:true});await refresh()}catch(e){report(e)}finally{setReading(false)}}}>刪除模型</button></div>
               <details className="source-details"><summary>來源與授權</summary>
                 <dl>{Object.entries({倉庫:entry.repository, 版本:entry.version, 'SHA-256':entry.sha256,
                   '模型卡授權':entry.license, 下載時間:entry.downloaded}).map(([label,value]) =>

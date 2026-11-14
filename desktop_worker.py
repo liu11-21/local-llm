@@ -46,6 +46,7 @@ from comfy_resources import ComfyResources
 from media_previews import MediaPreviews
 from resource_policy import configured,memory_policy,load as load_memory_policy,save as save_memory_policy
 from openvino_adapter import memory_limit
+from gguf_metadata import metadata as gguf_metadata
 from load_plan import block_count
 from device_resources import ResourceDemand
 from text_backend import TextBackend
@@ -359,6 +360,9 @@ class Desktop(Workspace):
         return plan
 
     def load_model(self, path, executable, mode, context, cancel, update, native):
+        declared_context=gguf_metadata(path).get('context_length')
+        if declared_context and context>declared_context:
+            raise ValueError('CONTEXT_LIMIT · 所選上下文超過 GGUF 模型宣告，未假定已支援延伸。')
         self.local.stop()
         self.active = None
         update(message="正在估算系統記憶體與 GPU 分層…")
@@ -406,6 +410,7 @@ class Desktop(Workspace):
                 self.local.start(executable, path, cancel, plan, context=context, native_tools=native)
             else:
                 raise error
+        if self.runtime_manager.report:self.runtime_manager.report["launch_success"]=True
         return asdict(plan)
 
     def stop_local(self):
@@ -949,6 +954,7 @@ class Desktop(Workspace):
             update(execution=execution)
             return {**(result or {}),"execution":execution}
         if action == "runtime-install":
+            if data.get("confirmed") is not True:raise ValueError("請確認下載固定版本 Runtime。")
             return self.runtime_manager.install(cancel,update)
         if action == "runtime-audit":
             report=self.runtime_manager.inspect(self.engine())
@@ -1066,15 +1072,18 @@ class Desktop(Workspace):
             else:
                 plan = self.prepare(data, cancel, update)
             messages = old + [{"role": "user", "content": prompt}]
+            if chosen=='local' and re.search(r'[\u4e00-\u9fff]',prompt):
+                messages.insert(0,{'role':'system','content':'使用者以中文提問時，請使用繁體中文回答；如果使用者明確要求其他語言或書寫系統，請遵循其要求。'})
             usage = None
             thinking = data.get("thinking",False)
             if type(thinking) is not bool:raise ValueError("Thinking 設定無效。")
             if chosen == "local":
+                self.local.thinking=thinking
                 original = len(messages)
                 while (input_tokens := self.local.prompt_tokens(messages)) + budget > self.active[2]:
-                    if len(messages) < 3:
+                    if len(messages) < (4 if messages[0]["role"]=="system" else 3):
                         raise ValueError("提示詞和回答長度超過上下文限制。請縮短輸入或提高上下文長度。")
-                    messages = messages[2:]
+                    messages = [messages[0],*messages[3:]] if messages[0]["role"]=="system" else messages[2:]
                 usage = {"input": input_tokens, "context": self.active[2], "max_output": budget,
                          "omitted_turns": (original - len(messages)) // 2}
             update(message="正在生成回答…", answer="", usage=usage)
@@ -1095,7 +1104,8 @@ class Desktop(Workspace):
                 samples=[]
                 def telemetry(stats):
                     if not samples or time()-samples[-1]['at']>=2:
-                        samples.append({'at':time(),'hardware':self.hardware_monitor.snapshot()})
+                        snapshot=self.hardware_monitor.snapshot()
+                        samples.append({'at':time(),'checked_at':snapshot.get('checked_at'),'devices':[{k:d.get(k) for k in ('id','memory_type','utilization','vram_used','vram_available','shared_used')} for d in snapshot.get('devices',[])[:8]]})
                         del samples[:-30]
                     stats['resource_samples']=samples
                     update(reasoning=stats.get('reasoning',''),generation=stats)
@@ -1416,7 +1426,8 @@ class Desktop(Workspace):
         if op == "info":
             info = self.info()
             if self.hardware_cache is None:
-                executable = self.runtime_manager.executable()
+                try:executable = self.runtime_manager.executable()
+                except (ValueError,OSError):executable = None
                 self.hardware_cache = engine_devices(executable) if executable else []
                 self.hardware_sample_at = time()
             if self.runtime_manager.record["kind"]=="llama-app":info["engine"] = self.has_engine()

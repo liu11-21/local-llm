@@ -45,7 +45,7 @@ export type Work = { name: string; kind: MediaKind; created: string; bytes: numb
   lyrics?: string; options?: Params; schema?: number; runtime?: string; status?: string; dimensions?: WorkDimensions;
   source?: {engine: string; job: string; original: string; host?:string; host_label?:string} }
 export type Registry = {
-  models: { id: string; label: string; bytes: number; quantization: string | null; format: string; publisher?: string; ram: number;
+  models: { id: string; label: string; bytes: number; context_length?:number; architecture?:string; quantization: string | null; format: string; publisher?: string; ram: number;
     verification: 'verified' | 'known' | 'imported' | 'unknown'; repository?: string; version?: string; source?: string;
     sha256?: string; license?: string; downloaded?: string }[];
   engines: { id: string; label: string; version: string; installed: boolean; running: boolean }[];
@@ -54,6 +54,7 @@ export type Registry = {
   media_models?: MediaModel[];
 }
 export type Info = {
+  llama_runtime?:{selected:string;selection:{version?:string};trust?:{authenticode?:{status:string}}};
   openvino?:{installed:boolean;version:string;devices:string[];detection:string;busy:boolean;
     models:{id:string;label:string;kind:'text'|'tensor';format:string;bytes:number;architecture:string;context:number|null;
       npu_candidate?:boolean;quantization?:string}[]};
@@ -67,7 +68,7 @@ export type Info = {
   recoverable_downloads: {name: string; url: string; received: number; total: number}[];
 }
 export type Chat = [string, string]
-export type Message = { role: string; content: string; runtime?: string; model?: string; provider?: string }
+export type Message = { reasoning?:string; role: string; content: string; runtime?: string; model?: string; provider?: string }
 export type TaskState = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'interrupted'
 export type Task = {
   error_info?:{code:string;summary:string;recovery:string;detail:string};
@@ -81,12 +82,12 @@ export type Task = {
   history_warning?: string | null;
   media_target?: string;
 }
-export type Usage = { input: number; context: number; max_output: number; omitted_turns: number }
+export type Usage = { input: number; context: number; max_output: number; omitted_turns: number; completion_tokens?:number; prompt_per_second?:number; predicted_per_second?:number }
 export type Job = {
-  id: string; state: string; message: string; answer?: string; received?: number; total?: number; plan?: Plan; plan_id?: string;
+  id: string; state: string; message: string; reasoning?:string; answer?: string; received?: number; total?: number; plan?: Plan; plan_id?: string;
   team_run_id?: string;
   members?: string[]; steps?: string[]; usage?: Usage;
-  result?: { message?: string; answer?: string; folder?: string; name?: string; file?: string; plan?: Plan; usage?: Usage; inference?:Params; drafts?: {name: string; text: string}[] };
+  result?: { path?:string; reasoning?:string; message?: string; answer?: string; folder?: string; name?: string; file?: string; plan?: Plan; usage?: Usage; inference?:Params; drafts?: {name: string; text: string}[] };
 }
 type Reply<T> = { ok: true; value: T } | { ok: false; error: string }
 

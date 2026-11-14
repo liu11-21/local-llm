@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import re
 import socket
 import subprocess
 from tempfile import TemporaryFile
@@ -30,6 +31,14 @@ class LocalEngine:
     def running(self):
         with self.lock:
             return self.process is not None and self.process.poll() is None
+
+    def safe_error(self,value):
+        text=str(value.get('message','Runtime error') if isinstance(value,dict) else value)
+        for source,replacement in ((self.key,'[已遮蔽金鑰]'),(str(self.model) if self.model else None,'[模型]'),(str(self.executable) if self.executable else None,'[Runtime]')):
+            if source:text=text.replace(source,replacement)
+        text=re.sub(r"[A-Za-z]:[\\/][^\s\"']+",'[檔案]',text)
+        text=re.sub(r"Bearer\s+[^\s\"']+",'Bearer [已遮蔽金鑰]',text,flags=re.I)
+        return text[:600]
 
     def resolve_model(self, model):
         model = Path(model).resolve(strict=True)
@@ -166,6 +175,9 @@ class LocalEngine:
         finally:
             connection.close()
 
+    def template_options(self):
+        return {}
+
     def prompt_tokens(self, messages, *, tools=None):
         port, key = self.endpoint()
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
@@ -178,7 +190,7 @@ class LocalEngine:
                     if response.status != 200:
                         raise RuntimeError(f"本機模型無法檢查輸入長度（HTTP {response.status}）。")
                     return json.loads(body)
-            prompt = request("/apply-template", {"messages": messages, **({"tools": tools} if tools else {})})["prompt"]
+            prompt = request("/apply-template", {"messages": messages, **self.template_options(), **({"tools": tools} if tools else {})})["prompt"]
             return len(request("/tokenize", {"content": prompt, "add_special": True})["tokens"])
         finally:
             connection.close()
@@ -238,7 +250,9 @@ class LocalEngine:
             with connection.getresponse() as response:
                 if response.status != 200:
                     detail = response.read(2048).decode("utf-8", errors="replace")
-                    raise RuntimeError(f"模型回應 HTTP {response.status}；請檢查 Runtime 診斷與模型範本。")
+                    try: parsed=json.loads(detail);detail=parsed.get('error',parsed)
+                    except ValueError:pass
+                    raise RuntimeError(f"模型回應 HTTP {response.status}：{self.safe_error(detail)}")
                 for line in response:
                     if cancel is not None and cancel.is_set():
                         return
@@ -251,7 +265,7 @@ class LocalEngine:
                         return
                     event = json.loads(data)
                     if event.get("error"):
-                        raise RuntimeError("Runtime 回傳推理錯誤；請檢查已遮蔽的診斷。")
+                        raise RuntimeError(self.safe_error(event["error"]))
                     yield event
             raise ConnectionError("模型串流提前結束。")
         finally:

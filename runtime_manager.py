@@ -20,7 +20,8 @@ class RuntimeManager:
         self.file=self.data/"llama-runtime.json"
         try:
             value=json.loads(self.file.read_text(encoding="utf-8"))
-            if value.get("kind") in ("legacy","llama-app"):self.record=value
+            if isinstance(value,dict) and value.get("kind") in ("legacy","llama-app"):
+                if value["kind"]=="legacy" or isinstance(value.get("path"),str) and isinstance(value.get("sha256"),str):self.record=value
         except (OSError,ValueError):pass
 
     def executable(self):

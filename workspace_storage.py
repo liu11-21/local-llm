@@ -72,7 +72,7 @@ class Upgrade:
             raise ValueError('升級備份所需磁碟空間不足。請保留原資料，釋出空間後重新啟動。')
         backups=self.data/'backups';backups.mkdir(exist_ok=True)
         name=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')+'-'+uuid4().hex[:12]
-        self.backup=backups/f'workspace-pre-070-{name}.sqlite3'
+        self.backup=backups/f'workspace-pre-{VERSION.replace(".","")}-{name}.sqlite3'
         digest=snapshot(source,self.backup)
         self.report.update(status='adopted-legacy' if source==legacy else 'upgraded',backup=str(self.backup),
                            backup_sha256=digest,source=source.name,source_schema=schema)

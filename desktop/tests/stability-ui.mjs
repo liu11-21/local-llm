@@ -13,9 +13,9 @@ export async function exerciseStability(page) {
   const go=async name=>{const menu=page.getByTitle('導覽');if(await menu.isVisible())await menu.click();await page.getByRole('button',{name,exact:true}).click()}
   await page.setViewportSize({width:1280,height:900})
   await go('設定')
-  await page.getByText('Local LLM Workspace 0.7.0 · Development',{exact:true}).waitFor()
+  await page.getByText('Local LLM Workspace 0.8.0 · Development',{exact:true}).waitFor()
   await page.getByText('建置詳情',{exact:true}).click()
-  await page.getByText(/Worker：0.7.0/).waitFor()
+  await page.getByText(/Worker：0.8.0/).waitFor()
   if(shots)await page.screenshot({path:join(shots,'settings-version.png'),fullPage:true})
   const timings={home_render_ms:[],runtime_selector_ms:[]}
   if(await page.getByTitle('關閉訊息').isVisible())await page.getByTitle('關閉訊息').click()
@@ -84,8 +84,8 @@ export async function exerciseStability(page) {
   if(process.env.LOCALLLM_070_EVIDENCE){
     await mkdir(process.env.LOCALLLM_070_EVIDENCE,{recursive:true})
     await writeFile(join(process.env.LOCALLLM_070_EVIDENCE,'ui-stability.json'),JSON.stringify({status:'PASS',model_inference:false,
-      version:'0.7.0',channel:'Development',mixed_worker_operations_blocked:true,chat_page_size:50,chat_search:true,
+      version:'0.8.0',channel:'Development',mixed_worker_operations_blocked:true,chat_page_size:50,chat_search:true,
       collapsed_monitor_unmounted:true,packaged_csp_png_cache:true,timings,scope:'Real React and production RPC; controlled Runtime, not model load/remote hardware performance'},null,2))
   }
-  console.log('PASS 0.7.0 settings identity, mixed-worker rejection, paged searchable history, collapsed monitoring and repeated UI baselines')
+  console.log('PASS 0.8.0 settings identity, mixed-worker rejection, paged searchable history, collapsed monitoring and repeated UI baselines')
 }

@@ -20,7 +20,7 @@ class WorkspaceVersionTests(unittest.TestCase):
                                                   {'tag_name':'workspace-v0.8.0'}], VERSION))
 
     def test_only_verified_newer_workspace_release_is_selected(self):
-        name='Local LLM Workspace_0.7.1_x64-setup.exe';tag='workspace-v0.7.1'
+        name='Local LLM Workspace_0.8.1_x64-setup.exe';tag='workspace-v0.8.1'
         asset={'name':name,'state':'uploaded','size':100,'digest':'sha256:'+hashlib.sha256(b'fixture').hexdigest(),
                'browser_download_url':f'{RELEASES}/download/{tag}/{quote(name)}'}
         release={'tag_name':tag,'assets':[asset]}

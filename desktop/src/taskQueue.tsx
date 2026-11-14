@@ -3,6 +3,7 @@ import { rpc, type Job, type Params, type Task,type Info } from './api'
 import { Empty, Panel } from './ui'
 
 const labels: Record<string, string> = {
+  'runtime-install':'安裝新版官方文字引擎','runtime-audit':'檢查 Runtime 信任證據',
   benchmark:'模型效能測試',
   'team-node':'團隊成員節點',
   'openvino-install':'安裝 OpenVINO','openvino-remove':'移除 OpenVINO','openvino-detect':'檢查 OpenVINO 裝置',

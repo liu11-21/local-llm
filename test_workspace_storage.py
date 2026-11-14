@@ -19,6 +19,21 @@ class UpgradeTests(unittest.TestCase):
             app=Desktop(root)
             try:self.assertTrue(database_ready(app.database))
             finally:app.close()
+    def test_070_workspace_upgrade_retains_history_and_creates_080_snapshot(self):
+        with TemporaryDirectory() as folder:
+            root=Path(folder).resolve();old=Desktop(root)
+            with old.connect() as db:
+                db.execute("INSERT INTO chats(id,title) VALUES(?,?)",('b'*32,'0.7 history'))
+                db.execute("INSERT INTO messages VALUES(?,?,?)",('b'*32,'assistant','keep 0.7 answer'))
+                db.execute("UPDATE workspace_storage SET version='0.7.0',minimum_reader='0.7.0'")
+            old.close();new=Desktop(root)
+            try:
+                self.assertEqual(new.history('b'*32)[0]['content'],'keep 0.7 answer')
+                self.assertEqual(new.rpc('storage-status',{})['status'],'upgraded')
+                self.assertTrue(list((root/'backups').glob('workspace-pre-080-*.sqlite3')))
+                self.assertTrue(database_ready(new.database))
+            finally:new.close()
+
     def legacy(self,root):
         path=root/'desktop.sqlite3'
         with closing(sqlite3.connect(path)) as db,db:

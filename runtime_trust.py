@@ -22,11 +22,13 @@ def sha256(path):
 def powershell(script, args=(), timeout=20):
     if os.name != "nt":
         return None
-    shell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+    shell = shutil.which("pwsh.exe") or shutil.which("powershell.exe")
     if not shell:
         return None
     # Arguments are bound positionally, never interpolated into PowerShell source.
-    result = subprocess.run([shell,"-NoProfile","-NonInteractive","-Command",script,*map(str,args)],
+    env={k:v for k,v in os.environ.items() if k.upper()!="PSMODULEPATH"}
+    script="[Console]::OutputEncoding=[Text.UTF8Encoding]::new();"+script
+    result = subprocess.run([shell,"-NoProfile","-NonInteractive","-Command",script,*map(str,args)],env=env,
         capture_output=True,timeout=timeout,creationflags=FLAGS,encoding="utf-8",errors="replace")
     if result.returncode:
         return None
@@ -37,9 +39,9 @@ def powershell(script, args=(), timeout=20):
 def signature(path):
     # Avoid shell injection: path is transferred through the environment, not parsed as code.
     if os.name != "nt":return {"status":"NOT VERIFIED","signer":None}
-    env = os.environ.copy();env["LOCALLLM_TRUST_FILE"] = str(Path(path).absolute())
-    script = "$s=Get-AuthenticodeSignature -LiteralPath $env:LOCALLLM_TRUST_FILE; @{status=$s.Status.ToString();signer=$s.SignerCertificate.Subject;issuer=$s.SignerCertificate.Issuer;thumbprint=$s.SignerCertificate.Thumbprint}|ConvertTo-Json -Compress"
-    shell=shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+    env = {k:v for k,v in os.environ.items() if k.upper()!="PSMODULEPATH"};env["LOCALLLM_TRUST_FILE"] = str(Path(path).absolute())
+    script = "[Console]::OutputEncoding=[Text.UTF8Encoding]::new();$s=Get-AuthenticodeSignature -LiteralPath $env:LOCALLLM_TRUST_FILE; @{status=$s.Status.ToString();signer=$s.SignerCertificate.Subject;issuer=$s.SignerCertificate.Issuer;thumbprint=$s.SignerCertificate.Thumbprint}|ConvertTo-Json -Compress"
+    shell=shutil.which("pwsh.exe") or shutil.which("powershell.exe")
     if not shell:return {"status":"NOT VERIFIED","signer":None}
     try:
         result=subprocess.run([shell,"-NoProfile","-NonInteractive","-Command",script],env=env,capture_output=True,timeout=20,creationflags=FLAGS,encoding="utf-8",errors="replace")
@@ -86,9 +88,9 @@ class RuntimeTrust:
 
     def modules(self,process):
         if os.name!="nt":return {"resolved_image":None,"dependencies":[],"dependency_scan":"NOT VERIFIED"}
-        env=os.environ.copy();env['LOCALLLM_TRUST_PID']=str(int(process.pid))
-        script="$p=Get-Process -Id ([int]$env:LOCALLLM_TRUST_PID) -ErrorAction Stop;@{image=$p.Path;modules=@($p.Modules | ForEach-Object {$_.FileName})}|ConvertTo-Json -Depth 3 -Compress"
-        shell=shutil.which('powershell.exe') or shutil.which('pwsh.exe')
+        env={k:v for k,v in os.environ.items() if k.upper()!='PSMODULEPATH'};env['LOCALLLM_TRUST_PID']=str(int(process.pid))
+        script="[Console]::OutputEncoding=[Text.UTF8Encoding]::new();$p=Get-Process -Id ([int]$env:LOCALLLM_TRUST_PID) -ErrorAction Stop;@{image=$p.Path;modules=@($p.Modules | ForEach-Object {$_.FileName})}|ConvertTo-Json -Depth 3 -Compress"
+        shell=shutil.which('pwsh.exe') or shutil.which('powershell.exe')
         if not shell:return {"resolved_image":None,"dependencies":[],"dependency_scan":"NOT VERIFIED"}
         try:
             r=subprocess.run([shell,'-NoProfile','-NonInteractive','-Command',script],env=env,capture_output=True,timeout=20,creationflags=FLAGS,encoding='utf-8',errors='replace')

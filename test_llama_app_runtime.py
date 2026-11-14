@@ -59,6 +59,12 @@ class RuntimeTests(unittest.TestCase):
             with self.assertRaises(ValueError):restored.executable()
             restored.select({'kind':'legacy','confirmed':True});self.assertIsNone(restored.executable())
 
+    def test_error_redaction_preserves_useful_diagnosis(self):
+        engine=LlamaAppEngine();engine.key='secret-123';engine.model=Path('C:/private/model.gguf')
+        result=engine.safe_error({'message':'controlled reviewer failure secret-123 C:/private/model.gguf Bearer abc'})
+        self.assertIn('controlled reviewer failure',result)
+        for secret in ('secret-123','C:/private/model.gguf','Bearer abc'):self.assertNotIn(secret,result)
+
     def test_installer_conflict_does_not_overwrite(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);target=root/'runtimes'/MANIFEST['id'];target.mkdir(parents=True)
