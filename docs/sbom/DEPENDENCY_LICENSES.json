@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "source_commit": "7b3e9639b7d0b871585106493c6016e47ad5a41a",
+  "source_commit": "1a4503dddeb6388b70da813b5c2b5e8788237f7d",
   "workspace_license": "MIT",
   "coverage": {
     "npm_lock_entries": 199,
     "cargo_lock_dependencies": 404,
-    "python_build_pins": 10,
+    "python_build_pins": 11,
     "python_audit_pins": 6
   },
   "components": [
@@ -17107,6 +17107,30 @@
       "license_spdx": "MIT"
     },
     {
+      "id": "SPDXRef-18495ebeb1775800336debcc",
+      "ecosystem": "pypi",
+      "name": "zstandard",
+      "version": "0.25.0",
+      "license_declared": "BSD-3-Clause",
+      "license_concluded": "NOASSERTION",
+      "distribution_classes": [
+        "B"
+      ],
+      "scope": "worker dependency",
+      "source": "https://pypi.org/project/zstandard/0.25.0/",
+      "purl": "pkg:pypi/zstandard@0.25.0",
+      "notice_files": [
+        {
+          "original_name": "zstandard-0.25.0.dist-info/licenses/LICENSE",
+          "sha256": "c15b28f8866500bd3d607c739e87710aa5c47627aa30a0573948414564ff1da2",
+          "file": "license-texts/c15b28f8866500bd3d607c739e87710aa5c47627aa30a0573948414564ff1da2.txt"
+        }
+      ],
+      "status": "PASS",
+      "evidence": "local installed metadata",
+      "license_spdx": "BSD-3-Clause"
+    },
+    {
       "id": "SPDXRef-91b6a6ae33da6170b2f0de66",
       "ecosystem": "pypi",
       "name": "jsonschema",
@@ -17231,6 +17255,32 @@
       "status": "REVIEW REQUIRED",
       "evidence": "pypi exact-version metadata",
       "license_spdx": "PSF-2.0"
+    },
+    {
+      "id": "SPDXRef-b2e26bf316a413a74cc24e34",
+      "ecosystem": "runtime",
+      "name": "llama.app official Vulkan x64",
+      "version": "b12360",
+      "license_declared": "MIT",
+      "license_concluded": "NOASSERTION",
+      "distribution_classes": [
+        "C"
+      ],
+      "scope": "optional separate runtime; downloaded only after user action; signature does not certify SAC",
+      "source": "https://huggingface.co/buckets/ggml-org/install.sh/resolve/b12360/x86_64/windows/vulkan/kkkkk/llama-app.exe.zst",
+      "purl": null,
+      "notice_files": [
+        {
+          "original_name": "llama.cpp b12360 LICENSE",
+          "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+          "file": "license-texts/94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d.txt"
+        }
+      ],
+      "status": "PASS",
+      "executable_sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+      "compressed_sha256": "e16cada91c78a6110d08e1f2431f56ca79238e03fbab9855c4f62a9483fa886a",
+      "revision": "2d8a32502",
+      "license_spdx": "MIT"
     },
     {
       "id": "SPDXRef-c8a25b14aa6bb573ced1caa8",
@@ -17769,5 +17819,6 @@
     "scope_document": "LICENSE_SCOPE.md",
     "dependency_inventory_rerun": false,
     "history_rescanned": false
-  }
+  },
+  "v080_evidence_note": "Retains all 641 previously reviewed dependency context records (640 unique identities) and MIT adoption evidence; adds only zstandard 0.25.0 and optional llama.app b12360 from the verified build. Exact generated CI metadata, including differing collection-time status/metadata, is separately frozen under docs/evidence/v080/CI-NOTICE-INDEX.json; this overlay is not a new legal approval."
 }

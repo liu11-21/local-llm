@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "source_commit": "1a4503dddeb6388b70da813b5c2b5e8788237f7d",
+  "json_files": 20,
+  "markdown_targets": "PASS",
+  "no_absolute_private_paths_or_token_patterns": "PASS",
+  "retained_prior_dependency_records": 641,
+  "original_notice_bytes": "PASS",
+  "MIT_approval_record": "preserved",
+  "spdx_packages": 643,
+  "notice_context_records": 643,
+  "github_attestation_verifier": "official gh 2.104.0; exit 0; nonempty JSON result; repository/workflow/ref/source pinned; deny self-hosted runners",
+  "installer_sha256": "d79f480bd1c35595b75ce5755e902f635a10a7e5e5fb35fef83cc3b1b25d4354",
+  "installed_PE_status_counts": {
+    "NotSigned": 7,
+    "Valid": 67
+  },
+  "note": "Documentation/data validation after successful Windows build; no program/build changes in the final documentation commit.",
+  "staged_whitespace_check": "PASS excluding byte-preserved upstream license texts; zstandard BSD notice retains original CRLF",
+  "staged_new_notice_hashes": "PASS"
+}

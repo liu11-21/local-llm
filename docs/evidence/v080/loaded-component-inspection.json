@@ -1,0 +1,518 @@
+{
+  "date": "2026-11-14",
+  "observer_commit": "c671373d0fcecaf87c1db8a18d60a4824c15c7f4",
+  "scope": "observed process tree and loaded modules only; delay-loaded or unreadable files remain NOT VERIFIED",
+  "main_image": {
+    "pid": 4440,
+    "sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+    "authenticode": {
+      "status": "Valid",
+      "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+      "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US"
+    }
+  },
+  "child_image_count": 1,
+  "dependencies": [
+    {
+      "sha256": "afb6568d4dafbdecc77f611a984e2f27ff5305cb03e792ccafc4596b90c406e1",
+      "name": "aswhook.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Gen Digital Inc., O=Gen Digital Inc., S=Arizona, C=US",
+        "issuer": "CN=Sectigo Public Code Signing CA R36, O=Sectigo Limited, C=GB"
+      }
+    },
+    {
+      "sha256": "85dcf04481d8362bc3b47b9a63db52d7ed9d5af90a28cf3532d9354e568d26a6",
+      "name": "advapi32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "055a5f86aae369ab44d0deebac7cc2104b4ab328718f3c028625bd63984cba32",
+      "name": "apphelp.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "6876433316c874bc44e2bac7e344a598e3ea374c2aa060def153ed5a2f09364e",
+      "name": "bcryptPrimitives.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "8f1d9eb7e0315ab1b07970d15016953e22aedd44fe70337ca9c592983495506d",
+      "name": "CFGMGR32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "b9136a89f90897b8423b10dea838babbf1b6318fd717a37c9dd638caa0a305e3",
+      "name": "combase.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "dd5c3514132d92052004d302c66c756ffb6beef572de6538b4fc55f62579eb11",
+      "name": "conhost.exe",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "f37e52bf59bec44c11ec7988134f6c6618f8816a4221cf707a4d6a5675b1a8e8",
+      "name": "ControlLib.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "bca7a7a91c758b78c7fb9b6fcc6b72dcb2c660aae809b402a2ade9999ac5df6b",
+      "name": "CRYPT32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "09c2d3e0f1c3d86f4a69496acf6d0c0901715ee2f02f20afc10d6dc9e639b03f",
+      "name": "CRYPTBASE.DLL",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "3a262619c8050c59ede854740c9cdd0fc0afdc89d5313958ac04e96285fd50dc",
+      "name": "directxdatabasehelper.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "af42bede0898f07d1dd0e3b0bef6690123e8570812d8e31c70e188d483bc2cfc",
+      "name": "igc1464.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "69b14d9fa61cd060053e34f504a712c6b826e88085837d9b32c4125e2e8c427c",
+      "name": "igc64.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "5a76bcf8f5562ffd6de6307f104b12fab6a98ea6fe246ba3066cf1831764cab9",
+      "name": "igddxvacommon64.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "35b3604333215dba30a774a3325485b3dbed7fda3242ecd711939d554721b248",
+      "name": "igdgmm64.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "89714ed85bbbbd57f1c60b2de244b74664d3dbb49dd094250c8a85e23b8035a7",
+      "name": "igdml64.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "935f19a3f5c0db7eed6e76f06189eacb53c7be923314d07d3f933fd7eeb3afa8",
+      "name": "igvk64.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "5df315620655972ae15730fc90a36554951947261fa552044ec09ba33beb7b08",
+      "name": "igvkMedia64.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "e0c5576ce4850108a045d947eb5d32bbab54def2d6bcb33671d8d47bb964086a",
+      "name": "IntelControlLib.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "fe0f67f9632d5dd7c2d148b6f253ce9b254d16ec3bf98c863050e55cc961d560",
+      "name": "media_bin_64.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Third Party Component CA 2012, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+      }
+    },
+    {
+      "sha256": "db0ad9ef6d3adfd0811020685e0dd3bd86a118b503e30a8adca5193a7c88dd0e",
+      "name": "dwmapi.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "74bd73065b06e32ddedd81ade496510921a27e647b7e99f4b6494eb2812702ba",
+      "name": "dxcore.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "84bc502f36687bb6c4dd9763d109c6ed7339767ed50a8a70707761563dd3e816",
+      "name": "dxgi.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "772c73e294a4c5f5e0d4146288af95287a85c074d3aee3fa9f320dc010d7dbfe",
+      "name": "GDI32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "cdb6e40c9d5e5d0ea32eca7fbec65841ac73b527696dd49c20d1e8369d79767b",
+      "name": "gdi32full.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "745f42a7a7ae34822d896ba5df61e34e0ec6456e01f686e83645dc6ac1eefe39",
+      "name": "GLU32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "a0a5953dbe06dc43af9bc617139bf2cfe1c3976403f9682ee8d8d470a94a2364",
+      "name": "IMM32.DLL",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "5da68e8d50b02fb8c90cf3bcd3c511723fc433612d0a441071b6e31f9544cf8d",
+      "name": "kernel.appcore.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "970e5e15eed7d53c8b88e06ddc71884c31804f1cb5286abf01fbce39b7f0e29f",
+      "name": "KERNEL32.DLL",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "9eb6768c3020992f8f616f7edfead6254dd6d4c6042d1468d790ec3004cb4bbc",
+      "name": "KERNELBASE.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "b9dacd83201e59bb74e5282d8f0dcc8c428525409b4bc458a39eb8d2a9373a9a",
+      "name": "msvcp_win.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "fc1447db4e4814cbcb002179a8003a41f383fc417879f628727043cab8c25093",
+      "name": "msvcrt.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "67fb9c45ed916c05d3e1615d186396ecf04d39a2be4d3a5ed9ef39595b4b6ea9",
+      "name": "mswsock.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "a0f81bf5c610c0ff0a550adc020a58446f214790c748057bb575042e972e6a34",
+      "name": "ntdll.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "83f1f855f2985785a45976a6a5e2aacdc8900f61e373978668f5fa3456f09a66",
+      "name": "ole32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "3b1e3a9338a0d56dff16ad80423654eb6d63d16f0672666d5f7de6a90b7b1e86",
+      "name": "OLEAUT32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "5c89e8296ef97eb0ca2c6fb62afcd8a35e286675c03858c2988f8e398d5ddfbb",
+      "name": "OpenGL32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "096b3c77ad7fece122be0362c72530b1edc024fe7107d1d40d8bcd8fa5428a0e",
+      "name": "powrprof.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "38c1c272db5dfc6b7f7a14eb9f4f062e00fad3fab9a40a642543d8f9a91e2606",
+      "name": "profapi.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "35fa5f92f985cba9b33bc5f17968211d84ebb910d639ba2db8f35596befca6a6",
+      "name": "RPCRT4.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "bfba167e580dd8ceecc0ebf6087fc6dfac4e3a0d5fe53494ae26e7313df00878",
+      "name": "sechost.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "b96660ad36113b7d13f6098508e213634f8a714ca30e9417ebc8c155cd135164",
+      "name": "SHCORE.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "10560eff83911e165674adafd31e05450ca827f2b5800e91130823b1e854f5d0",
+      "name": "SHELL32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "855aa0dc138d81ce2491f5c96cbcbc33d72eac697d6b447b80e81b9a378a320a",
+      "name": "SHLWAPI.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "dedb7611e1abc1ff3852dcac3d4c93a048d729e25b061973b9969f22698f14ca",
+      "name": "ucrtbase.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "8172acbaf08cbf516b8bc8e567cab5aa7576d4af913ecd3918a7ed65fdf64b3d",
+      "name": "UMPDC.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "4f66c3c584276f7df0dbfb78332315990ef81276661c8eacd8ba93197931ff91",
+      "name": "USER32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "e2e972e21a16c62e7c678334dc50f33c2f327c1b6854a2fb096ca244ae650f27",
+      "name": "uxtheme.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "591d4c316a0a39f96792979ce5ebb1bb380f0015c30707ba7ac611b35ae01cfc",
+      "name": "vulkan-1.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "5db5c7ceec0b8c19344d3720bb3548ad01831966d27d766204429d3147e46ecc",
+      "name": "win32u.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "fa6c5a777f0f65dffe1c9204cf49f2a71555b266bd8fbb1d7c62c0ba3a272f1b",
+      "name": "windows.staterepositorycore.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "d31d11307cb87a6a9e26f7b805b480717b78e8833dcece75cbee319d14654f74",
+      "name": "windows.storage.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "d4dbce9799d1b6260b20c595f212496a0d3067428a0b5a1a9a33d325f6ca1a4b",
+      "name": "WS2_32.dll",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      }
+    },
+    {
+      "sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+      "name": "llama.exe",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+        "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US"
+      }
+    }
+  ],
+  "unreadable_processes": 0,
+  "truncated": false,
+  "sac": "NOT VERIFIED; policy mode not established",
+  "child_images": [
+    {
+      "pid": 1760,
+      "sha256": "dd5c3514132d92052004d302c66c756ffb6beef572de6538b4fc55f62579eb11",
+      "authenticode": {
+        "status": "Valid",
+        "signer": "CN=Microsoft Windows, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+        "issuer": "CN=Microsoft Windows Production PCA 2026 RSA2048-SHA256, O=Microsoft Corporation, C=US"
+      },
+      "name": "conhost.exe"
+    }
+  ]
+}

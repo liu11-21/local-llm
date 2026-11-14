@@ -1,0 +1,9 @@
+{
+  "date": "2026-11-14",
+  "model": "Qwen3-0.6B-Q4_0.gguf",
+  "source": "real Worker, CPU, b12360",
+  "stream_started": true,
+  "cancel_state": "cancelled",
+  "cancelled_reply_not_committed": true,
+  "engine_stopped": true
+}

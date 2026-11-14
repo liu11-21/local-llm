@@ -1,0 +1,15 @@
+{
+  "run": 43567386614,
+  "commit": "1a4503dddeb6388b70da813b5c2b5e8788237f7d",
+  "artifact_id": 14103485329,
+  "archive_sha256": "0fb81f4568fab9a390ea9c3c3748bd9c7b6cd20b4e2ffb011d4d3df4f7bfb1e8",
+  "installer_sha256": "d79f480bd1c35595b75ce5755e902f635a10a7e5e5fb35fef83cc3b1b25d4354",
+  "bytes": 13807219,
+  "authenticode": "NotSigned",
+  "url": "https://github.com/liu11-21/local-llm/actions/runs/43567386614",
+  "artifact_url": "https://github.com/liu11-21/local-llm/actions/runs/43567386614/artifacts/14103485329",
+  "version": "0.8.0",
+  "channel": "Development",
+  "github_attestation_verification": "PASS; official gh CLI, exact repository/workflow/source SHA/ref, deny self-hosted runners",
+  "windows_authenticode": "NotSigned; GitHub provenance is not Windows code signing"
+}

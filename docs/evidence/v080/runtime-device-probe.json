@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-14",
+  "version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n",
+  "devices": [
+    {
+      "id": "Vulkan0",
+      "name": "Intel(R) Iris(R) Xe Graphics",
+      "reported_total_mib": 8002,
+      "reported_free_mib": 7346,
+      "backend": "Vulkan",
+      "available": true,
+      "memory_type": "shared-or-unified"
+    }
+  ],
+  "authenticode": {
+    "status": "Valid",
+    "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+    "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
+    "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US"
+  },
+  "source_manifest": "llama-app-runtime.json",
+  "scope": "real selected Runtime probes; device enumeration is not CUDA/SAC or full operator-placement proof"
+}

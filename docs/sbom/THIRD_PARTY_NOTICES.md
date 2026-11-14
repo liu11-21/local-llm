@@ -1,6 +1,6 @@
 # Third-party inventory — generated, not a project license grant
 
-Source: 7b3e9639b7d0b871585106493c6016e47ad5a41a
+Source: 1a4503dddeb6388b70da813b5c2b5e8788237f7d
 A: tracked repository. B: installer or potential compiled dependency. C: downloaded after installation. D: user supplied.
 Declared licenses are upstream metadata, not an independent legal conclusion. Complete lock graph includes non-shipped build/optional targets.
 
@@ -647,3 +647,7 @@ Declared licenses are upstream metadata, not an independent legal conclusion. Co
 | model | arbitrary Hugging Face/GGUF/user weights | user-selected | NOASSERTION | C,D | each upstream model card and conversion must be checked; not MIT by file format |
 | toolchain | Rust standard library/NSIS/WebView2 | CI toolchain-specific | NOASSERTION | B | linker/installer generated code and system bootstrapper need separate notices |
 | data | SPDX specification JSON schema | 2.3 | CC-BY-3.0 | A,B | unmodified validation schema; SPDX project attribution and upstream license retained |
+| pypi | zstandard | 0.25.0 | BSD-3-Clause | B | worker dependency |
+| runtime | llama.app official Vulkan x64 | b12360 | MIT | C | optional separate runtime; downloaded only after user action; signature does not certify SAC |
+
+0.8.0 scoped update: retain prior reviewed declarations and original notice text; add two dependencies from the verified build. Exact generated CI metadata is preserved separately in docs/evidence/v080. This is not additional legal or SignPath approval.

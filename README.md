@@ -1,17 +1,20 @@
-# Local LLM Workspace 0.7.0 · Development
+# Local LLM Workspace 0.8.0 · Development
 
 React／Tauri Windows AI 工作台，整合文字聊天、Agent、Team、圖片／影片／音樂創作、模型下載及本地／遠端運算。
 
 第一方程式碼、測試、建置腳本及技術文件已於 2026-11-13 經維護者明確批准採用 **[MIT](LICENSE)**，署名「Copyright (c) 2026 劉仲軒」。維護者主導需求與產品架構，主要透過 Codex／AI 輔助開發；不宣稱所有 AI 輸出均有著作權或絕對無第三方權利。Logo／品牌素材／UI 截圖及合成媒體檔暫時獨立處理；第三方元件、Runtime、模型權重維持原條款，詳 **[授權範圍](LICENSE_SCOPE.md)**。[核准紀錄](docs/MIT_FINAL_APPROVAL_CHECKLIST.md) · [來源紀錄](docs/MAINTAINER_PROVENANCE.md) · [開源準備](docs/OPEN_SOURCE_READINESS.md) · [第三方授權](THIRD_PARTY_LICENSES.md) · [隱私](PRIVACY.md) · [建置](BUILDING.md) · [Code signing policy](CODE_SIGNING_POLICY.md)。SignPath **未申請、未核准**，安裝包仍 **unsigned**；MIT 不等於整包發行或簽章資格已獲准。
+
+0.8.0 新增獨立的官方 llama.app `llama.exe serve` Runtime：可偵測既有安裝、按需下載固定版本、分別核對來源／雜湊／簽章並切換舊引擎。新增 Qwen3 Thinking 控制、Token／速度統計、模型 context metadata 及確認刪除。
+簽章有效不等於 SAC 或全部 DLL 已通過。[Runtime 說明](docs/LLAMA_RUNTIME_V2.md) · [信任管理](docs/RUNTIME_TRUST.md) · [GPU 支援](docs/GPU_RUNTIME_SUPPORT.md) · [0.8.0 交付](docs/V080_DELIVERY.md)。
 
 Windows 10/11 x64，需 WebView2；原始碼建置需 Python／Node／Rust／MSVC，固定版本見 BUILDING。聊天、Agent 工具核准與 Team 可依選擇在本機、雲端或配對 Host 執行；選用雲端／遠端會把必要內容送至該目的地。更新檢查、模型／Runtime 安裝及缺少 WebView2 時的安裝另有網路請求。模型所需 RAM／VRAM 依模型與工作流程而變。
 
 | 通道 | 版本／分支 | 取得方式 |
 |---|---|---|
 | Stable | v0.6.2 · main | [既有正式發行](https://github.com/liu11-21/local-llm/releases/tag/v0.6.2)，保留舊桌面版 |
-| Development | 0.7.0 · dev/desktop-workspace | [Windows Actions](https://github.com/liu11-21/local-llm/actions/workflows/desktop-windows.yml?query=branch%3Adev%2Fdesktop-workspace)，開啟成功建置的 artifact |
+| Development | 0.8.0 · dev/desktop-workspace | [下載已驗收的 Windows x64 安裝包](https://github.com/liu11-21/local-llm/actions/runs/43567386614/artifacts/14103485329) · [CI](https://github.com/liu11-21/local-llm/actions/runs/43567386614) · [SHA／驗收](docs/V080_DELIVERY.md) |
 
-開發安裝包解壓後執行 `Local LLM Workspace_0.7.0_x64-setup.exe`，會建立桌面與開始功能表捷徑。Actions 下載可能需要登入 GitHub，產物保留 14 天。這是未簽章開發版，目前沒有正式 0.7.0 Release。請選擇本分支最新成功的建置，並核對隨附的 BUILD.json／SHA256SUMS.txt。
+開發安裝包解壓後執行 `Local LLM Workspace_0.8.0_x64-setup.exe`，會建立桌面與開始功能表捷徑。Actions 下載可能需要登入 GitHub，產物保留 14 天。這是未簽章開發版，目前沒有正式 0.8.0 Release。已核對來源 1a4503d 的 EXE／ZIP hash 與 GitHub 來源證明，安裝／0.7→0.8 升級及卸載保留資料均通過；細節見交付報告與隨附 BUILD.json／SHA256SUMS.txt。
 
 工作台支援：
 
@@ -26,7 +29,7 @@ Windows 10/11 x64，需 WebView2；原始碼建置需 Python／Node／Rust／MSV
 
 工作台只檢查 `workspace-vX.Y.Z` 的正式發行，與舊桌面版 `vX.Y.Z` 分流；沒有可校驗的較新 Workspace Release 時不提供更新，不自動安裝。設定頁顯示 App／Worker 版本、Development、建置 SHA 與目標；版本混搭會拒絕啟動工作。
 
-Workspace 與舊桌面版為不同產品，不能把舊版 Setup 當成 Workspace 升級包。兩者歷史上使用 `%LOCALAPPDATA%\LocalLLM` 的模型／作品目錄；請先關閉兩套程式並備份資料。Workspace 0.6.2 → 0.7.0 是同產品的原地升級路徑，原資料庫保留，0.7.0 使用獨立 workspace.sqlite3；升級前自動建立校驗快照。[升級與恢復](docs/UPGRADE_070.md) · [0.7.0 完整交付](docs/V070_DELIVERY.md)。
+Workspace 與舊桌面版為不同產品，不能把舊版 Setup 當成 Workspace 升級包。兩者歷史上使用 `%LOCALAPPDATA%\LocalLLM` 的模型／作品目錄；請先關閉兩套程式並備份資料。Workspace 0.7.0 → 0.8.0 延續同產品原地升級與校驗備份；先前 0.6.2 → 0.7.0 的資料遷移路徑保留，原資料庫保留，0.7.0 使用獨立 workspace.sqlite3；升級前自動建立校驗快照。[升級與恢復](docs/UPGRADE_070.md) · [0.7.0 完整交付](docs/V070_DELIVERY.md)。
 
 開發：Python 3.12、Node 24、Rust／MSVC／WebView2；執行 `python check_workspace_version.py`、`python -m unittest -v`、`python build_desktop_worker.py`，再於 desktop 執行 `npm ci`、`npm run tauri -- dev`。只預覽 UI 可用 `npm run dev`；完整安裝包由 Windows CI 產生。main 的既有發行與說明不變。
 
@@ -34,7 +37,7 @@ Workspace 與舊桌面版為不同產品，不能把舊版 Setup 當成 Workspac
 
 ## 舊版 Stable v0.6.2 使用說明
 
-以下為舊桌面版說明，與上方 Workspace 0.7.0 Development 分開。
+以下為舊桌面版說明，與上方 Workspace 0.8.0 Development 分開。
 
 
 **[下載 Windows x64 安裝程式](https://github.com/liu11-21/local-llm/releases/download/v0.6.2/LocalLLM-v0.6.2-Windows-x64-Setup.exe)** · [免安裝版](https://github.com/liu11-21/local-llm/releases/download/v0.6.2/LocalLLM-v0.6.2-Windows-x64.exe) · [最新發行頁](https://github.com/liu11-21/local-llm/releases/latest)

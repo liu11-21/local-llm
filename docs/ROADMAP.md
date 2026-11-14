@@ -1,3 +1,20 @@
+# 0.8.0 Development 狀態（2026-11-14）
+
+已落地：獨立 llama.app Adapter／舊引擎切換；固定版本安裝與信任證據；既有排程、Agent／Team、
+Remote 與 Benchmark 接口；Thinking 預算／分離內容；GGUF metadata、模型空間管理；Runtime 進階介面。
+本地驗證完成：Python、Vite、四尺寸／雙主題 Chromium；CPU／Intel Vulkan 真實推理與排程 Benchmark。
+已完成：乾淨 Windows 20 steps CI；221 項 Python（封裝案例建置後補跑）、Rust 編譯／測試 harness、
+Worker／0.7→0.8 NSIS 升級、資料保留、解除安裝、Artifact 雜湊及 GitHub 來源證明校驗。
+開發安裝包與逐項證據見 [0.8.0 交付](V080_DELIVERY.md)，仍 unsigned、未建立正式 Release。
+
+仍需實體環境：RTX 5070 Ti Qwen3-4B 重測、GPU utilization／power、CUDA、NPU、其他 GPU、
+實體雙主機；SAC 啟用模式及所有依賴檔相容性。未授權雲端為 NEEDS AUTH。
+正式 Release／Tag、SignPath 申請及帳號安全操作不在本輪自動執行範圍。
+
+---
+
+## 保留的前輪路線圖
+
 # 桌面工作台路線圖
 
 ## 0.7.0 Development 整合

@@ -1,0 +1,16 @@
+{
+  "bytes": 13807219,
+  "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "target": "x86_64-pc-windows-msvc",
+  "sha256": "d79f480bd1c35595b75ce5755e902f635a10a7e5e5fb35fef83cc3b1b25d4354",
+  "installer_version": "0.8.0",
+  "commit": "1a4503dddeb6388b70da813b5c2b5e8788237f7d",
+  "python": "Python 3.12.10",
+  "channel": "Development",
+  "worker_version": "0.8.0",
+  "runner": "Windows",
+  "run": "43567386614",
+  "version": "0.8.0",
+  "node": "v24.22.1",
+  "authenticode": "NotSigned"
+}

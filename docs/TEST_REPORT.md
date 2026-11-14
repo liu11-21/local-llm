@@ -1,3 +1,31 @@
+# 0.8.0 Development 驗收追蹤
+
+2026-11-14；最終功能來源 1a4503d。下列新結果與後面的 0.7.0 歷史分開。
+
+| 類別 | 本輪結果 |
+|---|---|
+| Python | 最終乾淨 CI 221 項：220 通過、1 個 Worker 封裝案例建置前 skipped；建置後該案例單獨通過。本機曾有的 7 個 Norton/TLS skip 在 CI 均實跑；另本機授權完整性 6 項通過。 |
+| TypeScript／Vite | PASS；既有 bundle-size 建議警告，非失敗 |
+| Chromium | PASS；1280／1024／800／650，深淺色；Agent／Team、原生 SSE tool protocol、取消／部分失敗、遠端影音、Benchmark、推薦、作品、版本混用拒絕 |
+| 真實 Runtime | 固定官方 b12360 / 2d8a32502、有效 Hugging Face 簽章、CPU／Intel Iris Xe Vulkan0 推理通過；未認證 401、外部 Origin 無 CORS 授權、health 與停止通過 |
+| 真實模型／安裝 | Qwen3-0.6B 四執行緒下載／固定 revision／SHA；Runtime 解壓／雙 hash／簽章交易通過，不自動切換 |
+| 真實 Benchmark | TaskManager 排程 CPU／Intel Vulkan 同一 session completed；32 Token／2048 context／warmup 1／measured 2，JSON／CSV 成功 |
+| Windows CI | [Run 43567386614](https://github.com/liu11-21/local-llm/actions/runs/43567386614) SUCCESS／20 steps；Rust `cargo test --locked` 編譯及 harness 通過（0 個 Rust 單元案例）；NSIS／WebView／Worker 端到端、真正 0.7→0.8 升級、SQLite／備份、捷徑、程序清理、卸載保留資料 PASS。 |
+| 安裝包 | 0.8.0 Development、EXE／ZIP hash／GitHub attestation PASS；仍 NotSigned。實際安裝 74 個 PE：67 Valid／7 NotSigned；App／Worker／uninstaller FileVersion 均 0.8.0。SBOM 共 643 packages（含第一方），Notices schema／hash PASS；既有審查紀錄保留。 |
+| 真實功能鏈 | Worker 繁體輸出、已核准 models 工具的 native Agent、Qwen3／SmolLM2 混合 Team 四節點、Runtime 切換／歷史保留、串流取消均 completed／PASS |
+| 元件信任 | 實際主／子程序與 54 個載入元件逐一檢查，本次全部 Valid；SAC 仍 NOT VERIFIED |
+| 其他硬體 | RTX 5070 Ti 4B、CUDA、NPU、其他 GPU、兩台實體遠端仍 NEEDS HARDWARE；付費雲端 NEEDS AUTH |
+
+公開實測：[Runtime](evidence/v080/runtime-cpu-vulkan.json)、[Thinking](evidence/v080/qwen-thinking.json)、
+[安裝](evidence/v080/managed-runtime-install.json)、[排程 Benchmark](evidence/v080/scheduled-benchmark.json)。
+受控 UI／協定 fixture 與上述真實推理嚴格區分；SAC 模式及完整 Runtime 依賴鏈仍未獨立驗證。
+最新安裝包與 SHA 最後記錄於 [V080_DELIVERY](V080_DELIVERY.md)。
+[最終 CI 步驟與原始測試節錄](evidence/v080/windows-validation.json)；後續文件提交不改變安裝包來源 1a4503d。
+
+---
+
+## 以下為保留的先前驗收歷史
+
 # 桌面工作台測試紀錄
 
 ## Workspace 0.7.0 Development（2026-11-12）

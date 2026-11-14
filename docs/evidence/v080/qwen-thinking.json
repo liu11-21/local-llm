@@ -1,0 +1,83 @@
+{
+  "date": "2026-11-14",
+  "model": "Qwen3-0.6B-Q4_0.gguf",
+  "model_sha256": "33bcc57074ec7b6eada5a90651ee546ec0c2b271002c22baf9f1b2dd1e8f75cb",
+  "device": "CPU",
+  "context": 2048,
+  "tests": [
+    {
+      "thinking": false,
+      "max_tokens": 64,
+      "status": "PASS",
+      "answer": "我是你的智能助手，你可以和我交流任何问题。",
+      "generation": {
+        "reasoning": "",
+        "usage": {
+          "completion_tokens": 13,
+          "prompt_tokens": 22,
+          "total_tokens": 35,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 22,
+          "prompt_ms": 499.939,
+          "prompt_per_token_ms": 22.724500000000003,
+          "prompt_per_second": 44.00536865497591,
+          "predicted_n": 13,
+          "predicted_ms": 350.747,
+          "predicted_per_token_ms": 29.228916666666667,
+          "predicted_per_second": 34.21269462033887
+        },
+        "finish_reason": "stop"
+      },
+      "seconds": 0.8583838999984437
+    },
+    {
+      "thinking": true,
+      "max_tokens": 128,
+      "status": "PASS",
+      "answer": "用户的问题是“2 加 2 是多少？”。这个问题看起来很简单，但可能需要更详细的解释。用户可能是在学习基本的加法运算，或者是在做数学题时遇到了这个问题。\n\n首先，我要确认运算的正确性。2加2等于4，这是基本的加法运算。但用户可能希望得到更详细的解释，或者他们可能在寻找其他信息。比如，",
+      "generation": {
+        "reasoning": "嗯，用户问的是“2 加 2 是多少？”。首先，我需要确认用户的问题是什么。看起来用户是在问数学运算，但可能需要更明确的解释。可能用户是在",
+        "usage": {
+          "completion_tokens": 128,
+          "prompt_tokens": 20,
+          "total_tokens": 148,
+          "prompt_tokens_details": {
+            "cached_tokens": 3
+          }
+        },
+        "timings": {
+          "cache_n": 3,
+          "prompt_n": 17,
+          "prompt_ms": 381.258,
+          "prompt_per_token_ms": 22.42694117647059,
+          "prompt_per_second": 44.589228291603064,
+          "predicted_n": 128,
+          "predicted_ms": 3944.088,
+          "predicted_per_token_ms": 31.05581102362205,
+          "predicted_per_second": 32.20009289853573
+        },
+        "finish_reason": "length"
+      },
+      "seconds": 4.34030630000052
+    }
+  ],
+  "template_supports_thinking": true,
+  "template_caps": {
+    "supports_object_arguments": true,
+    "supports_parallel_tool_calls": true,
+    "supports_preserve_reasoning": false,
+    "supports_reasoning_effort": false,
+    "supports_string_content": true,
+    "supports_system_role": true,
+    "supports_tool_calls": true,
+    "supports_tools": true,
+    "supports_typed_content": false,
+    "reasoning_effort_levels": []
+  },
+  "process_stopped": true
+}

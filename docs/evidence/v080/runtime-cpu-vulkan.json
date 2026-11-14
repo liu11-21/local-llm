@@ -1,0 +1,120 @@
+{
+  "date": "2026-11-14",
+  "runtime_sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+  "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+  "model_sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+  "version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n",
+  "devices": [
+    [
+      "Vulkan0",
+      7702839296,
+      true
+    ]
+  ],
+  "hardware": {
+    "cpu_threads": 16,
+    "ram_total": 16781869056,
+    "ram_available": 4633718784,
+    "disk_available": 186522828800
+  },
+  "tests": [
+    {
+      "device": "CPU",
+      "requested_context": 2048,
+      "max_tokens": 32,
+      "cache_state": "fresh process; OS file cache uncontrolled",
+      "status": "PASS",
+      "load_seconds": 1.0185373000022082,
+      "unauthenticated_status": 401,
+      "cross_origin_allow": null,
+      "cross_origin_status": 200,
+      "answer": "Hello!",
+      "generation": {
+        "reasoning": "",
+        "usage": {
+          "completion_tokens": 3,
+          "prompt_tokens": 37,
+          "total_tokens": 40,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 37,
+          "prompt_ms": 2150.1,
+          "prompt_per_token_ms": 58.11081081081081,
+          "prompt_per_second": 17.208501930142784,
+          "predicted_n": 3,
+          "predicted_ms": 28.443,
+          "predicted_per_token_ms": 14.2215,
+          "predicted_per_second": 70.31607073796715
+        },
+        "finish_reason": "stop"
+      },
+      "seconds": 2.1979423000011593,
+      "plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 30,
+        "vram": 0,
+        "ram": 937124408,
+        "mapped_bytes": 105454432,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": []
+      },
+      "healthy": true,
+      "process_stopped": true
+    },
+    {
+      "device": "Vulkan0",
+      "requested_context": 2048,
+      "max_tokens": 32,
+      "cache_state": "fresh process; OS file cache uncontrolled",
+      "status": "PASS",
+      "load_seconds": 3.8564213999998174,
+      "unauthenticated_status": 401,
+      "cross_origin_allow": null,
+      "cross_origin_status": 200,
+      "answer": "Hello, I'm a helpful AI assistant, designed to assist with various tasks and provide a quick response.",
+      "generation": {
+        "reasoning": "",
+        "usage": {
+          "completion_tokens": 22,
+          "prompt_tokens": 37,
+          "total_tokens": 59,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 37,
+          "prompt_ms": 465.641,
+          "prompt_per_token_ms": 12.584891891891893,
+          "prompt_per_second": 79.4603567984778,
+          "predicted_n": 22,
+          "predicted_ms": 340.184,
+          "predicted_per_token_ms": 16.199238095238098,
+          "predicted_per_second": 61.73129835618371
+        },
+        "finish_reason": "stop"
+      },
+      "seconds": 0.8316638999967836,
+      "plan": {
+        "device": "Vulkan0",
+        "layers": 30,
+        "total_layers": 30,
+        "vram": 910760800,
+        "ram": 1716067168,
+        "mapped_bytes": 105454432,
+        "device_free": 3559976960,
+        "shared": true,
+        "mmap_args": []
+      },
+      "healthy": true,
+      "process_stopped": true
+    }
+  ]
+}

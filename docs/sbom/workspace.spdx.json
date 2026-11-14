@@ -2,20 +2,20 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "LocalLLM-Workspace-0.7.0-license-review",
-  "documentNamespace": "https://github.com/liu11-21/local-llm/sbom/7b3e9639b7d0b871585106493c6016e47ad5a41a/license-review-edfbeb48b159190f-mit-adoption-20261113",
+  "name": "LocalLLM-Workspace-0.8.0-license-review",
+  "documentNamespace": "https://github.com/liu11-21/local-llm/sbom/1a4503dddeb6388b70da813b5c2b5e8788237f7d/license-review-1e98be42ab02697f-retained-review-overlay",
   "creationInfo": {
     "creators": [
       "Tool: LocalLLM license_audit.py",
-      "Tool: scoped MIT adoption overlay (no dependency rescan)"
+      "Tool: scoped 0.8.0 overlay retaining prior review (no dependency re-audit)"
     ],
-    "created": "2026-11-13T14:48:49Z"
+    "created": "2026-11-14T06:48:27Z"
   },
   "packages": [
     {
       "SPDXID": "SPDXRef-Workspace",
       "name": "Local LLM Workspace",
-      "versionInfo": "0.7.0",
+      "versionInfo": "0.8.0",
       "downloadLocation": "https://github.com/liu11-21/local-llm",
       "filesAnalyzed": false,
       "licenseConcluded": "NOASSERTION",
@@ -14646,6 +14646,24 @@
       ]
     },
     {
+      "SPDXID": "SPDXRef-18495ebeb1775800336debcc",
+      "name": "zstandard",
+      "versionInfo": "0.25.0",
+      "downloadLocation": "https://pypi.org/project/zstandard/0.25.0/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD-3-Clause",
+      "copyrightText": "NOASSERTION",
+      "comment": "{\"distribution_classes\": [\"B\"], \"scope\": \"worker dependency\", \"status\": \"PASS\"}",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:pypi/zstandard@0.25.0"
+        }
+      ]
+    },
+    {
       "SPDXID": "SPDXRef-91b6a6ae33da6170b2f0de66",
       "name": "jsonschema",
       "versionInfo": "4.26.0",
@@ -14752,6 +14770,17 @@
           "referenceLocator": "pkg:pypi/typing_extensions@4.15.0"
         }
       ]
+    },
+    {
+      "SPDXID": "SPDXRef-b2e26bf316a413a74cc24e34",
+      "name": "llama.app official Vulkan x64",
+      "versionInfo": "b12360",
+      "downloadLocation": "https://huggingface.co/buckets/ggml-org/install.sh/resolve/b12360/x86_64/windows/vulkan/kkkkk/llama-app.exe.zst",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "copyrightText": "NOASSERTION",
+      "comment": "{\"distribution_classes\": [\"C\"], \"scope\": \"optional separate runtime; downloaded only after user action; signature does not certify SAC\", \"status\": \"PASS\"}"
     },
     {
       "SPDXID": "SPDXRef-c8a25b14aa6bb573ced1caa8",
@@ -18149,6 +18178,11 @@
     {
       "spdxElementId": "SPDXRef-Workspace",
       "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-18495ebeb1775800336debcc"
+    },
+    {
+      "spdxElementId": "SPDXRef-Workspace",
+      "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-91b6a6ae33da6170b2f0de66"
     },
     {
@@ -18175,6 +18209,11 @@
       "spdxElementId": "SPDXRef-Workspace",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-2100c2aab1df028bb8779e58"
+    },
+    {
+      "spdxElementId": "SPDXRef-Workspace",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-b2e26bf316a413a74cc24e34"
     },
     {
       "spdxElementId": "SPDXRef-Workspace",
@@ -18282,5 +18321,5 @@
       "relatedSpdxElement": "SPDXRef-ea4530ac2c5ace328689b1ba"
     }
   ],
-  "comment": "Nonstandard or uncollected license texts are NOASSERTION in SPDX; upstream labels and review issues remain in DEPENDENCY_LICENSES.json. No placeholder license body is fabricated. First-party declaration updated after maintainer A1-A4 approval on 2026-11-13 at d74bb27f7cba65c0bb291e0a50a5fc143fef4062; all dependency packages and relationships preserved from the original snapshot. No dependency rescan; not an aggregate installer license clearance."
+  "comment": "Nonstandard or uncollected license texts are NOASSERTION in SPDX; upstream labels and review issues remain in DEPENDENCY_LICENSES.json. No placeholder license body is fabricated."
 }

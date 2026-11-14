@@ -1,0 +1,8 @@
+{
+  "run": "43567386614",
+  "source_commit": "1a4503dddeb6388b70da813b5c2b5e8788237f7d",
+  "signpath": "NOT APPLIED",
+  "authenticode": "NotSigned",
+  "license": "MIT (scoped first-party; see LICENSE_SCOPE.md)",
+  "attestation_url": "https://github.com/liu11-21/local-llm/attestations/67478999"
+}

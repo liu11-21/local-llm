@@ -1,0 +1,17 @@
+{
+  "in_place_upgrade": true,
+  "scope": "WebView launch to live worker and database; OS cache not flushed",
+  "worker_cleanup": true,
+  "version": "0.8.0",
+  "baseline_version": "0.7.0",
+  "baseline_startup_ms": 8925.216,
+  "baseline_source": "e2ba3476c6a58574db3c488e9aa4296f4cd4dc4c",
+  "process_cold_startup_ms": [
+    1293.2824,
+    663.5662,
+    659.097
+  ],
+  "status": "PASS",
+  "start_menu_shortcut": true,
+  "desktop_shortcut": true
+}

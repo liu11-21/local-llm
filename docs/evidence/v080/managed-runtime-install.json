@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "schema": 1,
+    "id": "llama-app-b12360-vulkan-x64-baseline",
+    "version": "b12360",
+    "commit": "2d8a32502",
+    "backend": "Vulkan",
+    "cpu_preset": "kkkkk (baseline x86_64; no AVX assumption)",
+    "url": "https://huggingface.co/buckets/ggml-org/install.sh/resolve/b12360/x86_64/windows/vulkan/kkkkk/llama-app.exe.zst",
+    "compressed_bytes": 12695362,
+    "compressed_sha256": "e16cada91c78a6110d08e1f2431f56ca79238e03fbab9855c4f62a9483fa886a",
+    "bytes": 51384504,
+    "sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+    "source": "https://github.com/ggml-org/llama-install.sh",
+    "expected_signer": "Hugging Face",
+    "integrity_evidence": "Downloaded via official HTTPS source and decoded main PE Authenticode Valid, 2026-11-14. Bucket ETag is not assumed to be SHA-256. Different CPU preset from maintainer-reported binary.",
+    "license_sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  "main_signature": {
+    "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
+    "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+    "status": "Valid",
+    "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US"
+  },
+  "sha256_verified": true,
+  "source_confirmed": true,
+  "selected_after_install": "legacy",
+  "sac": "NOT VERIFIED; requires independent real-machine testing"
+}

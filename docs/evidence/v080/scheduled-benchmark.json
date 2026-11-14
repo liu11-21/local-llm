@@ -1,0 +1,848 @@
+{
+  "schema": 1,
+  "model": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+  "engine": "llama.cpp",
+  "state": "completed",
+  "created": "2026-11-14T05:42:13+00:00",
+  "finished": "2026-11-14T05:42:37+00:00",
+  "config": {
+    "parameters": {
+      "warmup": 1,
+      "iterations": 2,
+      "timeout": 240,
+      "memory_mib": 2048,
+      "max_tokens": 32,
+      "context": 2048
+    },
+    "workloads": [
+      {
+        "id": "short",
+        "sha256": "6959b27802b607ddda4c107be1f59a350ea7c8e652e5cfb225a5f4ac2e236cb0"
+      },
+      {
+        "id": "long",
+        "sha256": "7d7f02629c9dae95c02c4944cfcec1fdb8adfd0bc7948bc1eb7d0904b1fd8dce"
+      }
+    ],
+    "kind": "text",
+    "devices": [
+      "CPU",
+      "Vulkan0"
+    ],
+    "cold_policy": "fresh process; OS file cache uncontrolled",
+    "memory_scope": "child process Job Object commit limit; peak RAM is working set",
+    "vram_limit": null,
+    "temperature": null,
+    "power_watts": null,
+    "model_hashes": {
+      "gguf": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d"
+    },
+    "quantization": "encoded-in-GGUF-hash",
+    "model_bytes": 105454432,
+    "comparison_key": "7d8a90a2280fea740d6bf1119dd25d4ab4cd034440cebb15c0fbdfb59d65b919"
+  },
+  "message": "Benchmark 完成，請依相同工作量檢視數據與裝置證據。",
+  "started": "2026-11-14T05:42:14+00:00",
+  "id": "960fc5a3b75e4622971296b149d488d4",
+  "runs": [
+    {
+      "id": "b2bcf88e4db84e0ba58ba9ee21955556",
+      "device": "CPU",
+      "state": "completed",
+      "environment": {
+        "os": "Windows-11-10.0.26300-SP0",
+        "machine": "AMD64",
+        "runtime_id": "llama.cpp",
+        "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "hardware": {
+          "schema": 1,
+          "checked_at": 1794634943,
+          "inventory_at": 1794634943,
+          "state": "available",
+          "devices": [
+            {
+              "id": "00000000_00012045",
+              "kind": "gpu",
+              "name": "Intel(R) Iris(R) Xe Graphics",
+              "vendor": "Intel",
+              "vram_total": {
+                "value": 134217728,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "shared_limit": {
+                "value": 8390934528,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "memory_type": "unified",
+              "driver": {
+                "value": "31.0.101.5590",
+                "unit": "version",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "driver_state": {
+                "value": 0,
+                "unit": "code",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "verified_inference": false,
+              "utilization": {
+                "value": 8.8,
+                "unit": "percent",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_used": {
+                "value": 0,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_available": {
+                "value": 134217728,
+                "unit": "bytes",
+                "source": "estimated",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "estimated"
+              },
+              "shared_used": {
+                "value": 845131776,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              }
+            }
+          ],
+          "npu_present": {
+            "value": false,
+            "unit": "boolean",
+            "source": "detected",
+            "checked_at": 1794634943,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "providers": [],
+          "provider_state": "not-checked",
+          "provider_checked_at": null
+        },
+        "driver": null,
+        "backend_version": null,
+        "peak_vram_bytes": null,
+        "vram_limit": "Per-process reliable VRAM sampling not available.",
+        "npu_memory_bytes": null,
+        "started_monotonic": 19207.046,
+        "environment": {
+          "backend_version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)",
+          "executable_sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+          "driver": null,
+          "mapping": {
+            "state": "unknown"
+          }
+        },
+        "preparation": {
+          "pipeline_load_ms": 747.5191999983508,
+          "compile_ms": null,
+          "read_model_ms": null,
+          "cold_scope": "fresh-server-process-cache-prompt-disabled",
+          "os_file_cache": "uncontrolled",
+          "requested_precision": "GGUF-native"
+        }
+      },
+      "summary": {
+        "short": {
+          "count": 2,
+          "mean_ms": 862.2730000006413,
+          "stddev_ms": 13.64350000039849,
+          "p50_ms": 862.2730000006413,
+          "p95_ms": 874.552150001,
+          "requests_per_second": 1.1597255161639715
+        },
+        "long": {
+          "count": 2,
+          "mean_ms": 914.621249998163,
+          "stddev_ms": 12.95725000090897,
+          "p50_ms": 914.621249998163,
+          "p95_ms": 926.282774998981,
+          "requests_per_second": 1.093348749552898
+        }
+      },
+      "evidence": {
+        "requested_device": "CPU",
+        "available_devices": [
+          "CPU"
+        ],
+        "execution_devices": [],
+        "verified_inference": false,
+        "operator_allocation": "unknown",
+        "fallback": "unknown",
+        "verification_limit": "Configured layers are not operator placement evidence.",
+        "configured_plan": {
+          "device": null,
+          "layers": 0,
+          "total_layers": 30,
+          "vram": 0,
+          "ram": 937124408,
+          "mapped_bytes": 105454432,
+          "device_free": null,
+          "shared": false,
+          "mmap_args": []
+        }
+      },
+      "error": null,
+      "measurements": [
+        {
+          "workload": "short",
+          "phase": "first",
+          "index": 0,
+          "session_cold": true,
+          "latency_ms": 893.5539000012795,
+          "input_prepare_ms": 42.35960000005434,
+          "result_processing_ms": null,
+          "input_tokens": 41,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 372.79119999948307,
+          "prefill_tokens_per_s": 116.93137839279247,
+          "decode_tokens_per_s": 60.0530791732047,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 41,
+            "prompt_ms": 350.633,
+            "prompt_per_token_ms": 8.552024390243902,
+            "prompt_per_second": 116.93137839279247,
+            "predicted_n": 32,
+            "predicted_ms": 516.21,
+            "predicted_per_token_ms": 16.651935483870968,
+            "predicted_per_second": 60.0530791732047
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 248090624
+        },
+        {
+          "workload": "short",
+          "phase": "warmup",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 894.0200000033656,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 41,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 361.84750000029453,
+          "prefill_tokens_per_s": 115.9767933265256,
+          "decode_tokens_per_s": 58.74906191014047,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 41,
+            "prompt_ms": 353.519,
+            "prompt_per_token_ms": 8.622414634146342,
+            "prompt_per_second": 115.9767933265256,
+            "predicted_n": 32,
+            "predicted_ms": 527.668,
+            "predicted_per_token_ms": 17.021548387096775,
+            "predicted_per_second": 58.74906191014047
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 248737792
+        },
+        {
+          "workload": "short",
+          "phase": "measured",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 848.6295000002428,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 41,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 336.8245999990904,
+          "prefill_tokens_per_s": 124.6348351324321,
+          "decode_tokens_per_s": 61.046574597929535,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 41,
+            "prompt_ms": 328.961,
+            "prompt_per_token_ms": 8.023439024390244,
+            "prompt_per_second": 124.6348351324321,
+            "predicted_n": 32,
+            "predicted_ms": 507.809,
+            "predicted_per_token_ms": 16.380935483870967,
+            "predicted_per_second": 61.046574597929535
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 248774656
+        },
+        {
+          "workload": "short",
+          "phase": "measured",
+          "index": 1,
+          "session_cold": false,
+          "latency_ms": 875.9165000010398,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 41,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 353.1586999997671,
+          "prefill_tokens_per_s": 119.22278376476473,
+          "decode_tokens_per_s": 59.80076699306311,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 41,
+            "prompt_ms": 343.894,
+            "prompt_per_token_ms": 8.387658536585366,
+            "prompt_per_second": 119.22278376476473,
+            "predicted_n": 32,
+            "predicted_ms": 518.388,
+            "predicted_per_token_ms": 16.722193548387096,
+            "predicted_per_second": 59.80076699306311
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 248807424
+        },
+        {
+          "workload": "long",
+          "phase": "first",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 896.0814999991271,
+          "input_prepare_ms": 20.507400000497,
+          "result_processing_ms": null,
+          "input_tokens": 116,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 382.98329999815905,
+          "prefill_tokens_per_s": 309.786861298274,
+          "decode_tokens_per_s": 60.88005058935817,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 116,
+            "prompt_ms": 374.451,
+            "prompt_per_token_ms": 3.2280258620689657,
+            "prompt_per_second": 309.786861298274,
+            "predicted_n": 32,
+            "predicted_ms": 509.198,
+            "predicted_per_token_ms": 16.42574193548387,
+            "predicted_per_second": 60.88005058935817
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 250830848
+        },
+        {
+          "workload": "long",
+          "phase": "warmup",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 904.2294999999285,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 116,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 390.127400001802,
+          "prefill_tokens_per_s": 303.3869491303779,
+          "decode_tokens_per_s": 60.811738627224045,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 116,
+            "prompt_ms": 382.35,
+            "prompt_per_token_ms": 3.2961206896551727,
+            "prompt_per_second": 303.3869491303779,
+            "predicted_n": 32,
+            "predicted_ms": 509.77,
+            "predicted_per_token_ms": 16.444193548387098,
+            "predicted_per_second": 60.811738627224045
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 250863616
+        },
+        {
+          "workload": "long",
+          "phase": "measured",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 927.5784999990719,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 116,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 389.99600000170176,
+          "prefill_tokens_per_s": 303.64187011980766,
+          "decode_tokens_per_s": 58.16407899057179,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 116,
+            "prompt_ms": 382.029,
+            "prompt_per_token_ms": 3.293353448275862,
+            "prompt_per_second": 303.64187011980766,
+            "predicted_n": 32,
+            "predicted_ms": 532.975,
+            "predicted_per_token_ms": 17.192741935483873,
+            "predicted_per_second": 58.16407899057179
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 250900480
+        },
+        {
+          "workload": "long",
+          "phase": "measured",
+          "index": 1,
+          "session_cold": false,
+          "latency_ms": 901.663999997254,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 116,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 386.9033999981184,
+          "prefill_tokens_per_s": 320.7920244465646,
+          "decode_tokens_per_s": 60.69363030139282,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 116,
+            "prompt_ms": 361.605,
+            "prompt_per_token_ms": 3.117284482758621,
+            "prompt_per_second": 320.7920244465646,
+            "predicted_n": 32,
+            "predicted_ms": 510.762,
+            "predicted_per_token_ms": 16.476193548387098,
+            "predicted_per_second": 60.69363030139282
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 250933248
+        }
+      ]
+    },
+    {
+      "id": "65f3a73620f643bf8fbae4e707c3d581",
+      "device": "Vulkan0",
+      "state": "completed",
+      "environment": {
+        "os": "Windows-11-10.0.26300-SP0",
+        "machine": "AMD64",
+        "runtime_id": "llama.cpp",
+        "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+        "hardware": {
+          "schema": 1,
+          "checked_at": 1794634943,
+          "inventory_at": 1794634943,
+          "state": "available",
+          "devices": [
+            {
+              "id": "00000000_00012045",
+              "kind": "gpu",
+              "name": "Intel(R) Iris(R) Xe Graphics",
+              "vendor": "Intel",
+              "vram_total": {
+                "value": 134217728,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "shared_limit": {
+                "value": 8390934528,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "memory_type": "unified",
+              "driver": {
+                "value": "31.0.101.5590",
+                "unit": "version",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "driver_state": {
+                "value": 0,
+                "unit": "code",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "verified_inference": false,
+              "utilization": {
+                "value": 8.8,
+                "unit": "percent",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_used": {
+                "value": 0,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              },
+              "vram_available": {
+                "value": 134217728,
+                "unit": "bytes",
+                "source": "estimated",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "estimated"
+              },
+              "shared_used": {
+                "value": 845131776,
+                "unit": "bytes",
+                "source": "detected",
+                "checked_at": 1794634943,
+                "status": "available",
+                "evidence": "detected"
+              }
+            }
+          ],
+          "npu_present": {
+            "value": false,
+            "unit": "boolean",
+            "source": "detected",
+            "checked_at": 1794634943,
+            "status": "available",
+            "evidence": "detected"
+          },
+          "providers": [],
+          "provider_state": "not-checked",
+          "provider_checked_at": null
+        },
+        "driver": null,
+        "backend_version": null,
+        "peak_vram_bytes": null,
+        "vram_limit": "Per-process reliable VRAM sampling not available.",
+        "npu_memory_bytes": null,
+        "started_monotonic": 19215.718,
+        "environment": {
+          "backend_version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)",
+          "executable_sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+          "driver": null,
+          "mapping": {
+            "state": "unknown"
+          }
+        },
+        "preparation": {
+          "pipeline_load_ms": 739.005300001736,
+          "compile_ms": null,
+          "read_model_ms": null,
+          "cold_scope": "fresh-server-process-cache-prompt-disabled",
+          "os_file_cache": "uncontrolled",
+          "requested_precision": "GGUF-native"
+        }
+      },
+      "summary": {
+        "short": {
+          "count": 2,
+          "mean_ms": 332.5270500008628,
+          "stddev_ms": 28.280950000407756,
+          "p50_ms": 332.5270500008628,
+          "p95_ms": 357.9799050012298,
+          "requests_per_second": 3.0072741450579894
+        },
+        "long": {
+          "count": 2,
+          "mean_ms": 328.4232999994856,
+          "stddev_ms": 13.437100000373903,
+          "p50_ms": 328.4232999994856,
+          "p95_ms": 340.5166899998221,
+          "requests_per_second": 3.0448509591175967
+        }
+      },
+      "evidence": {
+        "requested_device": "Vulkan0",
+        "available_devices": [
+          "CPU",
+          "Vulkan0"
+        ],
+        "execution_devices": [],
+        "verified_inference": false,
+        "operator_allocation": "unknown",
+        "fallback": "unknown",
+        "verification_limit": "Configured layers are not operator placement evidence.",
+        "configured_plan": {
+          "device": "Vulkan0",
+          "layers": 30,
+          "total_layers": 30,
+          "vram": 910760800,
+          "ram": 1716067168,
+          "mapped_bytes": 105454432,
+          "device_free": 2799554560,
+          "shared": true,
+          "mmap_args": []
+        }
+      },
+      "error": null,
+      "measurements": [
+        {
+          "workload": "short",
+          "phase": "first",
+          "index": 0,
+          "session_cold": true,
+          "latency_ms": 966.4112999998906,
+          "input_prepare_ms": 20.13459999943734,
+          "result_processing_ms": null,
+          "input_tokens": 41,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 157.43840000141063,
+          "prefill_tokens_per_s": 274.1374699117411,
+          "decode_tokens_per_s": 38.533921037780644,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 41,
+            "prompt_ms": 149.56,
+            "prompt_per_token_ms": 3.6478048780487806,
+            "prompt_per_second": 274.1374699117411,
+            "predicted_n": 32,
+            "predicted_ms": 804.486,
+            "predicted_per_token_ms": 25.95116129032258,
+            "predicted_per_second": 38.533921037780644
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 288219136
+        },
+        {
+          "workload": "short",
+          "phase": "warmup",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 447.01290000011795,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 41,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 84.60310000009486,
+          "prefill_tokens_per_s": 534.6408126540352,
+          "decode_tokens_per_s": 86.55156239530052,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 41,
+            "prompt_ms": 76.687,
+            "prompt_per_token_ms": 1.8704146341463415,
+            "prompt_per_second": 534.6408126540352,
+            "predicted_n": 32,
+            "predicted_ms": 358.168,
+            "predicted_per_token_ms": 11.553806451612903,
+            "predicted_per_second": 86.55156239530052
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 288931840
+        },
+        {
+          "workload": "short",
+          "phase": "measured",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 360.80800000127056,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 41,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 65.04359999962617,
+          "prefill_tokens_per_s": 880.6220198462133,
+          "decode_tokens_per_s": 106.29798411016587,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 41,
+            "prompt_ms": 46.558,
+            "prompt_per_token_ms": 1.135560975609756,
+            "prompt_per_second": 880.6220198462133,
+            "predicted_n": 32,
+            "predicted_ms": 291.633,
+            "predicted_per_token_ms": 9.407516129032258,
+            "predicted_per_second": 106.29798411016587
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 288976896
+        },
+        {
+          "workload": "short",
+          "phase": "measured",
+          "index": 1,
+          "session_cold": false,
+          "latency_ms": 304.24610000045504,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 41,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 46.72040000150446,
+          "prefill_tokens_per_s": 1045.7583023006682,
+          "decode_tokens_per_s": 122.5243171245519,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 41,
+            "prompt_ms": 39.206,
+            "prompt_per_token_ms": 0.9562439024390245,
+            "prompt_per_second": 1045.7583023006682,
+            "predicted_n": 32,
+            "predicted_ms": 253.011,
+            "predicted_per_token_ms": 8.161645161290322,
+            "predicted_per_second": 122.5243171245519
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 289021952
+        },
+        {
+          "workload": "long",
+          "phase": "first",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 326.3504999995348,
+          "input_prepare_ms": 31.952299999829847,
+          "result_processing_ms": null,
+          "input_tokens": 116,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 68.22180000017397,
+          "prefill_tokens_per_s": 2250.6354164645627,
+          "decode_tokens_per_s": 121.63922590366174,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 116,
+            "prompt_ms": 51.541,
+            "prompt_per_token_ms": 0.44431896551724137,
+            "prompt_per_second": 2250.6354164645627,
+            "predicted_n": 32,
+            "predicted_ms": 254.852,
+            "predicted_per_token_ms": 8.221032258064517,
+            "predicted_per_second": 121.63922590366174
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 291090432
+        },
+        {
+          "workload": "long",
+          "phase": "warmup",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 318.6539999987872,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 116,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 57.108499997411855,
+          "prefill_tokens_per_s": 2353.2275733354973,
+          "decode_tokens_per_s": 120.42763464586506,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 116,
+            "prompt_ms": 49.294,
+            "prompt_per_token_ms": 0.42494827586206896,
+            "prompt_per_second": 2353.2275733354973,
+            "predicted_n": 32,
+            "predicted_ms": 257.416,
+            "predicted_per_token_ms": 8.30374193548387,
+            "predicted_per_second": 120.42763464586506
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 291143680
+        },
+        {
+          "workload": "long",
+          "phase": "measured",
+          "index": 0,
+          "session_cold": false,
+          "latency_ms": 341.8603999998595,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 116,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 78.39059999969322,
+          "prefill_tokens_per_s": 2354.326074161271,
+          "decode_tokens_per_s": 119.66663192474127,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 116,
+            "prompt_ms": 49.271,
+            "prompt_per_token_ms": 0.42475,
+            "prompt_per_second": 2354.326074161271,
+            "predicted_n": 32,
+            "predicted_ms": 259.053,
+            "predicted_per_token_ms": 8.356548387096774,
+            "predicted_per_second": 119.66663192474127
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 291192832
+        },
+        {
+          "workload": "long",
+          "phase": "measured",
+          "index": 1,
+          "session_cold": false,
+          "latency_ms": 314.9861999991117,
+          "input_prepare_ms": 0,
+          "result_processing_ms": null,
+          "input_tokens": 116,
+          "output_tokens": 32,
+          "token_count_source": "llama.cpp usage",
+          "ttft_ms": null,
+          "first_text_callback_ms": 57.88359999860404,
+          "prefill_tokens_per_s": 2331.611424895982,
+          "decode_tokens_per_s": 120.65871876009544,
+          "raw_timings": {
+            "cache_n": 0,
+            "prompt_n": 116,
+            "prompt_ms": 49.751,
+            "prompt_per_token_ms": 0.42888793103448275,
+            "prompt_per_second": 2331.611424895982,
+            "predicted_n": 32,
+            "predicted_ms": 256.923,
+            "predicted_per_token_ms": 8.28783870967742,
+            "predicted_per_second": 120.65871876009544
+          },
+          "output_correct": null,
+          "peak_ram_bytes": 291237888
+        }
+      ]
+    }
+  ]
+}

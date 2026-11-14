@@ -1,0 +1,106 @@
+{
+  "date": "2026-11-14",
+  "runtime": "b12360 / 2d8a32502",
+  "model": "Qwen3-0.6B-Q4_0.gguf",
+  "hardware": "development host Intel Iris Xe; no RTX claim",
+  "chat": {
+    "state": "completed",
+    "answer": "歡迎使用本機人工智慧工作台。",
+    "reasoning": "",
+    "error": null
+  },
+  "agent": {
+    "state": "completed",
+    "error": null,
+    "plan_state": "completed",
+    "events": 10,
+    "mode": "native; only models tool approved",
+    "audit_events": [
+      {
+        "type": "draft",
+        "tool": null
+      },
+      {
+        "type": "awaiting_approval",
+        "tool": null
+      },
+      {
+        "type": "approved",
+        "tool": null
+      },
+      {
+        "type": "running",
+        "tool": null
+      },
+      {
+        "type": "model_decision",
+        "tool": null
+      },
+      {
+        "type": "tool_requested",
+        "tool": "models"
+      },
+      {
+        "type": "tool_result",
+        "tool": "models"
+      },
+      {
+        "type": "model_decision",
+        "tool": null
+      },
+      {
+        "type": "model_answer",
+        "tool": null
+      },
+      {
+        "type": "completed",
+        "tool": null
+      }
+    ]
+  },
+  "team": {
+    "members_models": [
+      "Qwen3-0.6B-Q4_0.gguf",
+      "SmolLM2-135M-Instruct-Q4_K_M.gguf"
+    ],
+    "state": "completed",
+    "error": null,
+    "run_id": "2c0fb0906a2549ba92ced16d9eadb211",
+    "has_answer": true,
+    "saved_nodes": [
+      {
+        "id": "draft",
+        "agent": "m1",
+        "state": "completed",
+        "output_chars": 19,
+        "output_sha256": "7be9f35b32eb592b6a20e8870a8bb39bbc4ce4f1ecec79cdb509ea4ba4f9c93d"
+      },
+      {
+        "id": "review",
+        "agent": "m2",
+        "state": "completed",
+        "output_chars": 294,
+        "output_sha256": "a02b9887d8a0e4eeb2684b88ecc0615b25a99dddf7f98f5edce7cfed7079287f"
+      },
+      {
+        "id": "revision",
+        "agent": "m1",
+        "state": "completed",
+        "output_chars": 99,
+        "output_sha256": "7e8488b96a73728de946dfe166bd5d7bf4be3790b106888fa8a0d4db97ff9066"
+      },
+      {
+        "id": "final",
+        "agent": "m1",
+        "state": "completed",
+        "output_chars": 99,
+        "output_sha256": "19bc866c268075371dc4256d8650777b2bd63d9f0c552c1d846c6e7ad119dac4"
+      }
+    ],
+    "final_answer_sha256": "19bc866c268075371dc4256d8650777b2bd63d9f0c552c1d846c6e7ad119dac4"
+  },
+  "switch_to_legacy": "PASS",
+  "history_retained": true,
+  "switch_back": "PASS",
+  "process_cleanup": true
+}

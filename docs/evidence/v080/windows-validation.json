@@ -1,0 +1,99 @@
+{
+  "run": 43567386614,
+  "source_commit": "1a4503dddeb6388b70da813b5c2b5e8788237f7d",
+  "conclusion": "success",
+  "steps": [
+    {
+      "name": "Set up job",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+      "conclusion": "success"
+    },
+    {
+      "name": "Pin toolchain and Python packager",
+      "conclusion": "success"
+    },
+    {
+      "name": "Test Python and build the onedir worker",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "conclusion": "success"
+    },
+    {
+      "name": "Build actual Workspace 0.7.0 upgrade baseline",
+      "conclusion": "success"
+    },
+    {
+      "name": "Exercise desktop layout in Chromium",
+      "conclusion": "success"
+    },
+    {
+      "name": "Build Windows per-user installer (unsigned)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Verify installer inventory and produce checksums",
+      "conclusion": "success"
+    },
+    {
+      "name": "Exercise the installed desktop app and uninstall",
+      "conclusion": "success"
+    },
+    {
+      "name": "Attest candidate build provenance (not Windows code signing)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Preserve provenance bundle",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "conclusion": "success"
+    },
+    {
+      "name": "Complete job",
+      "conclusion": "success"
+    }
+  ],
+  "test_excerpts": [
+    "2026-11-14T06:41:31.3479921Z Ran 221 tests in 92.194s",
+    "2026-11-14T06:41:31.3480128Z OK (skipped=1)",
+    "2026-11-14T06:41:40.9935197Z Ran 1 test in 0.872s",
+    "2026-11-14T06:46:02.8520835Z PASS controlled NPU presence, unknown monitoring, long names, four sizes and both themes",
+    "2026-11-14T06:46:28.3695147Z PASS controlled OpenVINO Runtime selection, compute scheduling, local privacy and saved chat",
+    "2026-11-14T06:46:29.9348901Z PASS controlled Benchmark empty/failed/unknown states, non-equivalence, long names, no GPU/NPU, consent, cancel, keyboard and four sizes in both themes",
+    "2026-11-14T06:46:43.1951588Z PASS controlled 0.8 Runtime install without auto-switch, confirmed selection, named GPU/memory types, independent trust/SAC states, four sizes and both themes; no real downloads or inference",
+    "2026-11-14T06:49:53.5024013Z running 0 tests",
+    "2026-11-14T06:49:53.5025688Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+  ],
+  "cargo_note": "Rust test harness compiled and ran; current native shell has zero Rust unit test cases."
+}
