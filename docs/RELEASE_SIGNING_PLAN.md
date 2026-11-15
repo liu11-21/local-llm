@@ -1,5 +1,7 @@
 # Release signing implementation plan
 
+2026-11-15：此 Desktop 簽章方案已停止推進，保留為歷史。0.9.0 改以 Web Workspace 發行，不申請 SignPath／付費憑證或自行簽章；見 [Web 安裝](WEB_INSTALLATION.md)。
+
 已實作候選階段：GitHub-hosted Windows、固定 Actions SHA、npm／Cargo／Python 鎖檔、unsigned NSIS、SBOM 原始 Notices 隨安裝、安裝後 PE／uninstaller 清單、完整 build identity、SHA-256、升級／解除安裝、GitHub provenance。公開建置成功不代表法律審核或 SignPath 核准。
 
 `.github/workflows/signing-review.yml` 只有 workflow_dispatch，job 使用 literal false，無 secrets、無服務呼叫。`signpath/signing-request-step.yml.example` 是非執行範例，所有必要值空白；不會被一般 push／PR 觸發。這不是已運作的正式簽章管線。

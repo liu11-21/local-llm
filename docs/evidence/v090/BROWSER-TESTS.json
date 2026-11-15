@@ -1,0 +1,139 @@
+{
+  "status": "PASS",
+  "transport": "real same-origin HTTP, real SQLite; no inference in this browser layout test",
+  "matrix": [
+    {
+      "browser": "Chrome",
+      "width": 1280,
+      "height": 900,
+      "theme": "dark",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Chrome",
+      "width": 1280,
+      "height": 900,
+      "theme": "light",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Chrome",
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Chrome",
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Chrome",
+      "width": 800,
+      "height": 600,
+      "theme": "dark",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Chrome",
+      "width": 800,
+      "height": 600,
+      "theme": "light",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Chrome",
+      "width": 650,
+      "height": 720,
+      "theme": "dark",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Chrome",
+      "width": 650,
+      "height": 720,
+      "theme": "light",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Edge",
+      "width": 1280,
+      "height": 900,
+      "theme": "dark",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Edge",
+      "width": 1280,
+      "height": 900,
+      "theme": "light",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Edge",
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Edge",
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Edge",
+      "width": 800,
+      "height": 600,
+      "theme": "dark",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Edge",
+      "width": 800,
+      "height": 600,
+      "theme": "light",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Edge",
+      "width": 650,
+      "height": 720,
+      "theme": "dark",
+      "routes": 12,
+      "status": "PASS"
+    },
+    {
+      "browser": "Edge",
+      "width": 650,
+      "height": 720,
+      "theme": "light",
+      "routes": 12,
+      "status": "PASS"
+    }
+  ],
+  "upload": "controlled 32-byte GGUF header fixture; not a model inference test",
+  "multi_window": "real BroadcastChannel invalidation + shared core",
+  "restart": "PASS: rotated launch credential, preserved files",
+  "pwa": "manifest + service worker ready in Chrome/Edge; interactive OS installation not automated",
+  "self_built_exe_executed": false
+}

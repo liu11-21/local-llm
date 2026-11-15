@@ -1,0 +1,10 @@
+{
+  "scope": "several synthetic 0.6B quantized native-agent runs, not a statistical quality comparison",
+  "observed_outcomes": [
+    "completed with native models tool requested/result audit events",
+    "completed without selecting a tool",
+    "AGENT_LIMIT failure after approved steps/tokens, partial results retained"
+  ],
+  "final_zip_run": "completed",
+  "note": "Successful final sample does not erase earlier limits or guarantee all models/tool choices."
+}

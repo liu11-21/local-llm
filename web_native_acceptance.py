@@ -16,14 +16,17 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--runtime',type=Path,required=True);parser.add_argument('--qwen',type=Path,required=True)
     parser.add_argument('--smol',type=Path,required=True);parser.add_argument('--port',type=int,default=18775)
+    parser.add_argument('--app',type=Path,help='Optional extracted, hash-verified Web ZIP app directory')
     args=parser.parse_args();root=Path(__file__).resolve().parent;output=root/'build/v090-native';output.mkdir(exist_ok=True)
+    (output/'validation.json').unlink(missing_ok=True)
+    app=args.app.resolve() if args.app else root
     evidence={'scope':'actual official-Python Web host -> HTTP/SSE -> shared scheduler -> signed llama.app',
         'hardware':'Intel Iris Xe development host; RTX/CUDA/NPU not tested','paid_cloud':'NOT RUN'}
     with tempfile.TemporaryDirectory(prefix='v090-native-',dir=root/'build') as scratch:
         data=Path(scratch).resolve();models=data/'models';models.mkdir()
         for source in (args.qwen,args.smol):shutil.copyfile(source,models/source.name)
         log=(output/'launcher-private.log').open('w',encoding='utf-8')
-        child=subprocess.Popen([sys.executable,'-I','-S','-B',str(root/'web_launcher.py'),'start','--data',str(data),'--port',str(args.port),'--no-browser'],stdout=log,stderr=log)
+        child=subprocess.Popen([sys.executable,'-I','-S','-B',str(app/'web_launcher.py'),'start','--data',str(data),'--port',str(args.port),'--no-browser'],stdout=log,stderr=log)
         cookie='';csrf='';origin=f'http://127.0.0.1:{args.port}'
         def request(path,body=None,headers=None):
             connection=http.client.HTTPConnection('127.0.0.1',args.port,timeout=180)
@@ -51,6 +54,7 @@ def main():
                 time.sleep(.25)
             assert state
             session,raw=request('/api/session',{},headers={'X-Workspace-Bootstrap':state['bootstrap']});cookie=raw.split(';')[0];csrf=session['csrf']
+            evidence['application_build']=session['build']
             status=rpc('runtime-select',{'kind':'llama-app','path':str(args.runtime.resolve()),'confirmed':True})
             evidence['runtime']={'version':status['selection']['version'],'sha256':status['selection']['sha256'],
                 'authenticode':status['trust']['authenticode'],'devices':status['selection']['devices']}
@@ -62,13 +66,18 @@ def main():
             evidence['sqlite_history_rows']=len(rpc('history',{'chat':'1'*32}));assert evidence['sqlite_history_rows']>=2
             plan=rpc('agent-plan',{'role':'general','model':args.qwen.name,'runtime':'local','policy':'local','mode':'native','tools':['models'],
                 'prompt':'Call the models tool with {} to list the models actually installed on this computer. You must call the tool before answering because you cannot know the installed filenames. After its result, answer briefly.','limits':{'steps':3,'seconds':75,'tokens':256}})
-            agent=run('agent',{'id':plan['id'],'version':plan['version'],'confirmed':True},100)
+            agent=wait(rpc('run',{'action':'agent','id':plan['id'],'version':plan['version'],'confirmed':True}),100)
+            # A tiny quantized model may loop tools until the approved budget ends.
+            # Record that model/task failure, do not pretend it completed or prevent
+            # independent Team/Benchmark/browser checks from collecting evidence.
+            assert agent['state']=='completed' or agent['state']=='failed' and 'AGENT_LIMIT' in str(agent.get('error')),agent
             saved=rpc('agent-plan-get',{'id':plan['id']});events=saved.get('events',[])
-            evidence['agent']={'state':agent['state'],'tool_requested':any(e.get('kind')=='tool_requested' for e in events),
-                'tool_result':any(e.get('kind')=='tool_result' for e in events),'answer':agent['result'].get('answer'),
+            evidence['agent']={'state':agent['state'],'error':agent.get('error'),'tool_requested':any(e.get('kind')=='tool_requested' for e in events),
+                'tool_result':any(e.get('kind')=='tool_result' for e in events),'answer':(agent.get('result') or {}).get('answer'),
                 'audit_kinds':[e.get('kind') for e in events]}
             (output/'agent-observation.json').write_text(json.dumps(evidence['agent'],ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
             if not evidence['agent']['tool_result']:evidence['agent']['limitation']='Model completed without selecting the tool; native protocol/permission regression is separately controlled, no tool execution is claimed for this run.'
+            if agent['state']=='failed':evidence['agent']['limitation']='Actual AGENT_LIMIT failure; approved limits stopped the model. This native-agent run is not marked completed/PASS.'
             simple=rpc('agent-plan',{'role':'general','model':args.qwen.name,'runtime':'local','policy':'local','mode':'simple','tools':['models'],
                 'prompt':'列出本機模型，然後給一個簡短建議。','limits':{'steps':3,'seconds':75,'tokens':192}})
             simple_result=run('agent',{'id':simple['id'],'version':simple['version'],'confirmed':True},100)

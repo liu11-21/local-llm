@@ -1,5 +1,7 @@
 # SignPath application — UNSENT DRAFT
 
+2026-11-15：已依維護者指示停止推進。本文件僅保留未寄送的歷史草稿，不是待提交申請；0.9.0 的主要方向為 Web Workspace。
+
 未提交申請、未取得組織／專案／policy ID、Token 或憑證。需維護者及 Foundation 審查，不能原樣作已符合條件的聲明。
 
 | 欄位 | 草稿內容 |

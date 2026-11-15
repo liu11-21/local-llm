@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "browser": "Chrome",
+  "model": "Qwen3-0.6B Q4_0",
+  "backend": "CPU",
+  "scope": "Actual React composer -> authenticated HTTP -> shared scheduler -> signed llama.app -> SSE browser render",
+  "answer": "瀏覽器真實推理成功。",
+  "note": "Single synthetic instruction; not a quality benchmark or RTX/SAC test.",
+  "application_build": {
+    "version": "0.9.0",
+    "channel": "Development",
+    "commit": "78f8f7c10d2c0a9c3bedce6868a2d7093e992d2f",
+    "target": "Windows x64",
+    "signed": false
+  }
+}

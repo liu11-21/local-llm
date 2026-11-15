@@ -8,9 +8,14 @@
 瀏覽器關閉後可用 **Stop-Web-Workspace.cmd** 停止；模型、聊天與作品沿用原資料目錄。
 腳本／官方 Python／選用原生依賴仍可能受裝置政策限制，**SAC 完整相容性尚未獨立驗證**。
 
-[Windows Web CI／候選 ZIP](https://github.com/liu11-21/local-llm/actions/workflows/web-workspace.yml) ·
+[下載已驗收 Windows Web ZIP](https://github.com/liu11-21/local-llm/actions/runs/43685022914/artifacts/14150375872) ·
+[Windows Web CI](https://github.com/liu11-21/local-llm/actions/runs/43685022914) ·
 [安裝／更新／回滾](docs/WEB_INSTALLATION.md) · [架構](docs/WEB_ARCHITECTURE.md) · [安全](docs/WEB_SECURITY.md) ·
 [相容性](docs/WEB_COMPATIBILITY.md) · [0.9.0 交付](docs/V090_DELIVERY.md)。
+
+下載 Artifact 後解開其中 `LocalLLM-Web-0.9.0-Windows-x64.zip`。程式來源 78f8f7c；最終 CI 18 steps 成功，
+Python 235 項（234 通過、1 個不需要的封裝 Worker 測試 skipped）、Chrome／Edge 與真實同包模型工作鏈通過。
+Web ZIP 不含 EXE／DLL／PYD；[SHA-256 與逐項證據](docs/V090_DELIVERY.md)。
 
 ---
 

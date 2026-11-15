@@ -1,5 +1,7 @@
 # Open-source readiness — 0.7.0 Development
 
+2026-11-15 更新：第一方既有 MIT 與第三方權利範圍保留；SignPath／憑證方案已停止推進，0.9.0 主要使用 Web Workspace。以下為 Desktop 開源與簽章準備歷史，不是新的申請承諾；見 [0.9.0 交付](V090_DELIVERY.md)。
+
 MIT：**第一方已正式採用**；維護者於本次集中詢問後另行批准 A1–A4，署名「Copyright (c) 2026 劉仲軒」。
 維護者主導需求與產品架構，主要透過 Codex／AI 輔助產生及修改程式碼；不宣稱全部 AI 輸出都有著作權或絕對無第三方。
 Logo／品牌／UI 截圖及合成媒體暫時排除。SignPath：**未申請／未核准**；Windows：**unsigned review candidate**。

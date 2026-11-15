@@ -1,3 +1,12 @@
+# 0.9.0 Web Workspace（2026-11-15）
+
+主要方向改為瀏覽器 React＋官方 Python 本機後端＋已簽章上游 Runtime，不以自製 EXE／Installer 為必要依賴。
+共用核心、HTTP／SSE、安全邊界、模型／Agent／Team／媒體與遠端接口、啟動／管理、ZIP 更新回滾、PWA 已整合。
+最終 Windows CI、真實 0.8→0.9 升級、Chrome／Edge、同包模型工作鏈已完成；詳 [交付](V090_DELIVERY.md)。
+保留 Desktop 分支；SignPath／付費憑證／自行簽章停止推進。下一項實機工作為 SAC 完整鏈、RTX／NPU／雙實體主機及完整影音 GPU，付費雲端需另授權。
+
+---
+
 # 0.8.0 Development 狀態（2026-11-14）
 
 已落地：獨立 llama.app Adapter／舊引擎切換；固定版本安裝與信任證據；既有排程、Agent／Team、

@@ -23,3 +23,7 @@ ComfyUI 都是另行安裝的選用依賴，可能仍受 Application Control 限
 真實 HTTP／SSE 繁體回答、取消、SQLite、靜態 React 與關閉清理；基本路徑無 cryptography import。
 這台為 Iris Xe，沒有把維護者另一台 RTX／SAC 結果算作本輪測試。
 其他階段驗收依 V090_DELIVERY，不以原型通過代表全部移植完成。
+
+最終版本已完成乾淨 ZIP 的部署／升級／更新回滾與 Chrome／Edge 矩陣；另外對相同 78f8f7c CI ZIP
+完成真實 CPU／Intel Vulkan、Thinking、Agent／Team、Benchmark、React 聊天與取消清理。
+逐項來源與硬體界線見 [完整交付](V090_DELIVERY.md)，不是 pure WebGPU 改寫。

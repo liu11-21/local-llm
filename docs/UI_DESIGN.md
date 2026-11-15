@@ -1,3 +1,18 @@
+# 0.9.0 Web 操作介面
+
+沿用既有 Tesla 黑白灰與響應式佈局，沒有替換 Logo 或重寫功能頁。
+同一 React 透過 Web transport 工作，新增服務連線／停止／閒置說明、全螢幕、可用時的 PWA 安裝入口，
+保留每窗路由，核心模型／任務由共享服務與 invalidation 同步；中斷不自動重送生成。
+模型庫可分塊匯入 GGUF、作品在瀏覽器預覽與下載、Benchmark CSV／JSON 直接下載。
+Web 不提供 Desktop EXE 更新／舊引擎安裝操作，官方 Runtime 仍需使用者確認。
+
+Chrome／Edge 在 1280×900、1024×768、800×600、650×720 深淺模式全部通過；
+PWA manifest／service worker 就緒，互動式 OS 安裝仍需使用者依瀏覽器政策操作。
+[同一最終 CI ZIP 的真實 Qwen3 聊天畫面](ui-preview/v090/web-chat-real.png)，沒有用受控輸出冒充推理。
+[完整驗收與限制](V090_DELIVERY.md)。
+
+---
+
 # 0.8.0 Runtime 與聊天介面
 
 2026-11-14。沿用黑白灰、少邊框、既有深淺色與響應式設計，沒有重寫工作台或替換 Logo。

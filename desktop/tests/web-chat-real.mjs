@@ -32,7 +32,10 @@ try{
  assert.deepEqual(failures,[])
  const answer=await chat.locator('.message.assistant .markdown').last().innerText();assert(answer.trim())
  const output=join(root,'build/v090-browser');await mkdir(output,{recursive:true})
- await page.screenshot({path:join(output,'chrome-chat-real.png'),fullPage:true})
+ await chat.locator('.chat-config').evaluate(node=>{node.open=false})
+ await chat.locator('.compose-footer > details').evaluate(node=>{node.open=false})
+ await page.evaluate(()=>window.scrollTo(0,0))
+ await page.screenshot({path:join(output,'chrome-chat-real.png'),fullPage:false})
  await writeFile(join(output,'chat-real.json'),JSON.stringify({status:'PASS',browser:'Chrome',model:'Qwen3-0.6B Q4_0',backend:'CPU',
   scope:'Actual React composer -> authenticated HTTP -> shared scheduler -> signed llama.app -> SSE browser render',answer,
   note:'Single synthetic instruction; not a quality benchmark or RTX/SAC test.'},null,2)+'\n')

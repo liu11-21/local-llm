@@ -1,0 +1,109 @@
+{
+  "run": 43685022914,
+  "source_commit": "78f8f7c10d2c0a9c3bedce6868a2d7093e992d2f",
+  "url": "https://github.com/liu11-21/local-llm/actions/runs/43685022914",
+  "conclusion": "success",
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Install test tools and hash-pinned pure Web wheels",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Shared core, HTTP security and distribution regression",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Desktop transport and React regression",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Build source and prebuilt Web ZIP",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Clean ZIP start, real 0.8 upgrade, update and rollback",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Real Chrome and Edge, four sizes and both themes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Record test evidence and verify ZIP SHA",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "python": {
+    "total": 235,
+    "passed": 234,
+    "skipped": 1,
+    "skip_reason": "PackagedWorkerTests intentionally not built/required for Web"
+  },
+  "excerpts": [
+    "test_binary_handles_utf8_and_returns_safe_ipc_errors (test_desktop_worker.PackagedWorkerTests.test_binary_handles_utf8_and_returns_safe_ipc_errors) ... skipped 'Build the Windows onedir worker first.'",
+    "Ran 235 tests in 67.316s",
+    "OK (skipped=1)"
+  ]
+}

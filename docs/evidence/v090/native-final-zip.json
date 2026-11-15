@@ -1,0 +1,278 @@
+{
+  "scope": "actual official-Python Web host -> HTTP/SSE -> shared scheduler -> signed llama.app",
+  "hardware": "Intel Iris Xe development host; RTX/CUDA/NPU not tested",
+  "paid_cloud": "NOT RUN",
+  "application_build": {
+    "version": "0.9.0",
+    "channel": "Development",
+    "commit": "78f8f7c10d2c0a9c3bedce6868a2d7093e992d2f",
+    "target": "Windows x64",
+    "signed": false
+  },
+  "runtime": {
+    "version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n",
+    "sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+    "authenticode": {
+      "status": "Valid",
+      "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+      "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US",
+      "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93"
+    },
+    "devices": [
+      {
+        "id": "Vulkan0",
+        "name": "Intel(R) Iris(R) Xe Graphics",
+        "reported_total_mib": 8002,
+        "reported_free_mib": 7346,
+        "backend": "Vulkan",
+        "available": true,
+        "memory_type": "shared-or-unified"
+      }
+    ]
+  },
+  "thinking": {
+    "off": {
+      "generation": {
+        "reasoning": "",
+        "usage": {
+          "completion_tokens": 8,
+          "prompt_tokens": 64,
+          "total_tokens": 72,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 64,
+          "prompt_ms": 671.276,
+          "prompt_per_token_ms": 10.4886875,
+          "prompt_per_second": 95.34081361466819,
+          "predicted_n": 8,
+          "predicted_ms": 203.418,
+          "predicted_per_token_ms": 29.059714285714286,
+          "predicted_per_second": 34.41190061843101
+        },
+        "resource_samples": [
+          {
+            "at": 1794724196.3201807,
+            "checked_at": 1794724196,
+            "devices": []
+          }
+        ],
+        "finish_reason": "stop"
+      },
+      "reasoning": "",
+      "answer": "網頁工作台已連線。",
+      "plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 28,
+        "vram": 0,
+        "ram": 1283001968,
+        "mapped_bytes": 382156480,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": [
+          "--load-mode",
+          "mmap"
+        ]
+      },
+      "usage": {
+        "input": 64,
+        "context": 2048,
+        "max_output": 64,
+        "omitted_turns": 0,
+        "completion_tokens": 8,
+        "prompt_tokens": 64,
+        "total_tokens": 72,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cache_n": 0,
+        "prompt_n": 64,
+        "prompt_ms": 671.276,
+        "prompt_per_token_ms": 10.4886875,
+        "prompt_per_second": 95.34081361466819,
+        "predicted_n": 8,
+        "predicted_ms": 203.418,
+        "predicted_per_token_ms": 29.059714285714286,
+        "predicted_per_second": 34.41190061843101
+      },
+      "message": "回答已儲存。"
+    },
+    "on": {
+      "generation": {
+        "reasoning": "Okay, so the question is 7 plus 5. Let me think. First, I need to add these two numbers. 7 plus 5... Hmm, 7 plus 5 is like 10, right? Because 7 plus 3 is 10, and then adding another 2 would make it 12. Wait, no, that's not right. Wait, 7 plus 5 is 12? Let me check. 7 plus 5 is 12. Yes, that's correct. So the answer should be 12. But wait, maybe I should visualize it. If I have 7 and add 5, I can think of it as starting from 0 and adding 7 and then adding 5 more. So 0 + 7 = ",
+        "usage": {
+          "completion_tokens": 181,
+          "prompt_tokens": 24,
+          "total_tokens": 205,
+          "prompt_tokens_details": {
+            "cached_tokens": 1
+          }
+        },
+        "timings": {
+          "cache_n": 1,
+          "prompt_n": 23,
+          "prompt_ms": 520.248,
+          "prompt_per_token_ms": 22.619478260869567,
+          "prompt_per_second": 44.209684611954295,
+          "predicted_n": 181,
+          "predicted_ms": 5746.986,
+          "predicted_per_token_ms": 31.927699999999998,
+          "predicted_per_second": 31.320765354222196
+        },
+        "resource_samples": [
+          {
+            "at": 1794724197.187746,
+            "checked_at": 1794724196,
+            "devices": []
+          },
+          {
+            "at": 1794724199.1999702,
+            "checked_at": 1794724196,
+            "devices": []
+          },
+          {
+            "at": 1794724201.2176285,
+            "checked_at": 1794724201,
+            "devices": [
+              {
+                "id": "00000000_00012c77",
+                "memory_type": "unified",
+                "utilization": {
+                  "value": 0.9,
+                  "unit": "percent",
+                  "source": "detected",
+                  "checked_at": 1794724201,
+                  "status": "available",
+                  "evidence": "detected"
+                },
+                "vram_used": {
+                  "value": 0,
+                  "unit": "bytes",
+                  "source": "detected",
+                  "checked_at": 1794724201,
+                  "status": "available",
+                  "evidence": "detected"
+                },
+                "vram_available": {
+                  "value": 134217728,
+                  "unit": "bytes",
+                  "source": "estimated",
+                  "checked_at": 1794724201,
+                  "status": "available",
+                  "evidence": "estimated"
+                },
+                "shared_used": {
+                  "value": 545562624,
+                  "unit": "bytes",
+                  "source": "detected",
+                  "checked_at": 1794724201,
+                  "status": "available",
+                  "evidence": "detected"
+                }
+              }
+            ]
+          }
+        ],
+        "finish_reason": "stop"
+      },
+      "reasoning": "Okay, so the question is 7 plus 5. Let me think. First, I need to add these two numbers. 7 plus 5... Hmm, 7 plus 5 is like 10, right? Because 7 plus 3 is 10, and then adding another 2 would make it 12. Wait, no, that's not right. Wait, 7 plus 5 is 12? Let me check. 7 plus 5 is 12. Yes, that's correct. So the answer should be 12. But wait, maybe I should visualize it. If I have 7 and add 5, I can think of it as starting from 0 and adding 7 and then adding 5 more. So 0 + 7 = ",
+      "answer": "The answer is 12.",
+      "plan": {
+        "device": null,
+        "layers": 0,
+        "total_layers": 28,
+        "vram": 0,
+        "ram": 1283001968,
+        "mapped_bytes": 382156480,
+        "device_free": null,
+        "shared": false,
+        "mmap_args": [
+          "--load-mode",
+          "mmap"
+        ]
+      },
+      "usage": {
+        "input": 24,
+        "context": 2048,
+        "max_output": 512,
+        "omitted_turns": 0,
+        "completion_tokens": 181,
+        "prompt_tokens": 24,
+        "total_tokens": 205,
+        "prompt_tokens_details": {
+          "cached_tokens": 1
+        },
+        "cache_n": 1,
+        "prompt_n": 23,
+        "prompt_ms": 520.248,
+        "prompt_per_token_ms": 22.619478260869567,
+        "prompt_per_second": 44.209684611954295,
+        "predicted_n": 181,
+        "predicted_ms": 5746.986,
+        "predicted_per_token_ms": 31.927699999999998,
+        "predicted_per_second": 31.320765354222196
+      },
+      "message": "回答已儲存。"
+    }
+  },
+  "sqlite_history_rows": 2,
+  "agent": {
+    "state": "completed",
+    "error": null,
+    "tool_requested": true,
+    "tool_result": true,
+    "answer": "</think>\n\nThe installed GGUF filenames are: **Qwen3-0.6B-Q4_0.gguf** and **SmolLM2-135M-Instruct-Q4_K_M.gguf**.",
+    "audit_kinds": [
+      "draft",
+      "awaiting_approval",
+      "approved",
+      "running",
+      "model_decision",
+      "tool_requested",
+      "tool_result",
+      "model_decision",
+      "model_answer",
+      "completed"
+    ]
+  },
+  "simple_agent": {
+    "state": "completed",
+    "audit_kinds": [
+      "draft",
+      "awaiting_approval",
+      "approved",
+      "running",
+      "step",
+      "tool_requested",
+      "tool_result",
+      "step",
+      "completed"
+    ],
+    "tool_result": true
+  },
+  "team": {
+    "state": "completed",
+    "models": [
+      "Qwen3-0.6B-Q4_0.gguf",
+      "SmolLM2-135M-Instruct-Q4_K_M.gguf"
+    ],
+    "has_answer": true,
+    "saved_nodes": 4
+  },
+  "benchmark": {
+    "state": "completed",
+    "devices": [
+      "CPU",
+      "Vulkan0"
+    ],
+    "runs": 2
+  },
+  "chrome_react_inference": "PASS; see build/v090-browser/chat-real.json",
+  "cancel_after_started_stream": "PASS",
+  "cancelled_answer_not_saved": "PASS",
+  "shutdown_cleanup": "PASS"
+}

@@ -1,0 +1,13 @@
+{
+  "version": "0.9.0",
+  "channel": "Development",
+  "commit": "78f8f7c10d2c0a9c3bedce6868a2d7093e992d2f",
+  "target": "Windows x64",
+  "signed": false,
+  "zip": "LocalLLM-Web-0.9.0-Windows-x64.zip",
+  "sha256": "9649c947035f8547965035925542b2462859bfdab0c4fd5a805a58b31fe2b94d",
+  "bytes": 1550067,
+  "payload": "Python source + React static files + unchanged hash-pinned pure wheels; no self-built EXE",
+  "PE_payloads": 0,
+  "SAC": "NOT VERIFIED; scripts/interpreter/native optional runtimes need separate real-device approval"
+}

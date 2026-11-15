@@ -1,3 +1,24 @@
+# 0.9.0 Web Workspace 驗收（2026-11-15）
+
+最終程式來源 78f8f7c，[Windows CI 43685022914](https://github.com/liu11-21/local-llm/actions/runs/43685022914)
+SUCCESS／18 steps。乾淨 Windows Python **235 項：234 通過、1 skipped**；skip 為 Web 不建置／不依賴的自製封裝 Worker。
+本機先前受 Norton 限制的 7 個 TLS 案例在 CI 實跑；Web HTTP／CSRF／Origin／Host／路徑、檔案完整性、
+Windows 短路徑及 Job Object 強制退出清理均有回歸。
+
+TypeScript／Vite、完整既有 Desktop IPC／React 流程、Chrome／Edge 四尺寸／雙主題／12 頁、
+GGUF 匯入、多視窗、PWA 就緒、真正 0.8.0 資料升級、ZIP 更新／回滾與資料保留 PASS。
+未為 Web 重新封裝 Rust／PyInstaller／NSIS EXE，不將保留架構視為新 Desktop 二進位已建置。
+
+下載同一 78f8f7c CI ZIP 後另實跑：官方 Python／llama Valid、Qwen3 Thinking ON／OFF、
+原生與簡易 Agent 真正核准工具、Qwen3＋SmolLM2 四節點 Team、CPU／Intel Vulkan Benchmark、
+Chrome 表單至 SSE 正式回答、已開始生成後取消、不保存取消回答、關閉清理 PASS。
+0.6B 原生工具選擇／品質有波動，其他實驗曾無工具選擇或達 AGENT_LIMIT，不承諾每次完成。
+
+完整來源、SHA、原始記錄與 NOT VERIFIED／NEEDS HARDWARE／NEEDS AUTH 見 [0.9.0 交付](V090_DELIVERY.md)。
+SAC 啟用的完整鏈、RTX／CUDA／NPU、雙實體 Host 與完整影音模型未冒稱通過。
+
+---
+
 # 0.8.0 Development 驗收追蹤
 
 2026-11-14；最終功能來源 1a4503d。下列新結果與後面的 0.7.0 歷史分開。

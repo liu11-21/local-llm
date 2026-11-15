@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "source_commit": "78f8f7c10d2c0a9c3bedce6868a2d7093e992d2f",
+  "markdown_targets": "PASS",
+  "evidence_json_and_path_token_patterns": "PASS",
+  "artifact_digest_and_web_zip_hash": "PASS",
+  "distribution_manifest_files": 430,
+  "zero_PE_payloads_including_pure_wheels": "PASS",
+  "same_zip_real_model_application_identity": "PASS",
+  "first_party_MIT_scope": "preserved",
+  "production_source_changed_after_verified_build": false,
+  "final_changes": "documentation/evidence + opt-in acceptance controller/screenshot only; these tools are not in the shipped application import closure",
+  "manual_pwa_install_and_SAC": "NOT VERIFIED"
+}
