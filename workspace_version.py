@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 CHANNEL = "Development"
 
 
@@ -15,7 +15,7 @@ CHANNEL = "Development"
 def build_info():
     root = Path(__file__).resolve().parent
     stamp = root / "workspace-build.json"
-    if getattr(sys, "frozen", False):
+    if getattr(sys, "frozen", False) or stamp.is_file():
         value = json.loads(stamp.read_text(encoding="utf-8"))
         if value.get("version") != VERSION or value.get("channel") != CHANNEL:
             raise ValueError("工作程序建置版本不符，請重新安裝完整的 Workspace。")

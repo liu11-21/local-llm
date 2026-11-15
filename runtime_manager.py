@@ -17,7 +17,7 @@ MANIFEST=json.loads((ROOT/"llama-app-runtime.json").read_text(encoding="utf-8"))
 class RuntimeManager:
     def __init__(self,data,legacy):
         self.data=Path(data);self.legacy=legacy;self.trust=RuntimeTrust();self.record={"kind":"legacy"};self.report=None
-        self.file=self.data/"llama-runtime.json"
+        self.file=self.data/"llama-runtime.json";self.official_only=False
         try:
             value=json.loads(self.file.read_text(encoding="utf-8"))
             if isinstance(value,dict) and value.get("kind") in ("legacy","llama-app"):
@@ -25,6 +25,8 @@ class RuntimeManager:
         except (OSError,ValueError):pass
 
     def executable(self):
+        if self.official_only and self.record['kind']!='llama-app':
+            raise ValueError('WEB_RUNTIME_REQUIRED · 請到運算環境選擇官方已簽章的 llama.exe；Web 不需要舊版自製 EXE。')
         if self.record["kind"]=="legacy":return self.legacy()
         path=Path(self.record["path"])
         if path.is_symlink() or not path.is_file() or not hmac.compare_digest(sha256(path),self.record["sha256"]):
@@ -34,7 +36,7 @@ class RuntimeManager:
     def factory(self):return LlamaAppEngine() if self.record["kind"]=="llama-app" else LocalEngine()
 
     def status(self):
-        return {"selected":self.record["kind"],"selection":self.record,"trust":self.report,
+        return {"official_only":self.official_only,"selected":self.record["kind"],"selection":self.record,"trust":self.report,
                 "discovered":[str(p) for p in discover()],"managed_installed":(self.data/"runtimes"/MANIFEST['id']/"llama.exe").is_file(),
                 "official":OFFICIAL,"manifest":MANIFEST,"reported_baseline":BASELINE}
 
@@ -49,6 +51,7 @@ class RuntimeManager:
         if kind not in ('legacy','llama-app') or data.get('confirmed') is not True:
             raise ValueError('RUNTIME_CONFIRM · 請確認要切換的引擎。')
         record={'kind':kind}
+        if self.official_only and kind=='legacy':raise ValueError('Web 使用官方 llama.exe；舊引擎仍保留供 Desktop 使用。')
         if kind=='legacy':self.report=None
         if kind=='llama-app':
             report=self.inspect(data.get('path',''))

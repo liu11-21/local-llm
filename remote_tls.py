@@ -8,11 +8,6 @@ import socket
 import ssl
 from tempfile import TemporaryDirectory
 
-from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
-
 from remote_client import parse_invite, protect
 from remote_host import private_ip
 
@@ -47,6 +42,13 @@ def private_addresses():
 
 
 def create_material(address):
+    try:
+        from cryptography import x509
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+    except (ImportError,OSError):
+        raise ValueError('REMOTE_TLS_DEPENDENCY · 私人遠端 Host 需要選用的加密套件；請執行 Install-Web-Optional.cmd tls。原生套件仍需通過裝置政策。') from None
     key = ec.generate_private_key(ec.SECP256R1())
     subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Local LLM Private Host")])
     now = datetime.now(timezone.utc)

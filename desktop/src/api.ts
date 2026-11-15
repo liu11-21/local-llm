@@ -1,4 +1,5 @@
-import { invoke, isTauri } from '@tauri-apps/api/core'
+import { isTauri } from '@tauri-apps/api/core'
+import {currentTransport} from './transport'
 
 export type Params = Record<string, unknown>
 export type HardwareReading<T> = {value:T|null;source:string;status:string;unit?:string;checked_at?:number|null;evidence?:string}
@@ -95,18 +96,7 @@ export type BuildInfo = {version:string;channel:string;commit:string;target:stri
 export const APP_VERSION = __WORKSPACE_VERSION__
 let identity: Promise<BuildInfo> | undefined
 async function transport<T>(op: string, data: Params = {}): Promise<T> {
-  let reply: Reply<T>
-  if (isTauri()) {
-    reply = await invoke('workspace', { op, data })
-  } else if (import.meta.env.MODE === 'preview-worker') {
-    const response = await fetch('/__desktop_dev_rpc', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op, data })
-    })
-    if (!response.ok) throw new Error('無法連線至本機開發工作程序。')
-    reply = await response.json()
-  } else {
-    throw new Error('請使用桌面程式開啟工作台。')
-  }
+  const reply: Reply<T> = await currentTransport.request<T>(op,data)
   if (!reply.ok) throw new Error(reply.error)
   return reply.value
 }

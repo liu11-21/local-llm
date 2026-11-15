@@ -86,7 +86,9 @@ class Upgrade:
         with closing(sqlite3.connect(self.path)) as db,db:
             integrity(db);compatible(db)
             db.execute('CREATE TABLE IF NOT EXISTS workspace_storage(id INTEGER PRIMARY KEY CHECK(id=1), version TEXT NOT NULL, minimum_reader TEXT NOT NULL)')
-            db.execute('INSERT OR REPLACE INTO workspace_storage VALUES(1,?,?)',(VERSION,VERSION))
+            # Web changes transport, not schema 14. Preserve 0.8 reader compatibility;
+            # bump this floor only when a real incompatible data format is introduced.
+            db.execute('INSERT OR REPLACE INTO workspace_storage VALUES(1,?,?)',(VERSION,'0.8.0'))
         self.report['integrity']='PASS'
 
     def failed(self):

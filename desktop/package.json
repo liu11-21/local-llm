@@ -1,12 +1,14 @@
 {
   "name": "localllm-desktop",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite --mode preview-worker",
     "build": "tsc --noEmit && vite build",
+    "build:web": "tsc --noEmit && vite build --mode web",
+    "test:web": "node tests/web-workspace.mjs",
     "tauri": "tauri",
     "ui": "vite",
     "test:layout": "node tests/workspace-layout.mjs"

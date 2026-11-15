@@ -1,0 +1,58 @@
+{
+  "scope": "actual loopback HTTP/SSE -> shared core -> official signed llama.app, not a fixture",
+  "host": "Intel Iris Xe; RTX unavailable",
+  "sqlite_read": true,
+  "cpu_threads": 16,
+  "runtime": {
+    "version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n",
+    "signature": "Valid",
+    "devices": [
+      {
+        "id": "Vulkan0",
+        "name": "Intel(R) Iris(R) Xe Graphics",
+        "reported_total_mib": 8002,
+        "reported_free_mib": 7346,
+        "backend": "Vulkan",
+        "available": true,
+        "memory_type": "shared-or-unified"
+      }
+    ]
+  },
+  "http_sse_chat": {
+    "state": "completed",
+    "answer": "網頁工作台已連線。",
+    "snapshot_count": 5,
+    "usage": {
+      "input": 64,
+      "context": 2048,
+      "max_output": 64,
+      "omitted_turns": 0,
+      "completion_tokens": 8,
+      "prompt_tokens": 64,
+      "total_tokens": 72,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "cache_n": 0,
+      "prompt_n": 64,
+      "prompt_ms": 479.081,
+      "prompt_per_token_ms": 7.485640625,
+      "prompt_per_second": 133.58910079923854,
+      "predicted_n": 8,
+      "predicted_ms": 218.373,
+      "predicted_per_token_ms": 31.196142857142856,
+      "predicted_per_second": 32.05524492496783
+    }
+  },
+  "sqlite_write": "PASS",
+  "react_static": "PASS",
+  "cancellation": "PASS",
+  "no_cryptography_import": true,
+  "official_python": {
+    "issuer": "CN=Microsoft ID Verified CS AOC CA 01, O=Microsoft Corporation, C=US",
+    "status": "Valid",
+    "thumbprint": "DE01DAAE82D04F466A576E178F6B07A839238953",
+    "signer": "CN=Python Software Foundation, O=Python Software Foundation, L=Beaverton, S=Oregon, C=US"
+  },
+  "shutdown_cleanup": "PASS"
+}

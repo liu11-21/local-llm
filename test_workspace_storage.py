@@ -9,6 +9,7 @@ from unittest.mock import patch
 from desktop_worker import Desktop
 from workspace_storage import DATABASE, Upgrade, snapshot
 from upgrade_probe import database_ready
+from workspace_version import VERSION
 
 
 class UpgradeTests(unittest.TestCase):
@@ -19,7 +20,7 @@ class UpgradeTests(unittest.TestCase):
             app=Desktop(root)
             try:self.assertTrue(database_ready(app.database))
             finally:app.close()
-    def test_070_workspace_upgrade_retains_history_and_creates_080_snapshot(self):
+    def test_070_workspace_upgrade_retains_history_and_creates_versioned_snapshot(self):
         with TemporaryDirectory() as folder:
             root=Path(folder).resolve();old=Desktop(root)
             with old.connect() as db:
@@ -30,7 +31,7 @@ class UpgradeTests(unittest.TestCase):
             try:
                 self.assertEqual(new.history('b'*32)[0]['content'],'keep 0.7 answer')
                 self.assertEqual(new.rpc('storage-status',{})['status'],'upgraded')
-                self.assertTrue(list((root/'backups').glob('workspace-pre-080-*.sqlite3')))
+                self.assertTrue(list((root/'backups').glob(f'workspace-pre-{VERSION.replace(".","")}-*.sqlite3')))
                 self.assertTrue(database_ready(new.database))
             finally:new.close()
 

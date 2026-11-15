@@ -1,0 +1,44 @@
+[
+  {
+    "name": "uvicorn",
+    "version": "0.54.0",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "click>=7.0",
+      "h11>=0.8",
+      "typing-extensions>=4.0; python_version < \"3.11\"",
+      "httptools>=0.8.0; extra == \"standard\"",
+      "python-dotenv>=0.13; extra == \"standard\"",
+      "pyyaml>=5.1; extra == \"standard\"",
+      "uvloop>=0.15.1; (sys_platform != \"win32\" and (sys_platform != \"cygwin\" and platform_python_implementation != \"PyPy\")) and extra == \"standard\"",
+      "watchfiles>=0.20; extra == \"standard\"",
+      "websockets>=13.0; extra == \"standard\""
+    ],
+    "url": "https://files.pythonhosted.org/packages/38/0c/b54a4fdd7f90a3af8b02ebc9ce6712c2c208b7926a2f7bad95c33ebbe943/uvicorn-0.54.0-py3-none-any.whl",
+    "sha256": "505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf"
+  },
+  {
+    "name": "h11",
+    "version": "0.16.0",
+    "requires_python": ">=3.8",
+    "requires_dist": null,
+    "url": "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+    "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86"
+  },
+  {
+    "name": "click",
+    "version": "8.5.1",
+    "requires_python": ">=3.10",
+    "requires_dist": null,
+    "url": "https://files.pythonhosted.org/packages/31/7d/164b7ffc8624fe9efb4221bf9af485d5c1e41b9ae118045d2b6dc5457d8b/click-8.5.1-py3-none-any.whl",
+    "sha256": "8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37"
+  },
+  {
+    "name": "colorama",
+    "version": "0.4.6",
+    "requires_python": "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7",
+    "requires_dist": null,
+    "url": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+    "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
+  }
+]

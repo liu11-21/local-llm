@@ -78,7 +78,7 @@ ENGINE_HASH = "96a04cf289479b3404a559eab0db7dba9877080a61f5f5fdba9d85eb6ca0f324"
 ENGINE_BYTES = 36868097
 ENGINE_LICENSE_HASH = "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
 MAX_LINE = 256 * 1024
-WORKSPACE_VERSION = "0.8.0"
+WORKSPACE_VERSION = "0.9.0"
 ACTIONS = {"chat", "download", "team", "team-workflow", "comfy-start", "comfy-stop", "media", "engine-start",
            "engine-stop", "engine-install", "comfy-install", "media-install", "agent", "update-download", "remote-fetch-work",
            "runtime-install","runtime-audit","openvino-install","openvino-remove","openvino-detect","openvino-import","openvino-infer","benchmark"}
@@ -1646,8 +1646,9 @@ def main():
 
 
 def worker_loop(directory):
+    from workspace_core import WorkspaceApplication
     try:
-        worker = Desktop(directory)
+        application = WorkspaceApplication(directory)
     except Exception as error:
         info=explain(error)
         sys.stdout.buffer.write(json.dumps({'ok':False,'error':user_message(info),'error_info':info},ensure_ascii=True).encode()+b'\n')
@@ -1661,14 +1662,14 @@ def worker_loop(directory):
                 request = json.loads(raw)
                 if not isinstance(request, dict) or not isinstance(request.get("data"), dict):
                     raise ValueError("工作資料格式不正確。")
-                result = {"ok": True, "value": worker.rpc(request.get("op"), request["data"])}
+                result = application.response(request.get("op"), request["data"])
             except Exception as error:
                 info = explain(error)
                 result = {"ok": False, "error": user_message(info), "error_info": info}
             sys.stdout.buffer.write(json.dumps(result, ensure_ascii=False).encode("utf-8") + b"\n")
             sys.stdout.buffer.flush()
     finally:
-        worker.close()
+        application.close()
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import { Empty, Panel, gb } from './ui'
 import { RuntimePicker } from './TaskSelection'
 import { useTaskPreparation } from './TaskPreparation'
 import {DeviceChoice} from './DeviceRecommendation'
+import {isWeb} from './transport'
 
 const titles = { image: '圖片', video: '影片', music: '音樂' }
 const icons = { image: Image, video: Film, music: Music2 }
@@ -17,6 +18,7 @@ const weightStates = {missing:'缺少', detected:'已偵測 · 尚未驗證', ve
 function workAsset(info: Info | undefined, name: string) {
   if (!/^[a-f0-9]{12}\.(png|webm|flac)$/.test(name)) return undefined
   if (info && isTauri()) return convertFileSrc(info.output_folder + '/' + name)
+  if (isWeb) return '/api/works/' + encodeURIComponent(name)
   if (import.meta.env.MODE === 'preview-worker') return '/__desktop_dev_output/' + encodeURIComponent(name)
 }
 
