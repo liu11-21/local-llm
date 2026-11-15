@@ -29,7 +29,16 @@ def official_python():
     return result
 
 
-def state_path(data):return data/'.web-service.json'
+def canonical_data(path):
+    candidate=Path(path).absolute()
+    # Windows TEMP may contain a legitimate DOS 8.3 alias (e.g. RUNNER~1).
+    # Reject actual reparse links first, then canonicalize ordinary aliases.
+    for component in (candidate,*candidate.parents):
+        if component.is_symlink() or component.is_junction():raise ValueError('資料目錄不可為連結或重新導向路徑。')
+    return candidate.resolve()
+
+
+def state_path(data):return Path(data).resolve()/'.web-service.json'
 
 
 def save_state(data,app,url):
@@ -78,7 +87,7 @@ def main():
     parser.add_argument('--data',type=Path,default=Path(os.environ.get('LOCALAPPDATA',Path.home()))/'LocalLLM')
     parser.add_argument('--port',type=int,default=8766);parser.add_argument('--no-browser',action='store_true')
     parser.add_argument('--direct',action='store_true',help=argparse.SUPPRESS)
-    args=parser.parse_args();data=args.data.absolute()
+    args=parser.parse_args();data=canonical_data(args.data)
     if not owned(data):raise ValueError('資料目錄不可為連結或重新導向路徑。')
     data.mkdir(parents=True,exist_ok=True)
     if args.command=='stop':

@@ -69,6 +69,12 @@ def main():
                 'audit_kinds':[e.get('kind') for e in events]}
             (output/'agent-observation.json').write_text(json.dumps(evidence['agent'],ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
             if not evidence['agent']['tool_result']:evidence['agent']['limitation']='Model completed without selecting the tool; native protocol/permission regression is separately controlled, no tool execution is claimed for this run.'
+            simple=rpc('agent-plan',{'role':'general','model':args.qwen.name,'runtime':'local','policy':'local','mode':'simple','tools':['models'],
+                'prompt':'列出本機模型，然後給一個簡短建議。','limits':{'steps':3,'seconds':75,'tokens':192}})
+            simple_result=run('agent',{'id':simple['id'],'version':simple['version'],'confirmed':True},100)
+            simple_saved=rpc('agent-plan-get',{'id':simple['id']});kinds=[e.get('kind') for e in simple_saved.get('events',[])]
+            evidence['simple_agent']={'state':simple_result['state'],'audit_kinds':kinds,'tool_result':'tool_result' in kinds}
+            assert evidence['simple_agent']['tool_result']
             from team_workflow import templates
             team=next(t for t in templates() if t['id']=='code')
             for index,member in enumerate(team['members']):member.update(model=args.qwen.name if index%2==0 else args.smol.name,tokens=64,steps=4)
@@ -85,6 +91,9 @@ def main():
             evidence['benchmark']={'state':record['state'],'devices':devices,'runs':len(record['runs'])}
             for kind in ('csv','json'):
                 export=rpc('benchmark-export',{'id':record['id'],'format':kind});assert export['download_url'].startswith('/api/exports/')
+            subprocess.run(['node',str(root/'desktop/tests/web-chat-real.mjs'),str(data)],check=True,timeout=150,
+                env={**os.environ,'LOCALLLM_PYTHON':sys.executable})
+            evidence['chrome_react_inference']='PASS; see build/v090-browser/chat-real.json'
             job=rpc('run',{'action':'chat',**common,'chat':'3'*32,'prompt':'請寫一篇很長的故事。','max_tokens':1024,'thinking':True})
             for _ in range(300):
                 current=rpc('job',{'id':job['id']})

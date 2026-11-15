@@ -14,6 +14,16 @@ from web_update import update,rollback,selected
 
 
 class DistributionTests(unittest.TestCase):
+    @unittest.skipUnless(os.name=='nt','Windows DOS path aliases')
+    def test_legitimate_short_temp_alias_is_canonicalized(self):
+        from web_launcher import canonical_data
+        with TemporaryDirectory(prefix='web-long-directory-name-') as folder:
+            kernel=ct.WinDLL('kernel32',use_last_error=True)
+            kernel.GetShortPathNameW.argtypes=[ct.c_wchar_p,ct.c_wchar_p,ct.c_uint32]
+            buffer=ct.create_unicode_buffer(32768)
+            self.assertTrue(kernel.GetShortPathNameW(folder,buffer,len(buffer)))
+            self.assertEqual(canonical_data(Path(buffer.value)),Path(folder).resolve())
+
     @unittest.skipUnless(os.name=='nt','Windows Job Object needs Windows')
     def test_abrupt_host_exit_terminates_inherited_python_child(self):
         root=Path(__file__).resolve().parent

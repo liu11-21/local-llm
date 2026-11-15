@@ -8,7 +8,7 @@ import {chromium} from 'playwright-core'
 
 const root=resolve(fileURLToPath(new URL('../../',import.meta.url)))
 const app=process.env.LOCALLLM_WEB_PACKAGE||root
-const profile=process.env.LOCALLLM_WEB_TEST_DATA||await mkdtemp(join(tmpdir(),'localllm-web-test-'))
+const profile=process.env.LOCALLLM_WEB_TEST_DATA?await realpath(process.env.LOCALLLM_WEB_TEST_DATA):await realpath(await mkdtemp(join(tmpdir(),'localllm-web-test-')))
 const port=Number(process.env.LOCALLLM_WEB_TEST_PORT||18771)
 const python=process.env.LOCALLLM_PYTHON||'python'
 const output=join(root,'build','v090-browser');await mkdir(output,{recursive:true})
