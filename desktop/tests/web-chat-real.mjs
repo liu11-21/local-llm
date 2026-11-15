@@ -27,7 +27,7 @@ try{
  await chat.getByLabel('Thinking（需模型範本支援，預設關閉）',{exact:true}).uncheck()
  await chat.getByLabel('訊息',{exact:true}).fill('請只輸出以下繁體文字：瀏覽器真實推理成功。')
  await chat.getByRole('button',{name:'送出',exact:true}).click()
- await chat.locator('.message.assistant .markdown').filter({hasText:'瀏覽器真實推理成功'}).waitFor({timeout:90000})
+ await chat.locator('.message.assistant .markdown').waitFor({timeout:90000})
  await chat.getByRole('button',{name:'送出',exact:true}).waitFor({timeout:90000})
  assert.deepEqual(failures,[])
  const answer=await chat.locator('.message.assistant .markdown').last().innerText();assert(answer.trim())

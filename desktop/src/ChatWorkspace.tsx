@@ -217,8 +217,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
           {runtime === 'local' && <>
             {info?.llama_runtime?.selected==='llama-app' && <label><input type="checkbox" checked={thinking} onChange={e=>setThinking(e.target.checked)}/>Thinking（需模型範本支援，預設關閉）</label>}
             <label>GPU Layers<input type="number" min={0} max={1024} placeholder="自動安全分層" value={gpuLayers} onChange={e=>setGpuLayers(e.target.value)}/></label>
-            <label>上下文<select value={context} onChange={e => setContext(+e.target.value)}>{[2048,4096,8192].map(value => <option key={value}>{value}</option>)}</select></label>
-            <label>本機裝置<select value={mode} onChange={e => setMode(e.target.value)}><option value="auto">自動分層</option><option value="cpu">只使用 CPU</option></select></label>
+            <label>上下文<select aria-label="上下文" value={context} onChange={e => setContext(+e.target.value)}>{[2048,4096,8192].map(value => <option key={value}>{value}</option>)}</select></label>
+            <label>本機裝置<select aria-label="本機裝置" value={mode} onChange={e => setMode(e.target.value)}><option value="auto">自動分層</option><option value="cpu">只使用 CPU</option></select></label>
           </>}
           {runtime==='openvino' && <label>OpenVINO 執行裝置<select value={openvinoDevice} onChange={event=>setOpenvinoDevice(event.target.value)}>
             {[...new Set(['CPU',...(info?.openvino?.devices ?? [])])].map(device=><option key={device}
