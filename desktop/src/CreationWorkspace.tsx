@@ -79,11 +79,11 @@ function WorkDetails({work, info, reuse,onPreview}: {work: Work; info?: Info; re
     </details>}
     <div className="row section-note creation-actions">
       {compatible && <button className="button" onClick={() => reuse({...work, options:settings})}>重新使用設定</button>}
-      <button className="button" onClick={async () => {
+      {isWeb?<a className="button" href={workAsset(undefined,work.name)} download={work.name}>下載原始檔案</a>:<button className="button" onClick={async () => {
         setError('')
         try { await rpc('work-open', {name:work.name}) }
         catch (failure) {setError(failure instanceof Error ? failure.message : String(failure))}
-      }}>開啟原始檔案</button>
+      }}>開啟原始檔案</button>}
     </div>
     {work.workflow && !compatible && <p className="small muted">這件作品的工作流程版本目前無法回填。</p>}
     {error && <p className="creation-error pre" role="alert">{error}</p>}

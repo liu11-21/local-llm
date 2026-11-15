@@ -1,0 +1,96 @@
+name: Web Workspace (Windows x64, no own EXE)
+on:
+  workflow_dispatch:
+  push:
+    branches: ['dev/web-workspace']
+  pull_request:
+    branches: ['dev/web-workspace']
+permissions:
+  contents: read
+jobs:
+  windows-web:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.22.1'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12.10'
+          architecture: x64
+      - name: Install test tools and hash-pinned pure Web wheels
+        shell: pwsh
+        run: |
+          python -m pip install --only-binary=:all: -r desktop/requirements-windows.lock -r desktop/requirements-audit.lock
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m pip install --only-binary=:all: --require-hashes -r requirements-web.lock
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m pip download --only-binary=:all: --require-hashes -r requirements-web.lock --dest build/web-wheels
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Shared core, HTTP security and distribution regression
+        shell: pwsh
+        run: |
+          python check_workspace_version.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m unittest -v *> build/web-python-tests.log
+          $result = $LASTEXITCODE
+          Get-Content build/web-python-tests.log -Tail 45
+          if ($result) { exit $result }
+      - name: Desktop transport and React regression
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run test:layout
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run build:web
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: '90af62bf1c0bbdd49f5eaa38927282e1f33773d0'
+          path: build/upgrade-080-source
+          persist-credentials: false
+      - name: Build source and prebuilt Web ZIP
+        shell: pwsh
+        run: |
+          python build_web_workspace.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Clean ZIP start, real 0.8 upgrade, update and rollback
+        shell: pwsh
+        run: |
+          python web_smoke.py --baseline build/upgrade-080-source
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Expand-Archive -LiteralPath build/web-release/LocalLLM-Web-0.9.0-Windows-x64.zip -DestinationPath build/web-browser-package
+          $app = Get-Item build/web-browser-package/LocalLLM-Web-0.9.0/app
+          "LOCALLLM_WEB_PACKAGE=$($app.FullName)" >> $env:GITHUB_ENV
+      - name: Real Chrome and Edge, four sizes and both themes
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          npm run test:web
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Record test evidence and verify ZIP SHA
+        shell: pwsh
+        run: |
+          $record = Get-Content build/web-release/BUILD.json | ConvertFrom-Json
+          $sha = (Get-FileHash -LiteralPath "build/web-release/$($record.zip)" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($sha -ne $record.sha256) { throw 'Final ZIP hash mismatch' }
+          Copy-Item -LiteralPath build/v090-deployment/validation.json -Destination build/web-release/DEPLOYMENT.json
+          Copy-Item -LiteralPath build/v090-deployment/upgrade-before.json -Destination build/web-release/UPGRADE-BEFORE.json
+          Copy-Item -LiteralPath build/v090-deployment/upgrade-after.json -Destination build/web-release/UPGRADE-AFTER.json
+          Copy-Item -LiteralPath build/v090-browser/validation.json -Destination build/web-release/BROWSER-TESTS.json
+          Copy-Item -LiteralPath build/web-python-tests.log -Destination build/web-release/PYTHON-TESTS.log
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: LocalLLM-Web-Workspace-Windows-x64
+          path: build/web-release/
+          retention-days: 14
+          if-no-files-found: error

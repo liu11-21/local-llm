@@ -1,4 +1,20 @@
-# Local LLM Workspace 0.8.0 · Development
+# Local LLM Web Workspace 0.9.0 · Development
+
+主要開發已轉為 **React 瀏覽器介面＋Python 本機後端＋官方已簽章 llama.exe**，保留原生推理、既有排程與資料。
+工作分支 [`dev/web-workspace`](https://github.com/liu11-21/local-llm/tree/dev/web-workspace)；0.8.0 Desktop 留在原分支。
+不再以自製 EXE／Windows Installer 作必要依賴，停止推進 SignPath／憑證方案。
+
+首次使用：安裝官方 Python 3.12 x64 → 解壓完整 Web ZIP → 雙擊 **Start-Web-Workspace.cmd** → 在運算環境選擇官方 llama.exe。
+瀏覽器關閉後可用 **Stop-Web-Workspace.cmd** 停止；模型、聊天與作品沿用原資料目錄。
+腳本／官方 Python／選用原生依賴仍可能受裝置政策限制，**SAC 完整相容性尚未獨立驗證**。
+
+[Windows Web CI／候選 ZIP](https://github.com/liu11-21/local-llm/actions/workflows/web-workspace.yml) ·
+[安裝／更新／回滾](docs/WEB_INSTALLATION.md) · [架構](docs/WEB_ARCHITECTURE.md) · [安全](docs/WEB_SECURITY.md) ·
+[相容性](docs/WEB_COMPATIBILITY.md) · [0.9.0 交付](docs/V090_DELIVERY.md)。
+
+---
+
+## 保留的 0.8.0 Desktop 交付
 
 React／Tauri Windows AI 工作台，整合文字聊天、Agent、Team、圖片／影片／音樂創作、模型下載及本地／遠端運算。
 

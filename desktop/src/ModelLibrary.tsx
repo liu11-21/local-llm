@@ -4,6 +4,7 @@ import { rpc, type Info, type Plan, type Task } from './api'
 import { activeTask, type Run } from './taskQueue'
 import { Empty, Estimate, Panel, gb } from './ui'
 import {DeviceChoice} from './DeviceRecommendation'
+import {isWeb,uploadModel} from './transport'
 
 const verification = {verified: '下載時已核對來源與 SHA-256', known: '已知來源 · 無上游校驗值', imported: '手動匯入', unknown: '來源未知'}
 
@@ -17,6 +18,7 @@ export function ModelLibrary({ info, tasks, run, report, go, refresh }: {
   const [reading, setReading] = useState(false)
   const [workers, setWorkers] = useState(4)
   const [plan, setPlan] = useState<Plan>()
+  const [importing,setImporting]=useState<number>()
   const models = info?.models ?? []
   const recommendations = info?.recommended ?? []
   const downloading = (name: string) => tasks.some(task => task.action === 'download' && activeTask(task) && task.title === name.split('/').at(-1))
@@ -31,6 +33,7 @@ export function ModelLibrary({ info, tasks, run, report, go, refresh }: {
   }
   return <>
           <div className="dashboard"><Panel title="本機模型" description={info ? `${info.model_folder} · 可用空間 ${gb(info.hardware.disk_available ?? 0)}` : '正在讀取資料夾'}>
+            {isWeb&&<label className="button">{importing==null?'匯入 GGUF 檔案':`正在匯入 ${importing}%`}<input aria-label="匯入 GGUF 檔案" type="file" accept=".gguf" disabled={importing!=null} onChange={async event=>{const file=event.target.files?.[0];if(!file)return;setImporting(0);try{await uploadModel(file,setImporting);await refresh()}catch(error){report(error)}finally{setImporting(undefined);event.target.value=''}}}/></label>}
             {!models.length && <Empty>尚未安裝 GGUF。可以從下方推薦或 Hugging Face 搜尋下載。</Empty>}
             {(info?.registry.models ?? []).map(entry => <div key={entry.id}>
               <details><summary>模型運算建議 · {entry.label}</summary><DeviceChoice info={info} task="chat" runtime="local" model={entry.id}/></details>
@@ -47,7 +50,7 @@ export function ModelLibrary({ info, tasks, run, report, go, refresh }: {
               </details>
             </div>)}
             {plan && <Estimate plan={plan}/>}</Panel>
-            <Panel title="引擎與應用"><div className="list-row"><span>llama.cpp <small>{info?.registry.engines.find(engine => engine.id === "llama")?.installed ? '已安裝' : '尚未安裝'}</small></span><button className="button" disabled={!info || installing || info.engine} onClick={()=>run('engine-install',{})}><ArrowDownToLine size={15}/>安裝</button></div>
+            <Panel title="引擎與應用"><div className="list-row"><span>llama.cpp <small>{info?.registry.engines.find(engine => engine.id === "llama")?.installed ? '已安裝' : '尚未安裝'}</small></span><button className="button" disabled={!info || installing || info.engine} onClick={()=>isWeb?go('runtime'):run('engine-install',{})}><ArrowDownToLine size={15}/>{isWeb?'管理官方 Runtime':'安裝'}</button></div>
               <div className="list-row"><span>ComfyUI<small>{info?.comfy_running ? '運行中' : '按需安裝'}</small></span><button className="button" onClick={()=>go('runtime')}>管理</button></div>
               <label>下載執行緒<select value={workers} onChange={e=>setWorkers(Number(e.target.value))}>{[1,2,4,8].map(n=><option key={n}>{n}</option>)}</select></label>
             </Panel></div>

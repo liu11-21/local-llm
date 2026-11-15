@@ -12,6 +12,7 @@ import { HardwarePanel } from './HardwarePanel'
 import { OpenVINOSetup } from './OpenVINOSetup'
 import { BenchmarkPanel } from './BenchmarkPanel'
 import {DeviceChoice} from './DeviceRecommendation'
+import {isWeb} from './transport'
 
 function Health({status}: {status?: EngineStatus}) {
   if (!status) return <p className="muted small">正在查詢引擎健康狀態…</p>
@@ -72,7 +73,7 @@ export function RuntimeWorkspace({info, health, policy, tasks, run, report, noti
           {mode==='local' && <div className="dashboard"><Panel title="本機文字引擎" description={activeText || (info?.engine ? 'llama.cpp 已安裝，等待載入模型。' : '首次使用需要下載官方 llama.cpp。')}>
             <Health status={health?.llama}/>
             {info?.engine ? <><SelectModels models={models} value={local} change={setLocal} registry={info?.registry.models}/><div className="row section-note"><button className="button primary" disabled={engineBusy || !local} onClick={()=>run('engine-start',{model:local,mode:'auto',context:2048})}>啟動模型</button><button className="button" disabled={engineBusy || !activeText} onClick={()=>run('engine-stop',{})}>停止模型</button></div></> :
-            <button className="button primary" disabled={engineBusy || !info} onClick={()=>run('engine-install',{})}><ArrowDownToLine size={16}/>安裝官方 llama.cpp</button>}
+            isWeb?<p>請在上方「文字 Runtime」偵測並選擇官方已簽章的 llama.exe。按需安裝需選用的 zstandard 套件。</p>:<button className="button primary" disabled={engineBusy || !info} onClick={()=>run('engine-install',{})}><ArrowDownToLine size={16}/>安裝官方 llama.cpp</button>}
             {info?.active?.[3] && <Estimate plan={info.active[3]}/>}
             {info?.devices.map(([device,free,shared])=><div className="list-row" key={device}><span>{device} · llama.cpp 回報記憶體池</span><b>回報容量 {gb(free)} · {shared ? '共享／統一記憶體，非獨立顯存' : '需對照實體顯存與排程預算'}</b></div>)}
           </Panel><Panel title="ComfyUI" description="工作台可按需安裝官方便攜版。首次安裝會下載較大的執行環境。">

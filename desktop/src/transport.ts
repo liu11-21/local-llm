@@ -29,6 +29,7 @@ export async function initializeWeb(){
   if(!response.ok)throw Error('登入失敗，請從啟動器重新開啟。')
  }
  await webSession()
+ if('serviceWorker' in navigator)void navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(()=>{})
 }
 const snapshots=new Map<string,Reply<unknown>>()
 const streams=new Map<string,EventSource>()
@@ -78,6 +79,6 @@ export async function uploadModel(file:File,progress:(percent:number)=>void){
    if(!response.ok)throw Error('匯入中斷；請重試，未覆蓋既有模型。')
    progress(Math.round((offset+chunk.size)/file.size*100))
   }
-  return await webPost('/api/uploads/'+upload.id+'/finish',{})
+  const result=await webPost('/api/uploads/'+upload.id+'/finish',{});channel?.postMessage('changed');return result
  }catch(error){await webPost('/api/uploads/'+upload.id+'/cancel',{}).catch(()=>{});throw error}
 }

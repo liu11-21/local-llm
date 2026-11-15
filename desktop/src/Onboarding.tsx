@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import {isWeb} from './transport'
 import { ArrowRight, Bot, Film, Image, MessageSquare, Music, Users } from 'lucide-react'
 import { rpc, type Info, type Job, type Params } from './api'
 import { TaskProgress, type Run } from './taskQueue'
@@ -75,12 +76,16 @@ export function Onboarding({guide, update, close, info, policy, run, cancel, lau
           setReload(value=>value+1)
           return
         }
+        if(isWeb&&step.action==='runtime-install'){
+          if(!result.path||!window.confirm('官方 Runtime 已安裝。現在檢查簽章並切換到這個引擎？')){setError('尚未選擇 Runtime，請到運算環境確認後繼續。');return}
+          await rpc('runtime-select',{kind:'llama-app',path:result.path,confirmed:true})
+        }
       }
       if (!stop.current) {
         setPrepared(true)
         update({...guide,runtime:choice.runtime,model:choice.model,prepared:true})
       }
-    } finally {setBusy(false)}
+    } catch(error){setError(error instanceof Error?error.message:String(error))} finally {setBusy(false)}
   }
 
   const ready = prepared || !!choice && choice.actions.length===0

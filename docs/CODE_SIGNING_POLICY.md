@@ -1,5 +1,7 @@
 # Code signing policy — candidate
 
+2026-11-15 更新：維護者已停止推進 SignPath、付費憑證及自行簽章；0.9.0 改為 Web Workspace。以下為 0.7／0.8 Desktop 方案歷史，不是待執行申請。沒有寄信、提交申請、修改 MFA 或分支政策。
+
 現況：0.7.0 Development **unsigned**；SignPath **NOT APPLIED / NOT APPROVED**。不宣稱憑證、發行者身分或 Foundation 贊助。未核准前不使用其簽章服務致謝聲明。
 
 擬定 Authors／Reviewers／Approvers 三種責任，實際名單與全員 GitHub／SignPath MFA 尚待維護者確認。每次正式簽章須人工核准。公開 Foundation 條款對 Reviewers 的明文要求是審查非 committer 的提案；沒有據此推定所有本人提交都強制另一人審查。對建置、權限及簽章變更取得獨立審查是本專案較嚴的建議，不能寫成 Foundation 已宣布的通用最低人數。

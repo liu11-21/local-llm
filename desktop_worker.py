@@ -1430,7 +1430,7 @@ class Desktop(Workspace):
                 except (ValueError,OSError):executable = None
                 self.hardware_cache = engine_devices(executable) if executable else []
                 self.hardware_sample_at = time()
-            if self.runtime_manager.record["kind"]=="llama-app":info["engine"] = self.has_engine()
+            if self.runtime_manager.record["kind"]=="llama-app" or self.runtime_manager.official_only:info["engine"] = self.has_engine()
             info["llama_runtime"] = self.runtime_manager.status()
             if self.runtime_manager.record['kind']=='llama-app':
                 info['engine_version']=self.runtime_manager.record.get('version')

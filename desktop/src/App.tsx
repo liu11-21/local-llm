@@ -16,6 +16,8 @@ import { activeTask, TaskCenter, useTaskQueue, type Run } from './taskQueue'
 import { engineLabels, useEngineHealth } from './engineHealth'
 import { Onboarding, readGuide, saveGuide, type Guide, type Use } from './Onboarding'
 import logo from './logo.png'
+import {WebService} from './WebService'
+import {isWeb} from './transport'
 
 const navigation = [
   ['工作台', [['home', '首頁', House], ['chat', '文字聊天', MessageSquare], ['agent', 'AI 代理人', Bot], ['team', 'AI 團隊', Users]]],
@@ -27,7 +29,8 @@ type Page = typeof navigation[number][1][number][0]
 const pages = navigation.flatMap(([, items]) => [...items])
 
 export function App() {
-  const [page, setPage] = useState<Page>('home')
+  const route=()=>{const candidate=location.hash.replace(/^#\/?/,'');return pages.some(item=>item[0]===candidate)?candidate as Page:'home'}
+  const [page, setPage] = useState<Page>(isWeb?route:'home')
   const [menu, setMenu] = useState(false)
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar') === 'collapsed')
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'system')
@@ -60,6 +63,12 @@ export function App() {
     finally {await refresh()}
   }
   useEffect(() => { void refresh() }, [])
+  useEffect(()=>{
+    if(!isWeb)return
+    const update=()=>void refresh();const navigate=()=>setPage(route())
+    window.addEventListener('workspace-change',update);window.addEventListener('hashchange',navigate)
+    return()=>{window.removeEventListener('workspace-change',update);window.removeEventListener('hashchange',navigate)}
+  },[])
   useEffect(() => { window.scrollTo(0,0) }, [page])
   useEffect(()=>{
     if (!info) return
@@ -80,7 +89,7 @@ export function App() {
   const health = useEngineHealth()
   const engineStates = [health?.llama.state, health?.comfyui.state]
   const engineState = (['failed','unhealthy','starting','stopping','busy','ready'] as const).find(state => engineStates.includes(state))
-  const go = (value: Page) => {setPage(value);setMenu(false)}
+  const go = (value: Page) => {setPage(value);setMenu(false);if(isWeb)location.hash='/'+value}
   const [_, title, Icon] = pages.find(item => item[0] === page)!
   const creation = page === 'image' || page === 'video' || page === 'music'
   function updateGuide(next:Guide) {saveGuide(next);setGuide(next)}
@@ -145,6 +154,7 @@ export function App() {
         </button>
       </div></header>
       <div className={'content ' + (page === 'chat' ? 'chat-content' : '')}>
+        <WebService/>
         {banner && <div role={banner.error ? 'alert' : 'status'} className={banner.error ? 'notice failure' : 'notice'}>
           <span>{banner.text}</span><button className="icon" title="關閉訊息" onClick={() => setBanner(undefined)}><X size={17}/></button>
         </div>}

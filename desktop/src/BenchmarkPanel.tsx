@@ -3,6 +3,7 @@ import { rpc, type Info, type Task } from './api'
 import { activeTask, TaskProgress, type Run } from './taskQueue'
 import { Panel, gb } from './ui'
 import {DeviceChoice} from './DeviceRecommendation'
+import {isWeb} from './transport'
 
 type Model = {id:string;label:string;engine:string;kind:string;npu_candidate?:boolean}
 type Plan = {models:Model[];devices:Record<string,string[]>}
@@ -158,7 +159,7 @@ export function BenchmarkPanel({info,tasks,run,cancel}:{info?:Info;tasks:Task[];
       {comparison && <p role="status">{comparison.comparable ? '設定可比較，請分別核對每組工作量與裝置證據。' : `非完全等價比較 · ${comparison.reasons.join(' ')}`}</p>}
       <div className={other ? 'benchmark-comparison' : ''}>{detail && <Results detail={detail}/>} {other && <Results detail={other}/>}</div>
       {detail && <div className="row">{(['json','csv'] as const).map(format=><button className="button" key={format} onClick={async()=>{
-        try {const result = await rpc<{path:string}>('benchmark-export',{id:detail.id,format});setExportPath(result.path)}catch(error){report(error)}
+        try {const result = await rpc<{path:string;download_url?:string}>('benchmark-export',{id:detail.id,format});setExportPath(result.path);if(isWeb&&result.download_url){const link=document.createElement('a');link.href=result.download_url;link.download=`benchmark-${detail.id}.${format}`;link.click()}}catch(error){report(error)}
       }}>匯出 {format.toUpperCase()}</button>)}</div>}
       {exportPath && <p className="small pre" role="status">已匯出至 {exportPath}</p>}
     </Panel>

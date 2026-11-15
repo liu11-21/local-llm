@@ -3,6 +3,7 @@ import { rpc, APP_VERSION, type BuildInfo } from './api'
 import { Panel } from './ui'
 import { useWorkspaceUpdates } from './updates'
 import type { Run } from './taskQueue'
+import {isWeb} from './transport'
 
 export function SettingsWorkspace({theme,setTheme,policy,setPolicy,busy,run,report}: {
   theme: string; setTheme: (theme: string) => void; policy: string; setPolicy: (policy: string) => void
@@ -27,9 +28,10 @@ export function SettingsWorkspace({theme,setTheme,policy,setPolicy,busy,run,repo
           </Panel>
           <Panel title="版本與建置">
             <p>Local LLM Workspace {APP_VERSION} · Development</p>
-            <details><summary>建置詳情</summary><p className="small pre">Git Commit：{build?.commit || '尚未取得'}<br/>Build Target：{build?.target || '尚未取得'}<br/>Signed：{build?.signed ? 'Yes':'No'}<br/>Worker：{build?.version || '尚未驗證'}</p></details>
+            <details><summary>建置詳情</summary><p className="small pre">Git Commit：{build?.commit || '尚未取得'}<br/>Build Target：{build?.target || '尚未取得'}<br/>{isWeb?'Web 原始碼；由官方 Python 執行，不使用自製 EXE 簽章':`Signed：${build?.signed ? 'Yes':'No'}`}<br/>Worker：{build?.version || '尚未驗證'}</p></details>
           </Panel>
           <Panel title="工作台更新">
+            {isWeb?<p className="section-note">下載並校驗新版 Web ZIP，停止服務後執行 Update-Web-Workspace.cmd；可用 Rollback-Web-Workspace.cmd 回到先前程式。使用者資料保留，不安裝 Desktop EXE。</p>:<>
             <p className="section-note muted">目前版本 {APP_VERSION} · {
               updates.status?.state === 'available' ? `可下載 ${updates.status.tag}` :
               updates.status?.state === 'current' ? '目前沒有新版' :
@@ -40,5 +42,6 @@ export function SettingsWorkspace({theme,setTheme,policy,setPolicy,busy,run,repo
               onClick={async () => setUpdateFile((await run('update-download', { tag: updates.status?.tag }))?.name)}>下載並驗證</button>}</div>
             {updateFile && <><p className="muted section-note">已驗證 {updateFile}。關閉工作台後可執行安裝程式。</p>
               <button className="button" onClick={() => void rpc('update-folder').catch(report)}>開啟更新資料夾</button></>}
+            </>}
           </Panel></div>
 }

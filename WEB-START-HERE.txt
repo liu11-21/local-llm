@@ -1,0 +1,31 @@
+Local LLM Web Workspace 0.9.0 Development
+
+1. 從 python.org 安裝官方 Python 3.12 x64（3.12.10 或較新 3.12）。保留 Python Launcher。
+2. 將完整 ZIP 解壓至自己的資料夾，雙擊 Start-Web-Workspace.cmd。
+3. 瀏覽器會自動開啟。到「運算環境」偵測並確認選擇官方已簽章的 llama.exe。
+4. 到「模型與應用」匯入 GGUF，或搜尋 Hugging Face 並下載，再開始聊天。
+
+不需自行封裝的 EXE、不需 Node 或 Rust。基本 HTTP 套件已隨包提供並校驗 hash。
+沒有安裝 llama.exe 時，可先依官方 https://github.com/ggml-org/llama-install.sh 指引安裝；
+工作台不會自動執行遠端 PowerShell 安裝腳本。
+應用內下載固定 Runtime 需執行 Install-Web-Optional.cmd runtime 安裝 zstandard，再重新啟動。
+私人遠端 Host 建立 TLS 憑證需 Install-Web-Optional.cmd tls；這些選用原生套件仍可能受裝置政策阻擋。
+
+保留啟動命令視窗。關閉分頁不會立即停止背景工作；使用「服務管理→停止本機服務」
+或雙擊 Stop-Web-Workspace.cmd 停止。沒有分頁時，閒置模型約 90 秒後釋放；
+30 分鐘無連線會停止服務並取消未完成工作。再次執行 Start 會開啟原有服務，避免重複啟動。
+Chrome／Edge 可用瀏覽器的「安裝應用程式」建立 PWA；安裝入口取決於瀏覽器與裝置政策。
+
+資料預設保留於目前 Windows 帳號的 LocalAppData\LocalLLM，沿用 0.8.0。
+先關閉舊 Desktop；兩者不可同時寫入同一資料夾。升級會先建立 SQLite 校驗備份。
+更新：先停止服務，下載新的 Web ZIP，核對交付 SHA-256，執行
+  Update-Web-Workspace.cmd "完整 ZIP 路徑" --sha256 官方交付的64字元SHA256
+再執行原本的 Start。更新不覆蓋使用者資料。要返回先前程式，停止後執行 Rollback-Web-Workspace.cmd。
+本版 schema 與 0.8.0 相容；未來跨 schema 回滾需先保留新資料，再使用已校驗的升級前備份。
+
+問題診斷：Diagnose-Web-Workspace.cmd，報告存為資料目錄內 web-diagnostics.json。
+報告可能包含本機路徑，分享前請檢查。不要修改 Windows 安全政策或略過憑證／hash 驗證。
+改用 Python／腳本不保證 Smart App Control、WDAC 或防毒會放行。SAC 實機相容性仍待獨立驗收。
+
+授權：第一方程式碼 MIT，其他元件、Logo、模型及 Runtime 維持各自範圍與條款。
+開發版原始碼：https://github.com/liu11-21/local-llm/tree/dev/web-workspace

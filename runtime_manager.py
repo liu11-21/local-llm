@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 from urllib.request import urlopen
 from download_recovery import owned
-from runtime_trust import RuntimeTrust,discover,sha256,OFFICIAL,BASELINE,code_integrity,launch_diagnostic,expected_signer
+from runtime_trust import RuntimeTrust,discover,sha256,signature,OFFICIAL,BASELINE,code_integrity,launch_diagnostic,expected_signer
 from llama_app_engine import LlamaAppEngine,engine_profile
 from engine import LocalEngine
 
@@ -17,7 +17,7 @@ MANIFEST=json.loads((ROOT/"llama-app-runtime.json").read_text(encoding="utf-8"))
 class RuntimeManager:
     def __init__(self,data,legacy):
         self.data=Path(data);self.legacy=legacy;self.trust=RuntimeTrust();self.record={"kind":"legacy"};self.report=None
-        self.file=self.data/"llama-runtime.json";self.official_only=False
+        self.file=self.data/"llama-runtime.json";self.official_only=False;self.web_verified=None
         try:
             value=json.loads(self.file.read_text(encoding="utf-8"))
             if isinstance(value,dict) and value.get("kind") in ("legacy","llama-app"):
@@ -31,6 +31,9 @@ class RuntimeManager:
         path=Path(self.record["path"])
         if path.is_symlink() or not path.is_file() or not hmac.compare_digest(sha256(path),self.record["sha256"]):
             raise ValueError("RUNTIME_CHANGED · Runtime 已移動或更改，請重新檢查與選擇。")
+        if self.official_only and self.web_verified!=self.record['sha256']:
+            if not expected_signer(signature(path),MANIFEST['expected_signer']):raise ValueError('WEB_RUNTIME_SIGNATURE · 官方 Runtime 的有效簽章無法確認，未執行。')
+            self.web_verified=self.record['sha256']
         return path
 
     def factory(self):return LlamaAppEngine() if self.record["kind"]=="llama-app" else LocalEngine()
@@ -71,7 +74,8 @@ class RuntimeManager:
 
     def install(self,cancel,update):
         if os.name!='nt':raise ValueError('此官方套件只支援 Windows x64。')
-        import zstandard
+        try:import zstandard
+        except (ImportError,OSError):raise ValueError('RUNTIME_DEPENDENCY · 下載解壓需要選用的 zstandard。請執行 Install-Web-Optional.cmd runtime 並重啟；原生套件仍須通過裝置政策。') from None
         target=self.data/'runtimes'/MANIFEST['id'];target.parent.mkdir(exist_ok=True)
         if not all(owned(p) for p in (self.data,self.data/'runtimes',target)):
             raise ValueError('RUNTIME_PATH · Runtime 目錄路徑不安全，未寫入。')

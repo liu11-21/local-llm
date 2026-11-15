@@ -36,7 +36,10 @@ try {
       'Google', 'Chrome', 'Application', 'chrome.exe'),
   })
   const page = await browser.newPage({viewport:{width:1280,height:900}, colorScheme:'dark', reducedMotion:'reduce'})
-  if(process.env.LOCALLLM_RUNTIME_ONLY==='1') {
+  if(process.env.LOCALLLM_DEVICE_ONLY==='1') {
+    await page.goto(url);await page.getByText('本機工作台已連線').waitFor()
+    await exerciseDevices(page,async name=>{const menu=page.getByTitle('導覽');if(await menu.isVisible())await menu.click();await page.getByRole('button',{name,exact:true}).click();if(name==='文字聊天')await page.locator('.chat-config').evaluate(node=>{node.open=true})})
+  } else if(process.env.LOCALLLM_RUNTIME_ONLY==='1') {
     await page.goto(url)
     await page.getByText('本機工作台已連線').waitFor()
     await exerciseRuntimeV080(page)

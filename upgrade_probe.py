@@ -77,7 +77,9 @@ def seed(data):
     models=data/'models';models.mkdir(exist_ok=True);(models/'preserve.txt').write_text('user model marker',encoding='utf-8')
     outputs=data/'outputs';outputs.mkdir(exist_ok=True)
     (outputs/'abcdefabcdef.png').write_bytes((Path(__file__).parent/'desktop/tests/media-fixtures/sample.png').read_bytes())
-    return {'source_database':path.name,'source_version':'0.7.0' if path.name=='workspace.sqlite3' else '0.6.2','legacy_present':(data/'desktop.sqlite3').exists(),'legacy_tables':fingerprint(data/'desktop.sqlite3') if (data/'desktop.sqlite3').exists() else None,'tables':fingerprint(path),'files':{str(file.relative_to(data)):hashlib.sha256(file.read_bytes()).hexdigest()
+    with closing(sqlite3.connect(path)) as db:
+        source_version=db.execute('SELECT version FROM workspace_storage WHERE id=1').fetchone()[0] if path.name=='workspace.sqlite3' else '0.6.2'
+    return {'source_database':path.name,'source_version':source_version,'legacy_present':(data/'desktop.sqlite3').exists(),'legacy_tables':fingerprint(data/'desktop.sqlite3') if (data/'desktop.sqlite3').exists() else None,'tables':fingerprint(path),'files':{str(file.relative_to(data)):hashlib.sha256(file.read_bytes()).hexdigest()
             for file in (models/'preserve.txt',outputs/'abcdefabcdef.png')},'fixture_only':True}
 
 

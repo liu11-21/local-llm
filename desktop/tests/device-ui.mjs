@@ -51,6 +51,7 @@ export async function exerciseDevices(page,navigate) {
       await page.getByTitle('切換主題').click()
     }
   }
+  console.log('Device keyboard preflight',await chat.getByLabel('運算環境',{exact:true}).inputValue(),await card.count(),await card.getByLabel('執行裝置',{exact:true}).count())
   await card.getByLabel('執行裝置',{exact:true}).focus()
   await page.keyboard.press('Home');await page.keyboard.press('ArrowDown')
   assert.equal(await card.getByLabel('執行裝置',{exact:true}).inputValue(),'CPU')

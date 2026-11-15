@@ -21,6 +21,7 @@ import webbrowser
 from workspace_core import WorkspaceApplication
 from workspace_version import build_info
 from download_recovery import exclusive,owned
+from web_files import Uploads
 
 ROOT=Path(__file__).resolve().parent
 BODY_LIMIT=256*1024
@@ -41,6 +42,7 @@ class WebWorkspace:
         self.bootstrap=secrets.token_urlsafe(32);self.sessions={};self.stopping=False
         self.last_seen=time.monotonic();self.idle_seconds=idle_seconds;self.stop_callback=lambda:None
         self.capacity=asyncio.Semaphore(32);self.streams=0
+        self.uploads=Uploads(application);self.exports={}
         self.assets={('/'+p.relative_to(self.static).as_posix()):p for p in self.static.rglob('*')
                      if p.is_file() and not p.is_symlink() and p.resolve().is_relative_to(self.static)}
         self.assets['/']=self.static/'index.html'
@@ -114,13 +116,14 @@ class WebWorkspace:
             if not hmac.compare_digest(headers.get('x-workspace-bootstrap',''),self.bootstrap):raise HTTPError(401,'請使用啟動器開啟工作台。')
             await self.json_body(scope,receive,headers)
             now=time.monotonic();self.sessions={k:v for k,v in self.sessions.items() if v['expires']>now}
-            if len(self.sessions)>=64:raise HTTPError(429,'工作階段過多。')
+            if len(self.sessions)>=64:self.sessions.pop(next(iter(self.sessions)))
             token=secrets.token_urlsafe(32);session={'csrf':secrets.token_urlsafe(32),'expires':now+8*3600}
             self.sessions[token]=session;self.last_seen=now
             await self.send(send,200,{'ok':True,'value':{'csrf':session['csrf'],'build':build_info()}},
                 extra=[(b'set-cookie',f'{COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800'.encode())]);return
         if path.startswith('/api/'):
             session=self.session(headers,mutating=method not in ('GET','HEAD'))
+            if self.stopping and method not in ('GET','HEAD'):raise HTTPError(503,'服務正在停止，未接受新工作。')
             if path=='/api/session' and method=='GET':
                 await self.send(send,200,{'ok':True,'value':{'csrf':session['csrf'],'build':build_info(),
                     'idle_seconds':self.idle_seconds,'state':'stopping' if self.stopping else 'ready'}});return
@@ -128,8 +131,52 @@ class WebWorkspace:
                 body=await self.json_body(scope,receive,headers)
                 op=body.get('op');data=body.get('data')
                 if not isinstance(op,str) or len(op)>64 or not isinstance(data,dict):raise HTTPError(400,'RPC 格式無效。')
+                if op in ('work-open','update-folder'):raise HTTPError(400,'Web 請使用下載按鈕或服務管理，不開啟本機路徑。')
+                if op in ('update-check',) or op=='run' and data.get('action')=='update-download':
+                    if op=='update-check':
+                        await self.send(send,200,{'ok':True,'value':{'state':'unavailable','message':'Web 請使用 ZIP 更新／回滾腳本；Desktop EXE 更新不適用。'}});return
+                    raise HTTPError(400,'Web 不下載 Desktop EXE 更新。')
                 result=await asyncio.to_thread(self.application.response,op,data)
+                if result['ok'] and op=='onboarding-plan':
+                    for choice in result['value'].get('choices',[]):
+                        for step in choice.get('actions',[]):
+                            if step.get('action')=='engine-install':
+                                step['action']='runtime-install';step['data']={}
+                                choice['reason']='安裝後請到運算環境確認選擇官方 Runtime，再開始使用。'
+                if result['ok'] and op=='benchmark-export':
+                    file=Path(result['value']['path'])
+                    if not file.resolve().is_relative_to(self.application.service.data) or not owned(file):raise HTTPError(400,'匯出路徑無效。')
+                    identity=secrets.token_hex(16);self.exports[identity]=file
+                    if len(self.exports)>64:self.exports.pop(next(iter(self.exports)))
+                    result['value']['download_url']='/api/exports/'+identity
                 await self.send(send,200,result);return
+            if path=='/api/uploads/start' and method=='POST':
+                body=await self.json_body(scope,receive,headers)
+                try:result=await asyncio.to_thread(self.uploads.start,body,session['csrf'])
+                except (ValueError,OSError) as error:raise HTTPError(400,str(error)) from None
+                await self.send(send,200,{'ok':True,'value':result});return
+            upload=re.fullmatch(r'/api/uploads/([a-f0-9]{32})(?:/(finish|cancel))?',path)
+            if upload:
+                try:
+                    identity,action=upload.groups()
+                    if method=='PUT' and not action:
+                        if headers.get('content-type')!='application/octet-stream':raise HTTPError(415,'需要二進位 chunk。')
+                        try:offset=int(headers.get('x-upload-offset',''))
+                        except ValueError:raise HTTPError(400,'匯入位移無效。') from None
+                        block=await self.body(scope,receive,4*1024**2)
+                        result=await asyncio.to_thread(self.uploads.append,identity,session['csrf'],offset,block)
+                    elif method=='POST' and action in ('finish','cancel'):
+                        await self.json_body(scope,receive,headers)
+                        function=self.uploads.finish if action=='finish' else self.uploads.cancel
+                        result=await asyncio.to_thread(function,identity,session['csrf'])
+                    else:raise HTTPError(405,'匯入方法無效。')
+                except (ValueError,OSError) as error:raise HTTPError(400,str(error)) from None
+                await self.send(send,200,{'ok':True,'value':result});return
+            export=re.fullmatch(r'/api/exports/([a-f0-9]{32})',path)
+            if export and method in ('GET','HEAD'):
+                file=self.exports.get(export[1])
+                if not file or not file.is_file() or not owned(file):raise HTTPError(404,'匯出已過期，請重新匯出。')
+                await self.file(file,scope,send,headers);return
             if path=='/api/shutdown' and method=='POST':
                 body=await self.json_body(scope,receive,headers)
                 if body.get('confirmed') is not True:raise HTTPError(400,'需要確認停止服務。')
@@ -197,23 +244,28 @@ class WebWorkspace:
         await send({'type':'http.response.body','body':b''})
 
     async def monitor(self):
+        def release_idle():
+            with self.application.lock:
+                service=self.application.service
+                if not any(t['state'] in ACTIVE for t in service.scheduler.list()):
+                    service.stop_local();service.comfy.stop()
         while not self.stopping:
             await asyncio.sleep(2)
+            await asyncio.to_thread(self.uploads.expire)
             idle=time.monotonic()-self.last_seen
             if idle>self.idle_seconds:
                 self.stopping=True;self.stop_callback();return
             if idle>90:
-                with self.application.lock:
-                    service=self.application.service
-                    if not any(t['state'] in ACTIVE for t in service.scheduler.list()):
-                        await asyncio.to_thread(service.stop_local)
-                        await asyncio.to_thread(service.comfy.stop)
+                await asyncio.to_thread(release_idle)
 
 
 async def serve(directory,port=8766,static=None,*,browser=True,idle_seconds=1800,on_ready=None):
     import uvicorn
+    from web_process_guard import enable
+    guard=enable()
     application=WorkspaceApplication(directory,web=True)
     app=WebWorkspace(application,port,static,idle_seconds=idle_seconds)
+    app.process_guard=guard
     config=uvicorn.Config(app,host='127.0.0.1',port=port,loop='asyncio',http='h11',ws='none',lifespan='off',
         access_log=False,log_level='warning',proxy_headers=False,server_header=False,timeout_keep_alive=5,
         timeout_graceful_shutdown=8,limit_concurrency=48,h11_max_incomplete_event_size=16384)
@@ -228,7 +280,7 @@ async def serve(directory,port=8766,static=None,*,browser=True,idle_seconds=1800
     opener=asyncio.create_task(ready())
     try:await server.serve()
     finally:
-        app.stopping=True;opener.cancel();monitor.cancel()
+        app.stopping=True;opener.cancel();monitor.cancel();app.uploads.close()
         await asyncio.to_thread(application.close)
 
 

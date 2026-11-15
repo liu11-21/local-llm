@@ -1,5 +1,5 @@
 import { isTauri } from '@tauri-apps/api/core'
-import {currentTransport} from './transport'
+import {currentTransport,isWeb} from './transport'
 
 export type Params = Record<string, unknown>
 export type HardwareReading<T> = {value:T|null;source:string;status:string;unit?:string;checked_at?:number|null;evidence?:string}
@@ -104,8 +104,8 @@ async function transport<T>(op: string, data: Params = {}): Promise<T> {
 export async function rpc<T>(op: string, data: Params = {}): Promise<T> {
   if (!identity) identity = transport<BuildInfo>('build-info').then(value => {
     if(value.version !== APP_VERSION || value.channel !== 'Development' ||
-      (isTauri() && value.commit !== __WORKSPACE_COMMIT__))
-      throw new Error('介面與工作程序版本不一致。請關閉並重新安裝完整 Workspace；任務未自動重送。')
+      ((isTauri()||isWeb) && value.commit !== __WORKSPACE_COMMIT__))
+      throw new Error(isWeb?'介面與本機服務版本不一致。請停止服務，使用同一份完整 Web ZIP 重新啟動並重新整理；任務未自動重送。':'介面與工作程序版本不一致。請關閉並重新安裝完整 Workspace；任務未自動重送。')
     return value
   }).catch(error=>{identity=undefined;throw error})
   const build = await identity
