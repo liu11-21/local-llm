@@ -9,11 +9,18 @@ import subprocess
 import sys
 import time
 import ctypes as ct
+from unittest.mock import patch
 from web_environment import verify_distribution,verify_environment
 from web_update import update,rollback,selected
 
 
 class DistributionTests(unittest.TestCase):
+    @unittest.skipUnless(os.name=='nt','Windows publisher identity check')
+    def test_python_publisher_requires_exact_identity(self):
+        from web_launcher import official_python
+        with patch('web_launcher.signature',return_value={'status':'Valid','signer':'CN=Python Software Foundation Other, O=Python Software Foundation Other'}):
+            with self.assertRaises(ValueError):official_python()
+
     @unittest.skipUnless(os.name=='nt','Windows DOS path aliases')
     def test_legitimate_short_temp_alias_is_canonicalized(self):
         from web_launcher import canonical_data

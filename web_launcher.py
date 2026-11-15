@@ -15,7 +15,7 @@ for stream in (sys.stdout,sys.stderr):
 # -I intentionally omits the script directory. Add only the selected distribution.
 sys.path.insert(0,str(ROOT));sys.dont_write_bytecode=True
 from download_recovery import exclusive,owned
-from runtime_trust import signature,code_integrity
+from runtime_trust import signature,code_integrity,expected_signer
 from web_environment import ensure_environment,verify_distribution
 from workspace_version import build_info
 
@@ -24,7 +24,7 @@ def official_python():
     if not ((3,12,10)<=sys.version_info[:3]<(3,13,0)) or struct.calcsize('P')!=8:
         raise ValueError('需要官方 Python 3.12 x64（3.12.10 或較新 3.12 版本）。請從 https://www.python.org/downloads/windows/ 安裝。')
     result=signature(sys.executable)
-    if os.name=='nt' and (result.get('status')!='Valid' or 'CN=Python Software Foundation' not in result.get('signer','')):
+    if os.name=='nt' and not expected_signer(result,'Python Software Foundation'):
         raise ValueError('無法確認目前 Python 為有效 Python Software Foundation 簽章。請使用官方發行版本；勿停用系統安全政策。')
     return result
 
