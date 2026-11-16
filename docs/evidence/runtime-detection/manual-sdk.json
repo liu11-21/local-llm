@@ -18,10 +18,10 @@
     "selected": true,
     "version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n",
     "authenticode": {
-      "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
-      "status": "Valid",
       "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+      "status": "Valid",
       "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US",
+      "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
       "exit_code": 0
     },
     "probes": [
@@ -70,10 +70,10 @@
         "stage": "authenticode",
         "ok": true,
         "authenticode": {
-          "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
-          "status": "Valid",
           "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+          "status": "Valid",
           "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US",
+          "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
           "exit_code": 0
         }
       },
@@ -134,14 +134,14 @@
       "path": "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
       "sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
       "source": null,
-      "checked_at": 1794840391,
+      "checked_at": 1794840586,
       "source_confirmed": false,
       "sha256_verified": false,
       "authenticode": {
-        "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
-        "status": "Valid",
         "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+        "status": "Valid",
         "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US",
+        "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
         "exit_code": 0
       },
       "launch_success": false,
@@ -156,7 +156,7 @@
       "version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n",
       "cli_probe_success": true
     },
-    "checked_at": 1794840391
+    "checked_at": 1794840587
   },
   "browser_reload": "PASS",
   "backend_restart": "PASS",

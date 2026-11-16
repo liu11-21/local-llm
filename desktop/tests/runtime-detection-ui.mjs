@@ -50,6 +50,7 @@ export async function exerciseRuntimeDetection(page){
   }
  }
  await go('文字聊天');await page.getByRole('button',{name:'送出',exact:true}).waitFor()
+ await page.getByText('Runtime 已選取；尚未準備 GGUF 模型。請到「模型與應用」匯入或選擇模型，無需重裝 Runtime。',{exact:true}).waitFor()
  assert(await page.getByRole('button',{name:'送出',exact:true}).isDisabled(),'No model must remain unprepared, not inferred')
  assert(operations.includes('runtime-discover'));assert(!operations.includes('run'),'Detection-only workflow must not download or infer')
  await page.unroute('**/__desktop_dev_rpc',handler)

@@ -58,6 +58,7 @@ try{
  assert.equal(selected.selection.validation.authenticode.status,'Valid')
  assert.equal(info.llama_runtime.selection.path,selected.selection.path);assert.equal(info.models.length,0)
  await page.evaluate(()=>location.hash='/chat')
+ await page.getByText('Runtime 已選取；尚未準備 GGUF 模型。請到「模型與應用」匯入或選擇模型，無需重裝 Runtime。',{exact:true}).waitFor()
  assert(await page.getByRole('button',{name:'送出',exact:true}).isDisabled())
  await page.screenshot({path:join(output,'no-model-chat.png'),fullPage:true})
  await stop();launch=await start()

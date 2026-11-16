@@ -189,6 +189,8 @@ export function ChatWorkspace({ info, policy, run, cancel, report, notice, go, p
         </PreparationNotice>}
         <button className="button" onClick={()=>go('runtime')}>Benchmark 與進階運算環境</button>
         </div></details>
+        {runtime==='local' && info?.engine && info.llama_runtime?.selected==='llama-app' && !info.models.length &&
+          <p role="status" className="small">Runtime 已選取；尚未準備 GGUF 模型。請到「模型與應用」匯入或選擇模型，無需重裝 Runtime。</p>}
       </header>
       <div className="messages" ref={scroll} aria-label="對話內容" onScroll={event => {
         const node = event.currentTarget; stick.current = node.scrollHeight - node.scrollTop - node.clientHeight < 72

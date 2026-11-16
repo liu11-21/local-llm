@@ -81,6 +81,10 @@
 
 本機結果：252 Python tests，244 通過、8 略過（上述 TLS 7 項與 Desktop 封裝 smoke 1 項）；未略過執行的 TLS 失敗另保存，不視為遠端實測通過。
 TypeScript／Vite Web 建置、完整 Chromium layout 回歸通過；包含既有 Agent／Team／Benchmark／遠端流程與新增偵測案例。
+聊天頁直接顯示已選 Runtime／缺 GGUF 的提示，無須展開設定才能區分兩者。
+
+首輪 Windows CI `43889488137` 找到既有測試仍以輸入字串比對 Runtime 路徑；runner 的 TEMP 是 `RUNNER~1`，
+修復後的 canonical resolved path 是 `runneradmin`。調整為 resolved path 加 samefile 比對，保留內容變動拒絕測試，沒有放寬產品驗證。
 
 真實手動 SDK 驗收：`build/v080-upstream/llama.exe` 是既有檔案，非本輪下載，也不在已安裝 PATH。
 Authenticode、版本／安全 CLI、Web 選取與 reload、後端重啟後保存、聊天讀取同一設定及零模型送出停用通過；

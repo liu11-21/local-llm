@@ -62,7 +62,10 @@ class RuntimeTests(unittest.TestCase):
             manager=RuntimeManager(root,lambda:root/'llama-server.exe')
             with patch('runtime_trust.signature',return_value={'status':'Valid','signer':'CN=Hugging Face, O=Hugging Face'}),patch('runtime_manager.engine_profile',return_value={'version':'build 12360'}):
                 manager.select({'kind':'llama-app','path':str(exe),'confirmed':True})
-            restored=RuntimeManager(root,lambda:None);self.assertEqual(restored.executable(),exe)
+            # Windows CI TEMP may use RUNNER~1; selection deliberately persists
+            # the canonical long path rather than the spelling of the input.
+            restored=RuntimeManager(root,lambda:None);self.assertEqual(restored.executable(),exe.resolve())
+            self.assertTrue(restored.executable().samefile(exe))
             exe.write_bytes(b'changed')
             with self.assertRaises(ValueError):restored.executable()
             restored.report={'authenticode':{'status':'Valid'},'source_confirmed':True}
