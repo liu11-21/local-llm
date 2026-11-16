@@ -6,6 +6,11 @@
 2. 解壓完整 Web ZIP，雙擊 `Start-Web-Workspace.cmd`。只有原始碼 ZIP 時，開發者需先在 desktop 執行 `npm ci`、`npm run build:web`。
 3. 「運算環境」偵測／選擇官方 Hugging Face 簽章 llama.exe；「模型與應用」可匯入 GGUF 或使用既有 HF 搜尋／多執行緒下載。
 
+已有 llama.exe 不需重新下載或修改 PATH。按「偵測已安裝版本」會檢查服務 PATH、目前使用者／系統 PATH 與 WindowsApps，
+清單顯示簽章、版本、驗證失敗原因。看到「已驗證 · 尚未選取」後按「選取此 Runtime」，再重新載入確認保存。
+若掃不到，可按「選擇既有 llama.exe 檔案」，或展開進階區輸入完整路徑；兩者仍需相同完整驗證。
+無 GGUF 表示模型待準備，不會隱藏 Runtime，也不等於 GPU 推理失敗。診斷欄位與目標主機驗收見 [偵測修復](RUNTIME_DETECTION_REPAIR.md)。
+
 啟動器檢查官方 Python／x64，建立獨立環境，依 SHA-256／wheel RECORD 安裝四個純 Python 套件。
 發行 ZIP 包含原始 wheels，可離線完成基本環境；模型與選用 Runtime 下載仍需網路。
 以原本的官方 Python `-I -S -B` 執行，隔離全域 site-packages；不執行 venv 的 Python EXE、pip/distlib entry-point EXE 或自製 Worker。

@@ -1198,6 +1198,11 @@ class Desktop(Workspace):
                 db.execute("INSERT INTO creations VALUES(?,?)", (name, json.dumps(details)))
         return result
 
+    def runtime_running(self):
+        if self.local.running():return True
+        with self.device_execution.lock:scopes=list(self.device_execution.scopes.values())
+        return any(scope.local.running() for scope in scopes)
+
     def rpc(self, op, data):
         if op == "model-remove":
             if data.get("confirmed") is not True:raise ValueError("請確認永久刪除這個模型檔案。")
@@ -1211,7 +1216,17 @@ class Desktop(Workspace):
                 db.execute("DELETE FROM settings WHERE key='recent_model' AND value=?",(name,))
             return {"freed_bytes":freed,"message":"模型已刪除，對話與作品仍保留。"}
         if op == "runtime-diagnostics":return code_integrity()
-        if op == "runtime-status":return self.runtime_manager.status()
+        if op == "runtime-status":return self.runtime_manager.status(running=self.runtime_running())
+        if op == "runtime-discover":return self.runtime_manager.start_discovery()
+        if op == "runtime-validate":
+            self.runtime_manager.verify_candidate(field(data,'path',2000))
+            return self.runtime_manager.status(running=self.runtime_running())
+        if op == "runtime-pick":
+            if data.get('confirmed') is not True:raise ValueError('請按檔案選擇按鈕後確認開啟 Windows 選擇器。')
+            from runtime_file_picker import pick_existing
+            path=pick_existing()
+            if path:self.runtime_manager.verify_candidate(path,('file_picker',))
+            return {'cancelled':path is None,'status':self.runtime_manager.status(running=self.runtime_running())}
         if op == "runtime-inspect":return self.runtime_manager.inspect(field(data,'path',2000))
         if op == "runtime-select":
             if any(t['state'] in ('running','queued','paused') for t in self.scheduler.list()):

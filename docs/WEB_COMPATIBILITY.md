@@ -22,3 +22,8 @@ ComfyUI／OpenVINO 也各有原生依賴；阻擋時指出對應功能／檔案�
 SAC／WDAC 實機驗收必須另記政策模式、版本、實際 Python／腳本／EXE／DLL／PYD 與 3077。
 一般 Windows CI、單一 EXE Valid、安裝成功或正常推理都不能代替這份證據。本輪預設為 **NOT VERIFIED**。
 簽章與憑證方案依維護者方向停止推進；歷史 MIT／第三方授權與素材範圍仍有效，沒有重啟 SignPath 申請。
+
+0.9.0 Runtime 偵測修復的目標 RTX 5070 Ti／Intel Graphics 安裝偵測及 SAC 驗收另標 **BLOCKED**：
+開發主機沒有目標已安裝 Runtime。Mock 測試、手動既有 SDK、歷史推理與 Windows CI 結果各自記錄，
+不合併成該主機已通過。原生選擇器使用官方 Python＋Win32 common dialog；需要互動桌面，
+本輪互動點選尚未驗證。[詳細驗收](RUNTIME_DETECTION_REPAIR.md)。

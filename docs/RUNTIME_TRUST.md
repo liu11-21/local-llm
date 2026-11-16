@@ -51,3 +51,8 @@ SAC／Defender／Windows 安全政策，也沒有替上游檔案重簽。
 官方啟用條件精確比對有效憑證 subject 中的 CN 與 Organization 均為 Hugging Face，
 不以包含相似字串的另一個 publisher 當作官方。固定上游授權也以 SHA 比對並強制 LF 檢出，
 避免 Windows 換行轉換造成安裝完整性失敗；兩者均有反例回歸。
+
+0.9.0 偵測修復：process／使用者／系統 PATH 多候選及 WindowsApps 真實目標先驗簽、後查 CLI，
+失敗不執行候選，不受支援及逾時保留拒絕碼；驗證不自動選取。已選取仍須內容 pin 與 Web 官方簽章閘門。
+手動既有檔案選擇器也走相同驗證，沒有增加自製 EXE 或 Runtime 下載要求。
+[逐層證據與本輪實測界線](RUNTIME_DETECTION_REPAIR.md)。

@@ -7,29 +7,35 @@ import http.client
 import json
 from engine import LocalEngine
 from load_plan import engine_environment, DEVICE_LINE
+from runtime_probe import run_probe,ProbeError
 
 
 @lru_cache(maxsize=8)
 def profile(path, stamp):
-    env=engine_environment();flags=getattr(subprocess,"CREATE_NO_WINDOW",0)
+    probes=[]
     def run(args):
-        result=subprocess.run([str(path),*args],capture_output=True,timeout=15,env=env,creationflags=flags)
-        if result.returncode:raise ValueError("RUNTIME_CLI · llama.app CLI 探測失敗。")
-        return (result.stdout+result.stderr).decode("utf-8",errors="replace")
+        try:text,record=run_probe([str(path),*args])
+        except ProbeError as error:
+            probes.append(dict(error.record));error.record={'probes':list(probes)};raise
+        probes.append(record)
+        if record['exit_code']!=0:raise ProbeError('RUNTIME_CLI','llama.app CLI 探測失敗。',{'probes':probes})
+        return text
     version=run(["version"]);help_text=run(["serve","--help"])
     required=("--host","--port","--model","--alias","--cors-origins")
-    if any(flag not in help_text for flag in required):raise ValueError("RUNTIME_CAPABILITY · 此版本尚未驗證必要的安全啟動參數。")
+    if any(flag not in help_text for flag in required):raise ProbeError('RUNTIME_CAPABILITY','此版本不支援必要的安全啟動參數。',{'probes':probes})
     try:devices_text=run(["serve","--list-devices"])
     except (ValueError,subprocess.TimeoutExpired):devices_text=''
     devices=[{'id':name,'name':adapter,'reported_total_mib':int(total.replace(',','')),
               'reported_free_mib':int(free.replace(',','')),'backend':'Vulkan' if name.startswith('Vulkan') else 'CUDA',
               'available':name.startswith('Vulkan'),'memory_type':'shared-or-unified' if any(part in adapter.lower() for part in ('iris','uhd','intel graphics','intel(r) graphics')) else 'needs-physical-mapping'}
              for name,adapter,total,free in DEVICE_LINE.findall(devices_text)]
-    return {"version":version[:500],"help":help_text,"supports_cors":True,"devices":devices}
+    return {"version":version[:500],"help":help_text,"supports_cors":True,"devices":devices,'probes':probes}
 
 
-def engine_profile(path):
-    path=Path(path);return profile(str(path),path.stat().st_mtime_ns)
+def engine_profile(path,*,refresh=False):
+    path=Path(path)
+    if refresh:profile.cache_clear()
+    return profile(str(path),path.stat().st_mtime_ns)
 
 
 class LlamaAppEngine(LocalEngine):

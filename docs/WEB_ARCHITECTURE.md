@@ -8,6 +8,11 @@ React → Transport（DesktopIPCAdapter／WebHTTPAdapter）→ WorkspaceApplicat
 Desktop 仍用逐行 JSON IPC，Web 用同源 HTTP JSON 與每工作 SSE；推理不在瀏覽器執行。
 ComfyUI、OpenVINO、Agent／Team、Remote、Benchmark、模型及作品都由同一服務管理。
 
+Runtime 偵測沿用相同共用核心：`runtime-discover` 背景掃描 process／HKCU／HKLM PATH，
+`runtime_discovery` 解析 WindowsApps、驗簽後才以有逾時及程序樹保護的 CLI 探測版本／安全參數／設備。
+schema 2 的候選狀態與拒絕 trace 經原 HTTP／IPC 回傳；`runtime-select` 重新驗證後保存原本的單一設定。
+詳 [完整偵測鏈與驗收界線](RUNTIME_DETECTION_REPAIR.md)。
+
 選擇最小 Uvicorn + asyncio + h11 ASGI transport，不採 FastAPI／Pydantic-core，
 避免基本聊天增加原生擴充；也不採適用範圍有限的 Python http.server 作正式 Web transport。
 依賴為固定 hash 的純 Python wheels，沒有 uvicorn[standard]、uvloop、httptools、WebSocket extras。

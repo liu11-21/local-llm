@@ -4,11 +4,15 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from copy import deepcopy
+from threading import RLock,Thread
+from time import monotonic,time
 from urllib.request import urlopen
 from download_recovery import owned
 from runtime_trust import RuntimeTrust,discover,sha256,signature,OFFICIAL,BASELINE,code_integrity,launch_diagnostic,expected_signer
 from llama_app_engine import LlamaAppEngine,engine_profile
 from engine import LocalEngine
+from runtime_discovery import inventory,candidate,validate
 
 ROOT=Path(__file__).resolve().parent
 MANIFEST=json.loads((ROOT/"llama-app-runtime.json").read_text(encoding="utf-8"))
@@ -18,6 +22,8 @@ class RuntimeManager:
     def __init__(self,data,legacy):
         self.data=Path(data);self.legacy=legacy;self.trust=RuntimeTrust();self.record={"kind":"legacy"};self.report=None
         self.file=self.data/"llama-runtime.json";self.official_only=False;self.web_verified=None
+        self.discovery_lock=RLock();self.candidates=[];self.scan={'state':'not_detected','searched':0,'attempts':[],'errors':[]}
+        self.discovery_thread=None
         try:
             value=json.loads(self.file.read_text(encoding="utf-8"))
             if isinstance(value,dict) and value.get("kind") in ("legacy","llama-app"):
@@ -38,10 +44,50 @@ class RuntimeManager:
 
     def factory(self):return LlamaAppEngine() if self.record["kind"]=="llama-app" else LocalEngine()
 
-    def status(self):
-        return {"official_only":self.official_only,"selected":self.record["kind"],"selection":self.record,"trust":self.report,
+    def status(self,running=False):
+        with self.discovery_lock:
+            candidates=deepcopy(self.candidates);scan=deepcopy(self.scan)
+        for row in candidates:
+            row['selected']=self.record['kind']=='llama-app' and row.get('path')==self.record.get('path') and row.get('sha256')==self.record.get('sha256') and row['verified']
+            if row['selected']:row['state']='running' if running else 'selected'
+        return {"schema":2,"candidates":candidates,"scan":scan,"official_only":self.official_only,"selected":self.record["kind"],"selection":self.record,"trust":self.report,
                 "discovered":[str(p) for p in discover()],"managed_installed":(self.data/"runtimes"/MANIFEST['id']/"llama.exe").is_file(),
                 "official":OFFICIAL,"manifest":MANIFEST,"reported_baseline":BASELINE}
+
+    def verify_candidate(self,path,sources=('manual',)):
+        row=validate(candidate(str(path),sources),engine_profile,self.trust)
+        with self.discovery_lock:
+            self.candidates=[item for item in self.candidates if item['id']!=row['id']]+[deepcopy(row)]
+        return row
+
+    def start_discovery(self):
+        with self.discovery_lock:
+            if self.scan['state']=='scanning':return self.status()
+            self.scan={'state':'scanning','started_at':int(time()),'searched':0,'attempts':[],'errors':[]};self.candidates=[]
+            self.discovery_thread=Thread(target=self._discover,daemon=True,name='llama-runtime-discovery');self.discovery_thread.start()
+        return self.status()
+
+    def _discover(self):
+        try:
+            extra=[]
+            if self.record['kind']=='llama-app':extra.append(('saved_selection',Path(self.record['path'])))
+            extra.append(('managed_runtime',self.data/'runtimes'/MANIFEST['id']/'llama.exe'))
+            found=inventory(extra)
+            rows=[candidate(item['input_path'],item['sources']) for item in found['found'][:12]]
+            with self.discovery_lock:
+                self.scan.update({k:found[k] for k in ('searched','attempts','errors')});self.scan['truncated']=len(found['found'])>12
+                self.candidates=deepcopy(rows)
+            deadline=monotonic()+90
+            for row in rows:
+                def publish():
+                    with self.discovery_lock:
+                        self.candidates=[deepcopy(row) if existing['id']==row['id'] else existing for existing in self.candidates]
+                if monotonic()>deadline:
+                    row.update(state='failed',reason={'code':'SCAN_TIME_LIMIT','message':'本輪偵測時間已到；可按驗證單獨檢查此版本。'});publish();continue
+                validate(row,engine_profile,self.trust,publish)
+            with self.discovery_lock:self.scan.update(state='complete',finished_at=int(time()))
+        except Exception as error:
+            with self.discovery_lock:self.scan.update(state='failed',error={'code':'DISCOVERY_FAILED','message':str(error)},finished_at=int(time()))
 
     def inspect(self,path):
         self.report=self.trust.inspect(path,expected=MANIFEST['sha256'],source=OFFICIAL)
@@ -57,17 +103,12 @@ class RuntimeManager:
         if self.official_only and kind=='legacy':raise ValueError('Web 使用官方 llama.exe；舊引擎仍保留供 Desktop 使用。')
         if kind=='legacy':self.report=None
         if kind=='llama-app':
-            report=self.inspect(data.get('path',''))
-            auth=report['authenticode']
-            if not expected_signer(auth,MANIFEST['expected_signer']):
-                raise ValueError('RUNTIME_SIGNATURE · 新版官方 Runtime 需有效 Hugging Face 簽章；未執行此檔案。')
-            try:caps=engine_profile(Path(report['path']))
-            except OSError as error:
-                detail=launch_diagnostic(error,Path(report['path']));report.update(detail)
-                raise ValueError(detail['code']+' · '+detail['hint']) from None
-            record.update(path=report['path'],sha256=report['sha256'],version=caps['version'],devices=caps.get('devices',[]),confirmed=True)
-            report['gpu_identified']=bool(caps.get('devices'))
-            report['version']=caps['version'];report['cli_probe_success']=True
+            row=self.verify_candidate(data.get('path',''))
+            if not row['verified']:raise ValueError(row['reason']['code']+' · '+row['reason']['message'])
+            report=row['trust'];self.report=report
+            report['source']=OFFICIAL;report['sha256_verified']=report['sha256']==MANIFEST['sha256'];report['source_confirmed']=report['sha256_verified']
+            record.update(path=row['path'],sha256=row['sha256'],version=row['version'],devices=row['devices'],confirmed=True,
+                          validation={'checked_at':row['checked_at'],'authenticode':row['authenticode'],'input_paths':row['input_paths']})
         staged=self.file.with_suffix('.tmp');staged.write_text(json.dumps(record,ensure_ascii=False),encoding='utf-8');os.replace(staged,self.file)
         self.record=record
         return self.status()

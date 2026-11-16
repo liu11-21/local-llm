@@ -200,3 +200,5 @@
 .web-service details {max-width:650px}
 .web-service p {margin:8px 0;line-height:1.6}
 .web-service summary {cursor:pointer}
+.runtime-candidate {border-top:1px solid var(--line);padding:12px 0;min-width:0;overflow-wrap:anywhere}
+.runtime-candidate pre {max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}

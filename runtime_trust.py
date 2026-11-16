@@ -42,12 +42,13 @@ def signature(path):
     env = {k:v for k,v in os.environ.items() if k.upper()!="PSMODULEPATH"};env["LOCALLLM_TRUST_FILE"] = str(Path(path).absolute())
     script = "[Console]::OutputEncoding=[Text.UTF8Encoding]::new();$s=Get-AuthenticodeSignature -LiteralPath $env:LOCALLLM_TRUST_FILE; @{status=$s.Status.ToString();signer=$s.SignerCertificate.Subject;issuer=$s.SignerCertificate.Issuer;thumbprint=$s.SignerCertificate.Thumbprint}|ConvertTo-Json -Compress"
     shell=shutil.which("pwsh.exe") or shutil.which("powershell.exe")
-    if not shell:return {"status":"NOT VERIFIED","signer":None}
+    if not shell:return {"status":"NOT VERIFIED","signer":None,"reason":"POWERSHELL_NOT_FOUND"}
     try:
         result=subprocess.run([shell,"-NoProfile","-NonInteractive","-Command",script],env=env,capture_output=True,timeout=20,creationflags=FLAGS,encoding="utf-8",errors="replace")
         value=json.loads(result.stdout.lstrip("\ufeff"))
-        return value if result.returncode==0 else {"status":"NOT VERIFIED","signer":None}
-    except (OSError,ValueError,subprocess.TimeoutExpired):return {"status":"NOT VERIFIED","signer":None}
+        return {**value,'exit_code':result.returncode} if result.returncode==0 else {"status":"NOT VERIFIED","signer":None,"reason":"AUTHENTICODE_EXIT","exit_code":result.returncode}
+    except subprocess.TimeoutExpired:return {"status":"NOT VERIFIED","signer":None,"reason":"AUTHENTICODE_TIMEOUT","timeout":True}
+    except (OSError,ValueError) as error:return {"status":"NOT VERIFIED","signer":None,"reason":"AUTHENTICODE_QUERY_FAILED","error_type":type(error).__name__}
 
 
 def expected_signer(auth,expected='Hugging Face'):
@@ -58,18 +59,8 @@ def expected_signer(auth,expected='Hugging Face'):
 
 
 def discover():
-    candidates=[]
-    for name in ("llama.exe","llama"):
-        value=shutil.which(name)
-        if value:candidates.append(Path(value))
-    local=os.environ.get("LOCALAPPDATA")
-    if local:
-        candidates += [Path(local)/"llama-app"/"llama.exe",Path(local)/"Microsoft"/"WindowsApps"/"llama.exe"]
-    seen=set();result=[]
-    for path in candidates:
-        if path.is_file() and str(path.absolute()).casefold() not in seen:
-            seen.add(str(path.absolute()).casefold());result.append(path.absolute())
-    return result
+    from runtime_discovery import inventory
+    return [Path(row['input_path']) for row in inventory()['found']]
 
 
 def code_integrity(since=None):

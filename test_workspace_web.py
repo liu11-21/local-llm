@@ -89,6 +89,23 @@ class WebBoundaryTests(unittest.IsolatedAsyncioTestCase):
         _,_,body=await self.call('/api/rpc',{'op':'chats','data':{}})
         self.assertEqual(json.loads(body)['value'][0][1],'shared core')
 
+    async def test_runtime_candidate_http_contract_and_validation_gate(self):
+        from unittest.mock import patch
+        await self.login()
+        missing=str(self.root/'missing/llama.exe')
+        _,_,body=await self.call('/api/rpc',{'op':'runtime-validate','data':{'path':missing}})
+        result=json.loads(body);self.assertTrue(result['ok'])
+        row=result['value']['candidates'][0]
+        self.assertEqual(row['input_path'],missing);self.assertEqual(row['reason']['code'],'FILE_NOT_FOUND')
+        self.assertFalse(row['verified']);self.assertEqual(row['state'],'failed')
+        self.assertEqual(row['trace'][0]['stage'],'resolve')
+        with patch('runtime_file_picker.pick_existing',return_value=None) as picker:
+            _,_,body=await self.call('/api/rpc',{'op':'runtime-pick','data':{}})
+            self.assertFalse(json.loads(body)['ok']);picker.assert_not_called()
+            _,_,body=await self.call('/api/rpc',{'op':'runtime-pick','data':{'confirmed':True}})
+            self.assertTrue(json.loads(body)['value']['cancelled']);picker.assert_called_once()
+        self.assertEqual(self.core.service.runtime_manager.record['kind'],'legacy')
+
     async def test_upload_rejects_paths_offsets_ownership_and_never_overwrites(self):
         await self.login()
         for name in ('../evil.gguf','C:\\evil.gguf','CON.gguf','model.exe'):

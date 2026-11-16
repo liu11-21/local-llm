@@ -1,0 +1,170 @@
+{
+  "status": "PASS",
+  "scope": "manual existing SDK only; not installed PATH or target RTX/SAC acceptance",
+  "installed_candidates": 0,
+  "selected": {
+    "id": "0bec7dc70f22695bd318",
+    "input_path": "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+    "input_paths": [
+      "[REPOSITORY]\\build\\v080-upstream\\llama.exe"
+    ],
+    "sources": [
+      "manual"
+    ],
+    "path": "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+    "exists": true,
+    "state": "selected",
+    "verified": true,
+    "selected": true,
+    "version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n",
+    "authenticode": {
+      "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
+      "status": "Valid",
+      "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+      "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US",
+      "exit_code": 0
+    },
+    "probes": [
+      {
+        "argv": [
+          "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+          "version"
+        ],
+        "exit_code": 0,
+        "timeout": false,
+        "cleanup": "owned process tree closed",
+        "output": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n"
+      },
+      {
+        "argv": [
+          "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+          "serve",
+          "--help"
+        ],
+        "exit_code": 0,
+        "timeout": false,
+        "cleanup": "owned process tree closed",
+        "output": "----- common params -----\r\n\r\n-h,    --help, --usage                  print usage and exit\r\n--version                               show version and build info\r\n-cl,   --cache-list                     show list of models in cache\r\n--completion-bash                       print source-able bash completion script for llama.cpp\r\n-t,    --threads N                      number of CPU threads to use during generation (default: -1)\r\n                                        (env: LLAMA_ARG_THREADS)\r\n-tb,   --threads-batch N                number of threads to use during batch and prompt processing (default:\r\n                                        same as --threads)\r\n-C,    --cpu-mask M                     CPU affinity mask: arbitrarily long hex. Complements cpu-range\r\n                                        (default: \"\")\r\n-Cr,   --cpu-range lo-hi                range of CPUs for affinity. Complements --cpu-mask\r\n--cpu-strict <0|1>                      use strict CPU placement (default: 0)\r\n--prio N                                set process/thread priority : low(-1), normal(0), medium(1), high(2),\r\n                                        realtime(3) (default: 0)\r\n--poll <0...100>                        use polling level to wait for work (0 - no polling, default: 50)\r\n-Cb,   --cpu-mask-batch M               CPU affinity mask: arbitrarily long hex. Complements cpu-range-batch\r\n                                        (default: same as --cpu-mask)\r\n-Crb,  --cpu-range-batch lo-hi          ranges of CPUs for affinity. Complements --cpu-mask-batch\r\n--cpu-strict-batch <0|1>                use strict CPU placement (default: same as --cpu-strict)\r\n--prio-batch N                          set process/thread priority : 0-normal, 1-medium, 2-high, 3-realtime\r\n                                        (default: 0)\r\n--poll-batch <0|1>                      use polling to wait for work (default: same as --poll)\r\n-c,    --ctx-size N                     size of the prompt context (default: 0, 0 = "
+      },
+      {
+        "argv": [
+          "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+          "serve",
+          "--list-devices"
+        ],
+        "exit_code": 0,
+        "timeout": false,
+        "cleanup": "owned process tree closed",
+        "output": "Available devices:\r\n  Vulkan0: Intel(R) Iris(R) Xe Graphics (8002 MiB, 7346 MiB free)\r\n"
+      }
+    ],
+    "trace": [
+      {
+        "stage": "resolve",
+        "ok": true,
+        "input_path": "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+        "resolved_path": "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+        "exists": true
+      },
+      {
+        "stage": "authenticode",
+        "ok": true,
+        "authenticode": {
+          "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
+          "status": "Valid",
+          "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+          "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US",
+          "exit_code": 0
+        }
+      },
+      {
+        "stage": "cli",
+        "ok": true,
+        "probes": [
+          {
+            "argv": [
+              "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+              "version"
+            ],
+            "exit_code": 0,
+            "timeout": false,
+            "cleanup": "owned process tree closed",
+            "output": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n"
+          },
+          {
+            "argv": [
+              "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+              "serve",
+              "--help"
+            ],
+            "exit_code": 0,
+            "timeout": false,
+            "cleanup": "owned process tree closed",
+            "output": "----- common params -----\r\n\r\n-h,    --help, --usage                  print usage and exit\r\n--version                               show version and build info\r\n-cl,   --cache-list                     show list of models in cache\r\n--completion-bash                       print source-able bash completion script for llama.cpp\r\n-t,    --threads N                      number of CPU threads to use during generation (default: -1)\r\n                                        (env: LLAMA_ARG_THREADS)\r\n-tb,   --threads-batch N                number of threads to use during batch and prompt processing (default:\r\n                                        same as --threads)\r\n-C,    --cpu-mask M                     CPU affinity mask: arbitrarily long hex. Complements cpu-range\r\n                                        (default: \"\")\r\n-Cr,   --cpu-range lo-hi                range of CPUs for affinity. Complements --cpu-mask\r\n--cpu-strict <0|1>                      use strict CPU placement (default: 0)\r\n--prio N                                set process/thread priority : low(-1), normal(0), medium(1), high(2),\r\n                                        realtime(3) (default: 0)\r\n--poll <0...100>                        use polling level to wait for work (0 - no polling, default: 50)\r\n-Cb,   --cpu-mask-batch M               CPU affinity mask: arbitrarily long hex. Complements cpu-range-batch\r\n                                        (default: same as --cpu-mask)\r\n-Crb,  --cpu-range-batch lo-hi          ranges of CPUs for affinity. Complements --cpu-mask-batch\r\n--cpu-strict-batch <0|1>                use strict CPU placement (default: same as --cpu-strict)\r\n--prio-batch N                          set process/thread priority : 0-normal, 1-medium, 2-high, 3-realtime\r\n                                        (default: 0)\r\n--poll-batch <0|1>                      use polling to wait for work (default: same as --poll)\r\n-c,    --ctx-size N                     size of the prompt context (default: 0, 0 = "
+          },
+          {
+            "argv": [
+              "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+              "serve",
+              "--list-devices"
+            ],
+            "exit_code": 0,
+            "timeout": false,
+            "cleanup": "owned process tree closed",
+            "output": "Available devices:\r\n  Vulkan0: Intel(R) Iris(R) Xe Graphics (8002 MiB, 7346 MiB free)\r\n"
+          }
+        ],
+        "compatible": true
+      }
+    ],
+    "reason": null,
+    "devices": [
+      {
+        "id": "Vulkan0",
+        "name": "Intel(R) Iris(R) Xe Graphics",
+        "reported_total_mib": 8002,
+        "reported_free_mib": 7346,
+        "backend": "Vulkan",
+        "available": true,
+        "memory_type": "shared-or-unified"
+      }
+    ],
+    "sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+    "trust": {
+      "path": "[REPOSITORY]\\build\\v080-upstream\\llama.exe",
+      "sha256": "1dd8a275a6466e42c0f849df9beb3b4deb43c107e6a568fd1b5cecf22c905a1a",
+      "source": null,
+      "checked_at": 1794840391,
+      "source_confirmed": false,
+      "sha256_verified": false,
+      "authenticode": {
+        "thumbprint": "7DD85C6419D7E26A5AA97A2327BAE14AE3D05D93",
+        "status": "Valid",
+        "signer": "CN=Hugging Face, O=Hugging Face, L=Brooklyn, S=New York, C=US, PostalCode=11201",
+        "issuer": "CN=Microsoft ID Verified CS EOC CA 03, O=Microsoft Corporation, C=US",
+        "exit_code": 0
+      },
+      "launch_success": false,
+      "gpu_identified": true,
+      "inference_success": false,
+      "sac": "NOT VERIFIED; requires independent real-machine testing",
+      "resolved_image": null,
+      "dependencies": [],
+      "dependency_scan": "NOT VERIFIED; process modules must be inspected separately",
+      "execution_permission": true,
+      "baseline_match": false,
+      "version": "version: 1.0.0-dev (build 12360, commit 2d8a32502)\r\nbuilt with Clang 22.1.8 for Windows x86_64\r\n",
+      "cli_probe_success": true
+    },
+    "checked_at": 1794840391
+  },
+  "browser_reload": "PASS",
+  "backend_restart": "PASS",
+  "chat_reads_selection": "PASS",
+  "models": 0,
+  "runtime_downloads": 0,
+  "model_downloads": 0,
+  "inference": false,
+  "target_RTX_SAC": "BLOCKED",
+  "interactive_file_picker": "NOT VERIFIED"
+}

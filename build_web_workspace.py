@@ -41,7 +41,7 @@ def build():
             shutil.copyfile(ROOT/name,bundle/name)
         shutil.copyfile(ROOT/'WEB-START-HERE.txt',bundle/'WEB-START-HERE.txt')
         docs=app/'docs';docs.mkdir()
-        for name in ('WEB_ARCHITECTURE.md','WEB_INSTALLATION.md','WEB_SECURITY.md','WEB_COMPATIBILITY.md','V090_DELIVERY.md'):
+        for name in ('WEB_ARCHITECTURE.md','WEB_INSTALLATION.md','WEB_SECURITY.md','WEB_COMPATIBILITY.md','V090_DELIVERY.md','RUNTIME_DETECTION_REPAIR.md'):
             shutil.copyfile(ROOT/'docs'/name,docs/name)
         wheels=app/'wheelhouse';wheels.mkdir()
         inventory=[]
