@@ -39,7 +39,7 @@
 
 「選擇既有 llama.exe 檔案」呼叫 `runtime-pick`，必須明確 `confirmed=true`。官方 Python 開啟 Windows 原生 GetOpenFileNameW；120 秒未完成會清理選擇器。它只回傳本機路徑，不上傳、複製、下載或執行選中的檔案。選完走同一 `verify_candidate` 閘門，仍需明確按「選取此 Runtime」。取消不改選取。也保留進階完整路徑欄位。
 
-此功能不新增 Tk、瀏覽器原生橋接 EXE 或原生 Python wheel。Native picker 需要互動 Windows 桌面；本輪開窗成功，但操作工具逾時，完整點選流程保持 **NOT VERIFIED**。無互動桌面可使用手動路徑欄位；不是要求修改 PATH。Desktop frozen Worker 維持路徑輸入方式。
+此功能不新增 Tk、瀏覽器原生橋接 EXE 或原生 Python wheel。Native picker 需要互動 Windows 桌面；本輪開窗成功，但操作工具核准等待逾時，完整點選流程為 **BLOCKED／未驗證**。無互動桌面可使用手動路徑欄位；不是要求修改 PATH。Desktop frozen Worker 維持路徑輸入方式。
 
 簽章有效、CLI 通過、裝置辨識、模型服務運行、GPU 推理、SAC 放行是不同證據。新狀態不會讓後者自動通過。詳細路徑與驗證輸出只提供已認證的本機工作階段，分享診斷前請遮蔽帳號／私人目錄。
 
@@ -91,4 +91,40 @@ Authenticode、版本／安全 CLI、Web 選取與 reload、後端重啟後保�
 本機安裝候選數為 0。完整已遮蔽工作目錄的結果見 [手動既有 SDK 證據](evidence/runtime-detection/manual-sdk.json)。
 不宣稱原生互動檔案選擇器、目標 RTX／SAC 或推理已通過。
 
-待修復 Commit 的 Windows CI 完成後填入最終 Artifact 與雜湊；此段不是目標實機通過聲明。
+修復 Commit：[`26b90ef`](https://github.com/liu11-21/local-llm/commit/26b90ef0f99c7e83322c7edd11b180f112a688c1)。
+最終產品／ZIP 來源：[`fe2a363`](https://github.com/liu11-21/local-llm/commit/fe2a363cc91ea21e14605eee044b4f50907d9530)。
+後續報告、下載連結、證據與選用驗收腳本的 package 參數另以提交記錄補上，不變更已驗收的產品檔案或版本。
+
+| 驗證 | 最終結果 |
+|---|---|
+| Windows CI | [43890145954](https://github.com/liu11-21/local-llm/actions/runs/43890145954)，18 步成功 |
+| Windows Python | 252 tests：251 通過，僅 Desktop 封裝 EXE smoke 1 項略過；遠端 TLS 7 項實際通過，沒有本機攔截略過旗標 |
+| TypeScript／Vite | 通過；原本的大 bundle 提示仍存在 |
+| Chromium 完整回歸 | 包含 Agent、Team、Benchmark、遠端、Runtime 信任負例、偵測可見清單及零模型提示，通過；fixture 與真硬體分開 |
+| 真 HTTP Chrome／Edge | 4 尺寸 × 2 主題 × 12 頁；檔案匯入、跨視窗同步、PWA readiness、服務重啟通過；匯入是合成 header fixture，不是模型下載或推理 |
+| 乾淨 ZIP／資料 | 官方 Python 啟動、實際 0.8 升級、重複啟動、更新／回滾、保留資料與停止，通過 |
+| 實際 CI ZIP 再驗證 | GitHub 外層 digest、內層 ZIP hash、BUILD source Commit、434 個 manifest 檔案全部相符；沒有 PE 或模型 payload |
+| 同一 CI ZIP＋既有 SDK | 真 HF 簽章 Valid，1.0.0-dev build 12360；三個 CLI 探測退出碼 0 並清理。瀏覽器選取／reload、後端重啟、共用聊天設定、缺模型明確提示通過；無模型、無推理、無 Runtime／模型下載 |
+| 本機安裝偵測 | 找到 0 個候選、檢查 21 個位置；[遮蔽路徑證據](evidence/runtime-detection/host-scan.json)。這不是目標 RTX 主機成功偵測證據 |
+| 目標 RTX 5070 Ti／Intel Graphics／SAC | **BLOCKED／NEEDS HARDWARE**；無法取得目標安裝環境，尚未驗證該 Runtime 的設備列表。開發機 SDK 只回報 Iris Xe，不能代替 |
+| 原生 picker 完整點選 | **BLOCKED**；開窗成功、操作工具等待逾時。Mock 取消／閘門通過；手動路徑真驗證通過，但不當成 picker 點選通過 |
+
+[下載 Windows x64 Web Artifact](https://github.com/liu11-21/local-llm/actions/runs/43890145954/artifacts/14235639642)
+（GitHub 可能要求登入，保留 14 天，沒有建立 Release／Tag）。外層 Artifact 內有實際 Web ZIP、BUILD、SHA256SUMS、PYTHON-TESTS、DEPLOYMENT、BROWSER-TESTS。
+
+內層 `LocalLLM-Web-0.9.0-Windows-x64.zip`，1,569,832 bytes：
+
+```text
+0c8642da4ee45c51c8b7747bb0d3b4f56b33fbc78a8693101a45d768fd093cb4
+```
+
+GitHub 外層 Artifact ZIP SHA-256（不能用來更新內層 Web ZIP）：
+
+```text
+83028af5dd7893f5a04ee231a59c0400aba2a011ecb1285c421fa02f53e829cf
+```
+
+[產物雜湊核對紀錄](evidence/runtime-detection/ci-artifact.json)。ZIP 內文件是在 CI 建置前的來源快照；
+上述最終雜湊／驗收以此 Repository 報告與外部 BUILD／SHA256SUMS 為準，不將 ZIP 自身雜湊寫回自身。
+
+本輪沒有修改 main／Stable／Desktop 分支、模型與使用者資料，沒有重新下載 Runtime、模型或執行推理，沒有修改 Windows 安全設定。

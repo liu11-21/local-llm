@@ -1,0 +1,232 @@
+{
+  "status": "BLOCKED",
+  "scope": "current development host installed PATH/WindowsApps only; target RTX host is unavailable",
+  "candidate_count": 0,
+  "searched": 21,
+  "errors": [],
+  "attempts": [
+    {
+      "input_path": "[LOCAL_LOCATION_0]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_1]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_2]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_3]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_4]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_5]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_6]/llama.exe",
+      "sources": [
+        "process_path",
+        "system_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_7]/llama.exe",
+      "sources": [
+        "process_path",
+        "system_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_8]/llama.exe",
+      "sources": [
+        "process_path",
+        "system_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_9]/llama.exe",
+      "sources": [
+        "process_path",
+        "system_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_10]/llama.exe",
+      "sources": [
+        "process_path",
+        "system_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_11]/llama.exe",
+      "sources": [
+        "process_path",
+        "user_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_12]/llama.exe",
+      "sources": [
+        "process_path",
+        "user_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_13]/llama.exe",
+      "sources": [
+        "process_path",
+        "user_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_14]/llama.exe",
+      "sources": [
+        "process_path",
+        "user_path",
+        "windows_apps"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_15]/llama.exe",
+      "sources": [
+        "process_path",
+        "user_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_16]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_17]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_18]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_19]/llama.exe",
+      "sources": [
+        "process_path"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    },
+    {
+      "input_path": "[LOCAL_LOCATION_20]/llama.exe",
+      "sources": [
+        "official_install"
+      ],
+      "exists": false,
+      "is_file": false,
+      "is_link": false,
+      "reason": "FILE_NOT_FOUND"
+    }
+  ],
+  "path_changed": false,
+  "runtime_downloads": 0
+}

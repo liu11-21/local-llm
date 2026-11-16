@@ -1,5 +1,8 @@
 # Local LLM 0.9.0 Web Workspace — 交付
 
+2026-11-16 Runtime 偵測修復、最新 CI／ZIP／SHA、手動既有 SDK 同包驗收及目標 RTX／SAC BLOCKED 界線，
+見 [Runtime 偵測修復交付](RUNTIME_DETECTION_REPAIR.md)。以下保留原始交付來源與測試範圍，歷史推理不當成本輪安裝偵測驗收。
+
 基準 0.8.0 `90af62b`，工作分支 dev/web-workspace；不改 main、Stable v0.6.2、Desktop 分支，不建立 Release／Tag。
 停止推進 SignPath／憑證；保留 Tauri 原始碼與已核准第一方 MIT，第三方／素材範圍不變。
 

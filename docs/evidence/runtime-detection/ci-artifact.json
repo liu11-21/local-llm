@@ -1,0 +1,10 @@
+{
+  "run": 43890145954,
+  "source_commit": "fe2a363cc91ea21e14605eee044b4f50907d9530",
+  "artifact_id": 14235639642,
+  "artifact_url": "https://github.com/liu11-21/local-llm/actions/runs/43890145954/artifacts/14235639642",
+  "outer_zip_sha256": "83028af5dd7893f5a04ee231a59c0400aba2a011ecb1285c421fa02f53e829cf",
+  "web_zip_sha256": "0c8642da4ee45c51c8b7747bb0d3b4f56b33fbc78a8693101a45d768fd093cb4",
+  "web_zip_bytes": 1569832,
+  "status": "PASS: GitHub artifact digest + BUILD + inner ZIP hash"
+}

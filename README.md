@@ -8,10 +8,13 @@
 瀏覽器關閉後可用 **Stop-Web-Workspace.cmd** 停止；模型、聊天與作品沿用原資料目錄。
 腳本／官方 Python／選用原生依賴仍可能受裝置政策限制，**SAC 完整相容性尚未獨立驗證**。
 
-[下載已驗收 Windows Web ZIP](https://github.com/liu11-21/local-llm/actions/runs/43685022914/artifacts/14150375872) ·
-[Windows Web CI](https://github.com/liu11-21/local-llm/actions/runs/43685022914) ·
+[下載 Runtime 偵測修復 Windows Web ZIP](https://github.com/liu11-21/local-llm/actions/runs/43890145954/artifacts/14235639642) ·
+[Windows Web CI](https://github.com/liu11-21/local-llm/actions/runs/43890145954) ·
 [安裝／更新／回滾](docs/WEB_INSTALLATION.md) · [架構](docs/WEB_ARCHITECTURE.md) · [安全](docs/WEB_SECURITY.md) ·
 [相容性](docs/WEB_COMPATIBILITY.md) · [0.9.0 交付](docs/V090_DELIVERY.md)。
+
+0.9.0 偵測修復：掃描使用者／系統 PATH 與 WindowsApps，驗簽後顯示可選候選、拒絕原因及保存狀態。
+[修復及最新 Artifact／SHA／驗收](docs/RUNTIME_DETECTION_REPAIR.md)。目標 RTX 5070 Ti＋SAC 安裝偵測仍待實機確認，不以 Mock 或其他主機結果代替。
 
 下載 Artifact 後解開其中 `LocalLLM-Web-0.9.0-Windows-x64.zip`。程式來源 78f8f7c；最終 CI 18 steps 成功，
 Python 235 項（234 通過、1 個不需要的封裝 Worker 測試 skipped）、Chrome／Edge 與真實同包模型工作鏈通過。
