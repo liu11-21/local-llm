@@ -1,0 +1,208 @@
+{
+  "status": "FAIL",
+  "expected_reproduction": "PASS",
+  "baseline": "fe2a363",
+  "http": [
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781",
+      "error": "工作階段已過期，請從啟動器重新開啟。",
+      "code": null
+    },
+    {
+      "path": "/api/rpc",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781",
+      "error": "工作階段已過期，請從啟動器重新開啟。",
+      "code": null
+    },
+    {
+      "path": "/api/session",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781",
+      "error": "工作階段已過期，請從啟動器重新開啟。",
+      "code": null
+    }
+  ],
+  "same_document_bootstrap_consumed": false,
+  "old_session_status": 401,
+  "console": []
+}

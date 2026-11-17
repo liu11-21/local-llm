@@ -2,6 +2,7 @@ Local LLM Web Workspace 0.9.0 Development
 
 1. 從 python.org 安裝官方 Python 3.12 x64（3.12.10 或較新 3.12）。保留 Python Launcher。
 2. 將完整 ZIP 解壓至自己的資料夾，雙擊 Start-Web-Workspace.cmd。
+   啟動器依序檢查 py、PATH、Registry、常見安裝位置，每個候選實跑版本／64-bit 驗證，最後使用已驗證的絕對路徑。
 3. 瀏覽器會自動開啟。到「運算環境」偵測並確認選擇官方已簽章的 llama.exe。
 4. 到「模型與應用」匯入 GGUF，或搜尋 Hugging Face 並下載，再開始聊天。
 
@@ -14,6 +15,8 @@ Local LLM Web Workspace 0.9.0 Development
 保留啟動命令視窗。關閉分頁不會立即停止背景工作；使用「服務管理→停止本機服務」
 或雙擊 Stop-Web-Workspace.cmd 停止。沒有分頁時，閒置模型約 90 秒後釋放；
 30 分鐘無連線會停止服務並取消未完成工作。再次執行 Start 會開啟原有服務，避免重複啟動。
+服務重啟或登入逾期後，請再次執行 Start，使用新的 127.0.0.1 登入連結重新驗證；不需清除 Cookie。
+其他分頁會同步恢復。不要混用 localhost；寫入要求不會因重新連線而自動重送。
 Chrome／Edge 可用瀏覽器的「安裝應用程式」建立 PWA；安裝入口取決於瀏覽器與裝置政策。
 
 資料預設保留於目前 Windows 帳號的 LocalAppData\LocalLLM，沿用 0.8.0。

@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "build:web": "tsc --noEmit && vite build --mode web",
     "test:web": "node tests/web-workspace.mjs",
+    "test:session": "node tests/session-recovery.mjs",
     "tauri": "tauri",
     "ui": "vite",
     "test:layout": "node tests/workspace-layout.mjs"

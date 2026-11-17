@@ -37,7 +37,7 @@ try{
   await page.goto(origin+'/#bootstrap='+record.bootstrap)
   await page.getByText('本機服務已連線',{exact:true}).waitFor()
   assert(!page.url().includes(record.bootstrap),'Bootstrap credential must be removed before routing')
-  assert((await context.cookies()).some(cookie=>cookie.name==='localllm_web_session'&&cookie.httpOnly&&cookie.sameSite==='Strict'))
+  assert((await context.cookies()).some(cookie=>cookie.name===`localllm_web_session_${port}`&&cookie.httpOnly&&cookie.sameSite==='Strict'))
   const anonymous=await browser.newContext();assert.equal((await anonymous.request.post(origin+'/api/rpc',{headers:{Origin:origin},data:{op:'info',data:{}}})).status(),401);await anonymous.close()
   for(const [width,height] of [[1280,900],[1024,768],[800,600],[650,720]]){
    await page.setViewportSize({width,height})

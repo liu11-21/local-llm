@@ -32,12 +32,15 @@ CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; im
 
 
 class HTTPError(Exception):
-    def __init__(self,status,message):self.status=status;self.message=message
+    def __init__(self,status,message,code=None):self.status=status;self.message=message;self.code=code
 
 
 class WebWorkspace:
     def __init__(self,application,port,static=None,*,idle_seconds=1800):
         self.application=application;self.port=port;self.origin=f'http://127.0.0.1:{port}'
+        # Cookies do not isolate ports. Separate local workspace instances must
+        # not overwrite each other's host-only session cookie.
+        self.cookie_name=COOKIE+'_'+str(port)
         self.static=Path(static or ROOT/'desktop/dist').resolve()
         self.bootstrap=secrets.token_urlsafe(32);self.sessions={};self.stopping=False
         self.last_seen=time.monotonic();self.idle_seconds=idle_seconds;self.stop_callback=lambda:None
@@ -46,6 +49,7 @@ class WebWorkspace:
         self.assets={('/'+p.relative_to(self.static).as_posix()):p for p in self.static.rglob('*')
                      if p.is_file() and not p.is_symlink() and p.resolve().is_relative_to(self.static)}
         self.assets['/']=self.static/'index.html'
+        self.assets['/launch']=self.static/'index.html'
 
     def headers(self,scope):
         pairs=scope.get('headers',[]);result={}
@@ -66,9 +70,9 @@ class WebWorkspace:
         cookies=SimpleCookie()
         try:cookies.load(headers.get('cookie',''))
         except Exception:raise HTTPError(401,'請從啟動器重新開啟工作台。') from None
-        token=cookies.get(COOKIE);value=self.sessions.get(token.value if token else '')
-        if not value or value['expires']<time.monotonic():raise HTTPError(401,'工作階段已過期，請從啟動器重新開啟。')
-        if mutating and not hmac.compare_digest(headers.get('x-workspace-csrf',''),value['csrf']):raise HTTPError(403,'CSRF 驗證失敗。')
+        token=cookies.get(self.cookie_name);value=self.sessions.get(token.value if token else '')
+        if not value or value.get('revoked') or value['expires']<time.monotonic():raise HTTPError(401,'工作階段已過期，請再次執行 Start-Web-Workspace.cmd 重新驗證。','SESSION_REQUIRED')
+        if mutating and not hmac.compare_digest(headers.get('x-workspace-csrf',''),value['csrf']):raise HTTPError(403,'CSRF 驗證失敗。','CSRF_INVALID')
         self.last_seen=time.monotonic()
         return value
 
@@ -102,7 +106,7 @@ class WebWorkspace:
         try:
             headers=self.headers(scope)
             async with self.capacity:await self.route(scope,receive,send,headers)
-        except HTTPError as error:await self.send(send,error.status,{'ok':False,'error':error.message})
+        except HTTPError as error:await self.send(send,error.status,{'ok':False,'error':error.message,**({'code':error.code} if error.code else {})})
         except (TimeoutError,asyncio.TimeoutError):await self.send(send,408,{'ok':False,'error':'請求逾時；未自動重送工作。'})
         except (BrokenPipeError,ConnectionError,asyncio.CancelledError):return
         except Exception:
@@ -120,13 +124,20 @@ class WebWorkspace:
             token=secrets.token_urlsafe(32);session={'csrf':secrets.token_urlsafe(32),'expires':now+8*3600}
             self.sessions[token]=session;self.last_seen=now
             await self.send(send,200,{'ok':True,'value':{'csrf':session['csrf'],'build':build_info()}},
-                extra=[(b'set-cookie',f'{COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800'.encode())]);return
+                extra=[(b'set-cookie',f'{self.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800'.encode())]);return
         if path.startswith('/api/'):
             session=self.session(headers,mutating=method not in ('GET','HEAD'))
             if self.stopping and method not in ('GET','HEAD'):raise HTTPError(503,'服務正在停止，未接受新工作。')
             if path=='/api/session' and method=='GET':
                 await self.send(send,200,{'ok':True,'value':{'csrf':session['csrf'],'build':build_info(),
                     'idle_seconds':self.idle_seconds,'state':'stopping' if self.stopping else 'ready'}});return
+            if path=='/api/logout' and method=='POST':
+                body=await self.json_body(scope,receive,headers)
+                if body.get('confirmed') is not True:raise HTTPError(400,'請確認登出工作階段。')
+                session['revoked']=True
+                self.sessions={key:value for key,value in self.sessions.items() if value is not session}
+                await self.send(send,200,{'ok':True,'value':{'logged_out':True}},extra=[
+                    (b'set-cookie',f'{self.cookie_name}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'.encode())]);return
             if path=='/api/rpc' and method=='POST':
                 body=await self.json_body(scope,receive,headers)
                 op=body.get('op');data=body.get('data')
@@ -229,7 +240,7 @@ class WebWorkspace:
             while (await receive())['type']!='http.disconnect':pass
         disconnect=asyncio.create_task(disconnected());deadline=time.monotonic()+900;last=None
         try:
-            while time.monotonic()<min(deadline,session['expires']) and not self.stopping:
+            while time.monotonic()<min(deadline,session['expires']) and not session.get('revoked') and not self.stopping:
                 if disconnect.done():break
                 self.last_seen=time.monotonic()
                 snapshot=await asyncio.to_thread(self.application.response,'job',{'id':job})
@@ -274,7 +285,7 @@ async def serve(directory,port=8766,static=None,*,browser=True,idle_seconds=1800
     async def ready():
         while not server.started and not server.should_exit:await asyncio.sleep(.05)
         if not server.started:return
-        url=app.origin+'/#bootstrap='+app.bootstrap
+        url=app.origin+'/launch#bootstrap='+app.bootstrap
         if on_ready:on_ready(app,url)
         if browser:await asyncio.to_thread(webbrowser.open,url)
     opener=asyncio.create_task(ready())

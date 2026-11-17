@@ -2,6 +2,10 @@
 
 0.9.0 Development，以 Python 本機服務＋瀏覽器操作，不依賴自製 EXE／Windows Installer。
 
+本輪修復：[Session 恢復](SESSION_RECOVERY_REPAIR.md)、[Python 自動選取](PYTHON_LAUNCHER_REPAIR.md)、[桌機驗收](V090_DESKTOP_RETEST.md)。
+服務重啟／Session 逾期時，再執行 Start 取得目前服務的登入連結；既有分頁可安全重新初始化，不需清除 Cookie。
+六個管理 CMD 都會依序驗證 py／PATH／Registry／常見安裝的 Python 3.12 x64，再用絕對路徑執行。
+
 1. 從 [python.org](https://www.python.org/downloads/windows/) 安裝 Python 3.12 x64，3.12.10 或較新 3.12，含 Launcher。
 2. 解壓完整 Web ZIP，雙擊 `Start-Web-Workspace.cmd`。只有原始碼 ZIP 時，開發者需先在 desktop 執行 `npm ci`、`npm run build:web`。
 3. 「運算環境」偵測／選擇官方 Hugging Face 簽章 llama.exe；「模型與應用」可匯入 GGUF 或使用既有 HF 搜尋／多執行緒下載。

@@ -88,6 +88,15 @@ jobs:
           Copy-Item -LiteralPath build/v090-deployment/upgrade-after.json -Destination build/web-release/UPGRADE-AFTER.json
           Copy-Item -LiteralPath build/v090-browser/validation.json -Destination build/web-release/BROWSER-TESTS.json
           Copy-Item -LiteralPath build/web-python-tests.log -Destination build/web-release/PYTHON-TESTS.log
+      - name: Session recovery and actual CMD launcher regression
+        shell: pwsh
+        run: |
+          python desktop/tests/launcher-start-stop.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node desktop/tests/session-recovery.mjs
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Copy-Item -LiteralPath build/session-recovery/SESSION_RECOVERY_TESTS.json -Destination build/web-release/SESSION_RECOVERY_TESTS.json
+          Copy-Item -LiteralPath build/session-recovery/PYTHON_LAUNCHER_TESTS.json -Destination build/web-release/PYTHON_LAUNCHER_TESTS.json
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: LocalLLM-Web-Workspace-Windows-x64

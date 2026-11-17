@@ -1,0 +1,623 @@
+{
+  "status": "PASS",
+  "scope": "real official Python / SQLite / HTTP / Chrome; waiting TaskManager fixture for SSE and cancel, no AI inference",
+  "checks": {
+    "first_start": "PASS",
+    "reload": "PASS",
+    "restart_same_document": "PASS",
+    "expiry_gate": "PASS",
+    "reauth_and_multi_tab": "PASS",
+    "sse_reconnect": "PASS",
+    "cancel": "PASS",
+    "stale_csrf_rejected": "PASS",
+    "write_not_replayed": "PASS",
+    "security": "PASS",
+    "logout_multi_tab": "PASS",
+    "logout_cookie_cleared": "PASS",
+    "login_after_logout": "PASS",
+    "library_access": "PASS"
+  },
+  "http": [
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781",
+      "error": "工作階段已過期，請再次執行 Start-Web-Workspace.cmd 重新驗證。",
+      "code": "SESSION_REQUIRED"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781",
+      "error": "工作階段已過期，請再次執行 Start-Web-Workspace.cmd 重新驗證。",
+      "code": "SESSION_REQUIRED"
+    },
+    {
+      "path": "/api/session",
+      "status": 401,
+      "origin": null,
+      "host": "127.0.0.1:18781",
+      "error": "工作階段已過期，請再次執行 Start-Web-Workspace.cmd 重新驗證。",
+      "code": "SESSION_REQUIRED"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/jobs/99a4dbaaaa3f4bbabe0d8a1d576a66ea/events",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 403,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781",
+      "error": "CSRF 驗證失敗。",
+      "code": "CSRF_INVALID"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 403,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781",
+      "error": "CSRF 驗證失敗。",
+      "code": "CSRF_INVALID"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/logout",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/session",
+      "status": 200,
+      "origin": null,
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    },
+    {
+      "path": "/api/rpc",
+      "status": 200,
+      "origin": "http://127.0.0.1:18781",
+      "host": "127.0.0.1:18781"
+    }
+  ],
+  "console": [],
+  "network_log": "paths/status/origin/error only; credentials omitted",
+  "target_RTX": "BLOCKED: specified desktop QA directory is not on this host"
+}

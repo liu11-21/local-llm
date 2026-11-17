@@ -202,3 +202,5 @@
 .web-service summary {cursor:pointer}
 .runtime-candidate {border-top:1px solid var(--line);padding:12px 0;min-width:0;overflow-wrap:anywhere}
 .runtime-candidate pre {max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.session-recovery {position:fixed;inset:0;z-index:1000;background:var(--panel,#fff);color:var(--text,#18212c);padding:clamp(24px,8vw,96px);overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:16px}
+.session-recovery>* {max-width:760px}

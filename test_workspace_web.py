@@ -138,5 +138,35 @@ class WebBoundaryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(stops,[True])
         self.assertEqual((await self.call('/api/rpc',{'op':'run','data':{}}))[0],503)
 
+    async def test_session_restart_expiry_csrf_and_logout_are_fail_closed(self):
+        await self.login();original_csrf=self.csrf;original_cookie=self.cookie;original_bootstrap=self.app.bootstrap
+        status,_,body=await self.call('/api/session');self.assertEqual(status,200)
+        self.assertEqual(json.loads(body)['value']['csrf'],original_csrf)
+        _,_,body=await self.call('/api/rpc',{'op':'info','data':{}},headers={'x-workspace-csrf':'old'})
+        self.assertEqual(json.loads(body)['code'],'CSRF_INVALID')
+        self.app.sessions[original_cookie.split('=',1)[1]]['expires']=0
+        self.assertEqual((await self.call('/api/session'))[0],401)
+        await self.login();self.assertNotEqual(self.csrf,original_csrf)
+        _,headers,_=await self.call('/api/logout',{'confirmed':True})
+        self.assertIn(b'Max-Age=0',headers[b'set-cookie']);self.assertEqual((await self.call('/api/session'))[0],401)
+        self.app.uploads.close();self.app=WebWorkspace(self.core,18767,self.root/'ui')
+        self.assertNotEqual(self.app.bootstrap,original_bootstrap)
+        self.cookie=original_cookie;self.csrf=original_csrf
+        self.assertEqual((await self.call('/api/session',{},headers={'x-workspace-bootstrap':original_bootstrap}))[0],401)
+        self.assertEqual((await self.call('/api/rpc',{'op':'info','data':{}}))[0],401)
+        await self.login();self.assertEqual((await self.call('/api/rpc',{'op':'info','data':{}}))[0],200)
+        self.assertEqual((await self.call('/launch'))[0],200)
+
+    async def test_cookie_name_isolates_ports_and_remains_host_only(self):
+        await self.login();original=self.cookie
+        _,headers,_=await self.call('/api/session',{},headers={'x-workspace-bootstrap':self.app.bootstrap})
+        self.assertNotIn(b'Domain=',headers[b'set-cookie'])
+        self.assertIn(b'Path=/',headers[b'set-cookie']);self.assertIn(b'localllm_web_session_18767=',headers[b'set-cookie'])
+        self.app.uploads.close();self.app=WebWorkspace(self.core,18768,self.root/'ui')
+        status,headers,_=await self.call('/api/session',{},headers={'host':'127.0.0.1:18768','x-workspace-bootstrap':self.app.bootstrap})
+        self.assertEqual(status,200);self.assertIn(b'localllm_web_session_18768=',headers[b'set-cookie'])
+        self.assertEqual(self.cookie,original,'Creating another instance must not alter the first port cookie')
+        self.assertEqual((await self.call('/api/session',headers={'host':'127.0.0.1:18768'}))[0],401)
+
 
 if __name__=='__main__':unittest.main()

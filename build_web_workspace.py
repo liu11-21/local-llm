@@ -37,11 +37,11 @@ def build():
         shutil.copytree(ROOT/'docs/sbom',app/'notices')
         for name in ('LICENSE','LICENSE_SCOPE.md','LICENSE_STATUS.md','PRIVACY.md','THIRD_PARTY_LICENSES.md'):
             shutil.copyfile(ROOT/name,app/name)
-        for name in ('Start-Web-Workspace.cmd','Stop-Web-Workspace.cmd','Diagnose-Web-Workspace.cmd','Update-Web-Workspace.cmd','Rollback-Web-Workspace.cmd','Install-Web-Optional.cmd'):
+        for name in ('Start-Web-Workspace.cmd','Stop-Web-Workspace.cmd','Diagnose-Web-Workspace.cmd','Update-Web-Workspace.cmd','Rollback-Web-Workspace.cmd','Install-Web-Optional.cmd','Run-Web-Workspace.cmd','Find-Web-Python.cmd'):
             shutil.copyfile(ROOT/name,bundle/name)
         shutil.copyfile(ROOT/'WEB-START-HERE.txt',bundle/'WEB-START-HERE.txt')
         docs=app/'docs';docs.mkdir()
-        for name in ('WEB_ARCHITECTURE.md','WEB_INSTALLATION.md','WEB_SECURITY.md','WEB_COMPATIBILITY.md','V090_DELIVERY.md','RUNTIME_DETECTION_REPAIR.md'):
+        for name in ('WEB_ARCHITECTURE.md','WEB_INSTALLATION.md','WEB_SECURITY.md','WEB_COMPATIBILITY.md','V090_DELIVERY.md','RUNTIME_DETECTION_REPAIR.md','SESSION_RECOVERY_REPAIR.md','PYTHON_LAUNCHER_REPAIR.md','V090_DESKTOP_RETEST.md'):
             shutil.copyfile(ROOT/'docs'/name,docs/name)
         wheels=app/'wheelhouse';wheels.mkdir()
         inventory=[]

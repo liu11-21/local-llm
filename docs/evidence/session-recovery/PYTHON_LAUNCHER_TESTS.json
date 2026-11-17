@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "scope": "actual Windows CMD + installed official Python; disposable synthetic profile, not target RTX QA",
+  "checks": {
+    "PATH without py": {
+      "status": "PASS",
+      "version": [
+        3,
+        12,
+        10
+      ],
+      "bits": 64
+    },
+    "Registry without py or PATH Python": {
+      "status": "PASS",
+      "version": [
+        3,
+        12,
+        10
+      ],
+      "bits": 64
+    },
+    "CMD first start and duplicate": "PASS",
+    "CMD stop process and port cleanup": "PASS",
+    "CMD restart": "PASS",
+    "SQLite chats Agent Team library works preservation": "PASS",
+    "saved Runtime setting preservation": "PASS"
+  },
+  "runtime_cli_repeated": false,
+  "model_downloads": 0,
+  "inference": false,
+  "python_version": "3.12.10"
+}

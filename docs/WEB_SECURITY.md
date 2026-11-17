@@ -24,7 +24,14 @@ PWA service worker network-only，無 API／聊天／憑證／過期 UI 快取�
 同源多視窗只廣播 invalidation，不廣播提示詞或憑證；服務閒置回收與停止流程見安裝文件。
 Windows Job Object kill-on-close 管理 Python Host 與繼承的子程序，正常停止另沿用核心清理；建立保護失敗會拒絕啟動。
 
-界線：此本機 HTTP 服務不是多使用者／公網伺服器；未經外部滲透測試。Cookie 不按 port 隔離，
+界線：此本機 HTTP 服務不是多使用者／公網伺服器；未經外部滲透測試。Cookie 本身不按 TCP port 隔離，本版以 port 後綴名稱分開工作台，
 同帳戶惡意程式／可讀寫使用者資料的惡意瀏覽器擴充不在此邊界內；請勿在同一來源部署其他不可信網站。
 manifest／SHA 是完整性與來源核對工具，不是發行者數位簽章；同帳戶能修改程式及 hash 檔不能被視為已防護。
 不修改 Defender／SAC／WDAC／PowerShell 政策，不執行遠端安裝腳本，基本依賴 hash 與 HTTPS 驗證不可略過。
+
+## 2026-11-17 Session 恢復補充
+
+登入恢復仍要求啟動器持有的 bootstrap；服務重啟後舊 Cookie 不會被自動當作授權。
+127.0.0.1／同源／CSRF／Host 規則保留；Cookie 新增 port 名稱隔離，維持 HttpOnly／SameSite Strict／host-only。
+認證值不保存或廣播，stale CSRF 僅重新讀取憑證，不重送寫入；logout 撤銷當前 Session 與對應 SSE。
+詳 [Session 修復](SESSION_RECOVERY_REPAIR.md)。

@@ -75,7 +75,7 @@ def control(data,*,stop=False):
             connection.request('POST','/api/shutdown',json.dumps({'confirmed':True}),headers={
                 'Origin':origin,'Content-Type':'application/json','Cookie':cookie.split(';')[0],'X-Workspace-CSRF':payload['value']['csrf']})
             response=connection.getresponse();response.read();return response.status==200
-        return origin+'/#bootstrap='+record['bootstrap']
+        return origin+'/launch#bootstrap='+record['bootstrap']
     except (OSError,ValueError,http.client.HTTPException):return False
     finally:connection.close()
 
