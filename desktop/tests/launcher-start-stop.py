@@ -18,6 +18,7 @@ wrapper=app.parent if (app.parent/'Start-Web-Workspace.cmd').is_file() else app
 output=ROOT/'build/session-recovery';output.mkdir(parents=True,exist_ok=True)
 env={**os.environ,'LOCALLLM_NO_PAUSE':'1'}
 result={'status':'PASS','scope':'actual Windows CMD + installed official Python; disposable synthetic profile, not target RTX QA','checks':{}}
+result['package_build']=json.loads((app/'workspace-build.json').read_text(encoding='utf-8')) if (app/'workspace-build.json').is_file() else {'mode':'source checkout'}
 system=Path(os.environ['SystemRoot']);minimal=[str(system/'System32'),str(system),str(system/'System32/WindowsPowerShell/v1.0')]
 for label,paths in [('PATH without py',[str(Path(sys.executable).parent),*minimal]),('Registry without py or PATH Python',minimal)]:
     probe=subprocess.run(['cmd.exe','/d','/c','Find-Web-Python.cmd'],cwd=wrapper,env={**env,'PATH':os.pathsep.join(paths)},capture_output=True,encoding='utf-8',errors='replace',timeout=40)

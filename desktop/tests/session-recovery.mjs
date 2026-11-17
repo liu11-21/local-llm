@@ -94,7 +94,8 @@ try{
   await page.evaluate(()=>location.hash='/library');await page.getByLabel('匯入 GGUF 檔案',{exact:true}).waitFor();checks.library_access='PASS'
   assert.deepEqual(errors,[])
   await Promise.allSettled(logRequests)
-  await writeFile(join(output,'SESSION_RECOVERY_TESTS.json'),JSON.stringify({status:'PASS',scope:'real official Python / SQLite / HTTP / Chrome; waiting TaskManager fixture for SSE and cancel, no AI inference',checks,http:observations,console:errors,network_log:'paths/status/origin/error only; credentials omitted',target_RTX:'BLOCKED: specified desktop QA directory is not on this host'},null,2)+'\n')
+  const packageBuild=JSON.parse(await readFile(join(app,'workspace-build.json'),'utf8').catch(()=>'{}'))
+  await writeFile(join(output,'SESSION_RECOVERY_TESTS.json'),JSON.stringify({status:'PASS',scope:'real official Python / SQLite / HTTP / Chrome; waiting TaskManager fixture for SSE and cancel, no AI inference',package_build:packageBuild,checks,http:observations,console:errors,network_log:'paths/status/origin/error only; credentials omitted',target_RTX:'BLOCKED: specified desktop QA directory is not on this host'},null,2)+'\n')
   console.log('PASS real browser session reload/restart/expiry/reauth/multi-tab/logout, transport SSE reconnect/cancel and security boundaries')
  }
  await stop()

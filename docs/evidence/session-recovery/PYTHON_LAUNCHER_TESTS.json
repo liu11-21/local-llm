@@ -26,6 +26,13 @@
     "SQLite chats Agent Team library works preservation": "PASS",
     "saved Runtime setting preservation": "PASS"
   },
+  "package_build": {
+    "version": "0.9.0",
+    "channel": "Development",
+    "commit": "524b1f9500ede507b5041dbab0b6b0282ec9bdd7",
+    "target": "Windows x64",
+    "signed": false
+  },
   "runtime_cli_repeated": false,
   "model_downloads": 0,
   "inference": false,

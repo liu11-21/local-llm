@@ -8,13 +8,17 @@
 瀏覽器關閉後可用 **Stop-Web-Workspace.cmd** 停止；模型、聊天與作品沿用原資料目錄。
 腳本／官方 Python／選用原生依賴仍可能受裝置政策限制，**SAC 完整相容性尚未獨立驗證**。
 
-[下載 Runtime 偵測修復 Windows Web ZIP](https://github.com/liu11-21/local-llm/actions/runs/43890145954/artifacts/14235639642) ·
-[Windows Web CI](https://github.com/liu11-21/local-llm/actions/runs/43890145954) ·
+[下載 Session／Launcher 修復 Windows Web ZIP](https://github.com/liu11-21/local-llm/actions/runs/44056914092/artifacts/14315909098) ·
+[Windows Web CI](https://github.com/liu11-21/local-llm/actions/runs/44056914092) ·
 [安裝／更新／回滾](docs/WEB_INSTALLATION.md) · [架構](docs/WEB_ARCHITECTURE.md) · [安全](docs/WEB_SECURITY.md) ·
 [相容性](docs/WEB_COMPATIBILITY.md) · [0.9.0 交付](docs/V090_DELIVERY.md)。
 
 0.9.0 偵測修復：掃描使用者／系統 PATH 與 WindowsApps，驗簽後顯示可選候選、拒絕原因及保存狀態。
-[修復及最新 Artifact／SHA／驗收](docs/RUNTIME_DETECTION_REPAIR.md)。目標 RTX 5070 Ti＋SAC 安裝偵測仍待實機確認，不以 Mock 或其他主機結果代替。
+[Runtime 偵測修復紀錄](docs/RUNTIME_DETECTION_REPAIR.md) 保留當時的實測界線。維護者本輪已確認 RTX 安裝偵測與設備列舉通過；GPU 推理仍待後續桌機驗收。
+
+2026-11-17：新增安全 Session 重新初始化、跨分頁／SSE 恢復及 Python Launcher 備援，版本仍為 0.9.0。
+[最新修復交付／SHA](docs/V090_DESKTOP_RETEST.md) · [Session](docs/SESSION_RECOVERY_REPAIR.md) · [Python](docs/PYTHON_LAUNCHER_REPAIR.md)。
+先停止舊服務，再沿用原資料目錄啟動新版；Session 逾期可再執行 Start 重新驗證，不需清除 Cookie。
 
 下載 Artifact 後解開其中 `LocalLLM-Web-0.9.0-Windows-x64.zip`。程式來源 78f8f7c；最終 CI 18 steps 成功，
 Python 235 項（234 通過、1 個不需要的封裝 Worker 測試 skipped）、Chrome／Edge 與真實同包模型工作鏈通過。

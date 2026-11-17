@@ -1,5 +1,7 @@
 # Local LLM 0.9.0 Web Workspace — 交付
 
+2026-11-17：Session Recovery／Python Launcher 修復與新的 0.9.0 CI ZIP，見 [最新桌機複測交付](V090_DESKTOP_RETEST.md)。
+
 2026-11-16 Runtime 偵測修復、最新 CI／ZIP／SHA、手動既有 SDK 同包驗收及目標 RTX／SAC BLOCKED 界線，
 見 [Runtime 偵測修復交付](RUNTIME_DETECTION_REPAIR.md)。以下保留原始交付來源與測試範圍，歷史推理不當成本輪安裝偵測驗收。
 
