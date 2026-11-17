@@ -43,6 +43,7 @@ try{
  await stop();record=await start();assert.notEqual(record.bootstrap,firstToken)
  const failed=await page.evaluate(async csrf=>{const r=await fetch('/api/rpc',{method:'POST',headers:{'Content-Type':'application/json','X-Workspace-CSRF':csrf},body:JSON.stringify({op:'info',data:{}})});return r.status},prior)
  assert.equal(failed,401)
+ if(!baseline){await page.getByRole('dialog',{name:'恢復工作階段',exact:true}).waitFor();checks.restart_invalid_session_detected='PASS'}
  // Same-document navigation reproduces the original blocker. Do not use about:blank/reload.
  await page.goto(origin+launchPath+'#bootstrap='+record.bootstrap)
  if(baseline){
@@ -56,17 +57,17 @@ try{
   const other=await context.newPage();await other.goto(origin+'/#/chat');await other.getByText('本機服務已連線',{exact:true}).waitFor()
   await writeFile(join(profile,'expire-session'),'expire controlled test sessions')
   await sleep(250)
-  // Ask the actual transport to observe expiry rather than waiting for its 15-second heartbeat.
-  await page.evaluate(async()=>{const t=await import('/transport-test.js');await t.webSession().catch(()=>{})})
+  await page.getByRole('dialog',{name:'恢復工作階段',exact:true}).waitFor();checks.expiry_detected_without_reload='PASS'
   await page.reload();await page.getByRole('dialog',{name:'恢復工作階段',exact:true}).waitFor();checks.expiry_gate='PASS'
+  const otherReauthenticated=other.waitForResponse(r=>new URL(r.url()).pathname==='/api/session'&&r.request().method()==='GET'&&r.status()===200)
   await page.goto(origin+launchPath+'#bootstrap='+record.bootstrap);await page.getByText('本機服務已連線',{exact:true}).waitFor()
-  await other.getByText('本機服務已連線',{exact:true}).waitFor();checks.reauth_and_multi_tab='PASS'
+  await otherReauthenticated;await other.getByText('本機服務已連線',{exact:true}).waitFor();checks.reauth_and_multi_tab='PASS'
   const job=JSON.parse(await readFile(join(profile,'test-job.json'),'utf8')).id
   let requests=0;await page.route('**/api/jobs/*/events',async route=>{requests++;if(requests===1)return route.abort();return route.continue()})
   await page.evaluate(async id=>{const t=await import('/transport-test.js');await t.initializeWeb();window.sessionTransport=t;window.sessionAdapter=new t.WebHTTPAdapter();await window.sessionAdapter.request('job',{id})},job)
   for(let i=0;i<60&&requests<2;i++)await sleep(100)
   assert(requests>=2,'SSE must reconnect after the controlled dropped connection');checks.sse_reconnect='PASS'
-  const cancel=await page.evaluate(async id=>await window.sessionAdapter.request('cancel',{id}),job);assert(cancel.ok)
+  const cancel=await page.evaluate(async id=>await window.sessionAdapter.request('cancel',{id}),job);assert(cancel.ok);assert.equal(cancel.value.id,job)
   for(let i=0;i<50;i++){const r=await page.evaluate(async id=>await window.sessionAdapter.request('job',{id}),job);if(r.value?.state==='cancelled')break;await sleep(100);if(i===49)assert.fail('Controlled waiting task did not cancel')}
   checks.cancel='PASS'
   // A second login rotates cookie/CSRF; the old tab must refresh, never replay a write.

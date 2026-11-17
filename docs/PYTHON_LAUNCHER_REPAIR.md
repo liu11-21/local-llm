@@ -13,6 +13,8 @@ Launcher 找不到登錄版本時，沒有再檢查其他可用 Python；所以�
 
 六個薄 CMD wrapper → `Run-Web-Workspace.cmd` → `Find-Web-Python.cmd`。
 selector 使用 Windows 內建 PowerShell 的固定 inline 指令；不載入 profile、不使用 ExecutionPolicy Bypass、不變更任何政策、不安裝任何程式。
+Probe 的子程序環境強制 `PYTHON_MANAGER_AUTOMATIC_INSTALL=false` 並移除 `PYLAUNCHER_ALLOW_INSTALL`，
+避免使用者環境允許 Launcher 自行安裝版本；不修改全域環境設定。[Python 官方 Windows 說明](https://docs.python.org/3/using/windows.html)。
 stdout 只輸出已驗證的絕對 Python 路徑；來源／拒絕原因放 stderr。
 
 順序：
@@ -37,6 +39,7 @@ Registry 讀不到時保留診斷並繼續其他來源，沒有讀寫安裝登�
 |---|---|
 | py 正常、py 失敗轉 PATH、僅 Registry、多版本、錯版本、32-bit、安裝路徑空格、完全不存在 | **PASS**：`test_python_launcher.py`，Mock 候選及版本，負例不執行假 EXE |
 | 實際 finder | **PASS**：本機官方 3.12.10 x64，stdout 為可實跑的絕對路徑 |
+| 自動安裝旗標 | **PASS**：父程序刻意允許自動安裝，實際 probe 子程序仍回報 allow-install 不存在、automatic-install=false |
 | PATH 備援 | **PASS**：僅改測試子程序環境，移除 Launcher 搜尋目錄，實際找到 PATH Python |
 | Registry 備援 | **PASS**：測試子程序 PATH 不含 py／Python，實際從 Registry 找到 3.12.10；未修改系統／使用者 PATH |
 | 真 CMD Start／Stop／重啟 | **PASS**：官方 Python 3.12.10、重複啟動防護、程序退出及連接埠釋放 |

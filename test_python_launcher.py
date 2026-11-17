@@ -11,12 +11,16 @@ import unittest
 ROOT=Path(__file__).resolve().parent
 
 
+def selector_functions():
+    lines=(ROOT/'Find-Web-Python.cmd').read_text().splitlines()
+    parts=[re.fullmatch(r' "(.*)"(?: \^)?',line) for line in lines]
+    return ' '.join(match[1] for match in parts if match and not match[1].startswith('try { Write-Output'))
+
+
 @unittest.skipUnless(os.name=='nt','Windows CMD/PowerShell selector')
 class PythonLauncherTests(unittest.TestCase):
     def selection(self,candidates,versions=None,failed=(),space=False):
-        lines=(ROOT/'Find-Web-Python.cmd').read_text().splitlines()
-        parts=[re.fullmatch(r' "(.*)"(?: \^)?',line) for line in lines]
-        script=' '.join(match[1] for match in parts if match and not match[1].startswith('try { Write-Output'))
+        script=selector_functions()
         with tempfile.TemporaryDirectory(prefix='python selection with spaces ') as folder:
             exe=Path(folder)/'python.exe' if space else Path(sys.executable)
             if space:exe.write_bytes(b'never executed; mock probe only')
@@ -48,6 +52,17 @@ class PythonLauncherTests(unittest.TestCase):
         path=Path(result.stdout.strip());self.assertTrue(path.is_absolute());self.assertTrue(path.is_file())
         value=json.loads(subprocess.check_output([str(path),'-I','-S','-B','-c','import sys,json,struct;print(json.dumps([list(sys.version_info[:2]),struct.calcsize("P")]))'],text=True))
         self.assertEqual(value,[[3,12],8])
+
+    def test_probe_cannot_inherit_automatic_install_flags(self):
+        # Run the real Process probe; substitute only its diagnostic payload so
+        # the child reports its environment instead of version metadata.
+        payload='import os,json;print(json.dumps(dict(allow=os.getenv("PYLAUNCHER_ALLOW_INSTALL"),automatic=os.getenv("PYTHON_MANAGER_AUTOMATIC_INSTALL"))))'
+        diagnostic='exec(bytes('+repr(list(payload.encode('utf-8')))+'))'
+        script=selector_functions().replace('import sys,json,struct;print(json.dumps([sys.executable,list(sys.version_info[:3]),struct.calcsize(chr(80))*8]))',diagnostic)
+        script+="; Probe-Python '"+sys.executable.replace("'","''")+"' '' | ConvertTo-Json -Compress"
+        env={**os.environ,'PYLAUNCHER_ALLOW_INSTALL':'1','PYTHON_MANAGER_AUTOMATIC_INSTALL':'true'}
+        value=subprocess.check_output(['powershell.exe','-NoProfile','-NonInteractive','-Command',script],env=env,text=True,encoding='utf-8',timeout=15)
+        self.assertEqual(json.loads(value),{'allow':None,'automatic':'false'})
 
 
 if __name__=='__main__':unittest.main()
